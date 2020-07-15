@@ -1,0 +1,13 @@
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/bin/Debug/netcoreapp3.1/udp_hole_punching_server
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/bin/Debug/netcoreapp3.1/udp_hole_punching_server.deps.json
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/bin/Debug/netcoreapp3.1/udp_hole_punching_server.runtimeconfig.json
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/bin/Debug/netcoreapp3.1/udp_hole_punching_server.runtimeconfig.dev.json
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/bin/Debug/netcoreapp3.1/udp_hole_punching_server.dll
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/bin/Debug/netcoreapp3.1/udp_hole_punching_server.pdb
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/obj/Debug/netcoreapp3.1/udp_hole_punching_server.csprojAssemblyReference.cache
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/obj/Debug/netcoreapp3.1/udp_hole_punching_server.AssemblyInfoInputs.cache
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/obj/Debug/netcoreapp3.1/udp_hole_punching_server.AssemblyInfo.cs
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/obj/Debug/netcoreapp3.1/udp_hole_punching_server.csproj.CoreCompileInputs.cache
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/obj/Debug/netcoreapp3.1/udp_hole_punching_server.dll
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/obj/Debug/netcoreapp3.1/udp_hole_punching_server.pdb
+/home/pasan/Desktop/projects/FYP/udp_hole_punching_server/obj/Debug/netcoreapp3.1/udp_hole_punching_server.genruntimeconfig.cache

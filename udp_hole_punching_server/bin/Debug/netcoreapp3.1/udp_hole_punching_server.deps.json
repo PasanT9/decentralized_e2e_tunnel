@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v3.1",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v3.1": {
+      "udp_hole_punching_server/1.0.0": {
+        "runtime": {
+          "udp_hole_punching_server.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "udp_hole_punching_server/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
