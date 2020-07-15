@@ -1,0 +1,13 @@
+/home/pasan/Desktop/projects/FYP/udp_relay_client/obj/Debug/netcoreapp3.1/udp_relay_client.csprojAssemblyReference.cache
+/home/pasan/Desktop/projects/FYP/udp_relay_client/obj/Debug/netcoreapp3.1/udp_relay_client.AssemblyInfoInputs.cache
+/home/pasan/Desktop/projects/FYP/udp_relay_client/obj/Debug/netcoreapp3.1/udp_relay_client.AssemblyInfo.cs
+/home/pasan/Desktop/projects/FYP/udp_relay_client/obj/Debug/netcoreapp3.1/udp_relay_client.csproj.CoreCompileInputs.cache
+/home/pasan/Desktop/projects/FYP/udp_relay_client/bin/Debug/netcoreapp3.1/udp_relay_client
+/home/pasan/Desktop/projects/FYP/udp_relay_client/bin/Debug/netcoreapp3.1/udp_relay_client.deps.json
+/home/pasan/Desktop/projects/FYP/udp_relay_client/bin/Debug/netcoreapp3.1/udp_relay_client.runtimeconfig.json
+/home/pasan/Desktop/projects/FYP/udp_relay_client/bin/Debug/netcoreapp3.1/udp_relay_client.runtimeconfig.dev.json
+/home/pasan/Desktop/projects/FYP/udp_relay_client/bin/Debug/netcoreapp3.1/udp_relay_client.dll
+/home/pasan/Desktop/projects/FYP/udp_relay_client/bin/Debug/netcoreapp3.1/udp_relay_client.pdb
+/home/pasan/Desktop/projects/FYP/udp_relay_client/obj/Debug/netcoreapp3.1/udp_relay_client.dll
+/home/pasan/Desktop/projects/FYP/udp_relay_client/obj/Debug/netcoreapp3.1/udp_relay_client.pdb
+/home/pasan/Desktop/projects/FYP/udp_relay_client/obj/Debug/netcoreapp3.1/udp_relay_client.genruntimeconfig.cache
