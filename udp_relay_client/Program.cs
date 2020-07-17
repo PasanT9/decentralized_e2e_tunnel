@@ -9,7 +9,7 @@ namespace udp_relay_client
         static int address;
         static void Main(string[] args)
         {
-            IPAddress serverIP = IPAddress.Parse("127.0.0.1");     // Server IP
+            IPAddress serverIP = IPAddress.Parse("80.211.12.100");     // Server IP
             int port = 27005;   // Server port
             IPEndPoint ipEndPoint = new IPEndPoint(serverIP,port);      
             while(true)
@@ -25,6 +25,7 @@ namespace udp_relay_client
 
             using (UdpClient client = new UdpClient())
             {
+
                 byte[] data = Encoding.UTF8.GetBytes(message);      // Convert our message to a byte array
                 client.Send(data, data.Length, serverAddress);      // Send the date to the server
                 serverResponse = Encoding.UTF8.GetString(client.Receive(ref serverAddress)); 
