@@ -2,11 +2,27 @@
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
+using System.Collections.Generic;  
+using System.Net.Security;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
+using System.IO;
 
 namespace peer
 {
     class Program
     {
+        public static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            if(sslPolicyErrors == SslPolicyErrors.None || sslPolicyErrors == SslPolicyErrors.RemoteCertificateChainErrors)
+                return true;
+
+            Console.WriteLine("Certificate error: {0}", sslPolicyErrors);
+
+            // Do not allow this client to communicate with unauthenticated servers.
+            return false;
+        }
         static int connection_address;
         static void Main(string[] args)
         {
@@ -21,8 +37,11 @@ namespace peer
             TcpClient client = new TcpClient(ipLocalEndPoint);
             client.Connect(server_ip, server_port);
 
+            //sslStream.Flush();
+
             init_connection(client);  
             client.Close();
+
             Console.Write("Do you wanna create a connection(y/n): ");
             string input = Console.ReadLine();
 
@@ -42,13 +61,30 @@ namespace peer
         {
             Byte[] bytes = new Byte[256];
 
-            NetworkStream stream = client.GetStream();
-            send_message_tcp(stream, "HELLO");
+            SslStream sslStream = new SslStream(client.GetStream(),false, new RemoteCertificateValidationCallback (ValidateServerCertificate), null);
+            try
+            {
+                sslStream.AuthenticateAsClient("test", null, SslProtocols.Tls13, true);
+            }
+            catch (AuthenticationException e)
+            {
+                Console.WriteLine("Exception: {0}", e.Message);
+                if (e.InnerException != null)
+                {
+                    Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                }
+                Console.WriteLine ("Authentication failed - closing the connection.");
+                client.Close();
+                return;
+            }
+            byte[] messsage = Encoding.UTF8.GetBytes("HELLO");
+            sslStream.Write(messsage);
 
-            stream.Read(bytes, 0, bytes.Length);
+            sslStream.Read(bytes, 0, bytes.Length);
             String response = System.Text.Encoding.ASCII.GetString(bytes, 0, bytes.Length);
             connection_address = Int16.Parse(response);
             Console.WriteLine("Recieved address: "+connection_address);
+            sslStream.Close();
         }
 
         static void req_connection(IPEndPoint ip, UdpClient client)
