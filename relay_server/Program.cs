@@ -43,10 +43,8 @@ namespace peer
 
             server.Start();
             Console.WriteLine("Server is starting");
-            Thread connections_t = new Thread(() => handle_connections(server));
-            //handle_connections(server);
-            connections_t.Start();
-            handle_relay_requests();
+            handle_connections(server);
+            //handle_relay_requests();
 
         }
 
@@ -72,33 +70,75 @@ namespace peer
                 SslStream sslStream = new SslStream(client.GetStream(), false);
                 sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false,SslProtocols.Tls13, checkCertificateRevocation: true);
 
-                sslStream.ReadTimeout = 5000;
-                sslStream.WriteTimeout = 5000;
+                sslStream.ReadTimeout = 20000;
+                sslStream.WriteTimeout = 20000;
                 // Read a message from the client.
-                sslStream.Read(bytes, 0, bytes.Length);
-                response = Encoding.UTF8.GetString(bytes);
-                Console.WriteLine(response);
+                response = recieve_message_tcp(sslStream);
+                if(String.Compare(response,"HELLO") == 0){
+                    Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint)+" is requesting a connection");
+                    client_map[client_count] = (IPEndPoint)client.Client.RemoteEndPoint;
+                    client_map_reverse[(IPEndPoint)client.Client.RemoteEndPoint] = client_count++;
 
-                Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint)+" is requesting a connection");
-                client_map[client_count] = (IPEndPoint)client.Client.RemoteEndPoint;
-                client_map_reverse[(IPEndPoint)client.Client.RemoteEndPoint] = client_count++;
+                    Console.WriteLine("address "+ (client_count-1)+" is now reserved for client " + ((IPEndPoint)client.Client.RemoteEndPoint));
 
-                Console.WriteLine("address "+ (client_count-1)+" is now reserved for client " + ((IPEndPoint)client.Client.RemoteEndPoint));
-
-                byte[] message = Encoding.UTF8.GetBytes((client_count-1).ToString());
-                sslStream.Write(message);
-
-                sslStream.Close();
-                client.Close();
+                    send_message_tcp(sslStream, (client_count-1).ToString());
+                    Thread request_t = new Thread(() => handle_relay_requests(sslStream,client));
+                    request_t.Start();
+                    //sslStream.Close();
+                    //client.Close();   
+                }
+                else{
+                    Console.WriteLine("unrecognized command");
+                }
             }
         }
 
-        static void handle_relay_requests()
+        static void handle_relay_requests(SslStream sslStream, TcpClient client)
         {
-            int port = 27005;
-            while(true)
-            {
-                UdpClient udpListener = new UdpClient(port);
+            //int port = 27005;
+            //while(true)
+            //{
+            string msg = recieve_message_tcp(sslStream);
+            if(String.Compare(msg, "REQUEST") == 0){
+                send_message_tcp(sslStream, "ACCEPT");
+                msg = recieve_message_tcp(sslStream);
+                int peer0 = client_map_reverse[((IPEndPoint)client.Client.RemoteEndPoint)];
+                int peer1 = Int32.Parse(msg);
+                Console.WriteLine("Peer "+ peer0 + " requesting a connection to Peer " + peer1);
+                client_buffers[peer1] = peer0.ToString();
+                while(client_buffers[peer0] == null);
+                if(client_buffers[peer0] == "ACCEPT"){
+                    send_message_tcp(sslStream, "ACCEPT");
+                    client_buffers[peer0] = null;
+                    client_buffers[peer1] = null;
+                    sslStream.Close();
+                    client.Close();
+                    Thread p2p_connection_t = new Thread(() => init_relay(peer0, peer1));
+                    p2p_connection_t.Start();
+                }
+                else if(client_buffers[peer0] == "REJECT"){
+                    send_message_tcp(sslStream, "REJECT");
+                }
+            }
+            else if(String.Compare(msg, "LISTEN") == 0){
+                send_message_tcp(sslStream, "ACCEPT");
+                int peer = client_map_reverse[((IPEndPoint)client.Client.RemoteEndPoint)];
+                while(client_buffers[peer] == null);
+                send_message_tcp(sslStream, peer.ToString());
+                msg = recieve_message_tcp(sslStream);
+                if(String.Compare(msg,"ACCEPT") == 0){
+                    client_buffers[Int32.Parse(client_buffers[peer])] = "ACCEPT"; 
+                    sslStream.Close();
+                    client.Close();
+                }
+                else if(String.Compare(msg,"REJECT") == 0){
+                    client_buffers[Int32.Parse(client_buffers[peer])] = "REJECT"; 
+                }
+            }
+            else{
+                Console.WriteLine("unrecognized command");
+            }
+                /*UdpClient udpListener = new UdpClient(port);
 
                 IPEndPoint ipEndPoint = new IPEndPoint(IPAddress.Any, port);
                 byte[] receivedBytes = udpListener.Receive(ref ipEndPoint);
@@ -110,8 +150,8 @@ namespace peer
                 Console.WriteLine("Client "+ peer0 + " requesting a connection to " + peer1);
                 udpListener.Close();
                 Thread p2p_connection_t = new Thread(() => init_relay(peer0, peer1));
-                p2p_connection_t.Start();
-            }
+                p2p_connection_t.Start();*/
+            //}
             
 
         }
@@ -124,23 +164,30 @@ namespace peer
             UdpClient client1 = new UdpClient();
             IPEndPoint peerIP1 = client_map[peer1];
 
-            send_message_udp(client1, peerIP1, peer0.ToString());
-            string response = Encoding.UTF8.GetString(client1.Receive(ref peerIP1));
-
-            if(response == "ACCEPT"){
-                Console.WriteLine("connection accepted");
-                send_message_udp(client1, peerIP1, ("connected to "+peer0));
-                send_message_udp(client0, peerIP0, ("connected to "+peer1));
-                start_relay(peer0, peer1, client0, peerIP0, client1, peerIP1);
-            }
-            else if(response == "REJECT"){
-                Console.WriteLine("connection rejected");
-            }
+            send_message_udp(client1, peerIP1, ("connected to "+peer0));
+            send_message_udp(client0, peerIP0, ("connected to "+peer1));
+            
+            start_relay(peer0, peer1, client0, peerIP0, client1, peerIP1);
         }
         static void send_message_udp(UdpClient client, IPEndPoint ip, String message)
         {
             byte[] data = Encoding.UTF8.GetBytes(message);
             client.Send(data, data.Length, ip);
+        }
+
+        static void send_message_tcp(SslStream sslStream, string message)
+        {
+            byte[] data = Encoding.UTF8.GetBytes(message);
+            sslStream.Write(data);
+            sslStream.Flush();
+        }
+
+        static string recieve_message_tcp(SslStream sslStream)
+        {
+            Byte[] bytes = new Byte[256];
+            sslStream.Read(bytes, 0, bytes.Length);
+            string message = Encoding.UTF8.GetString(bytes);
+            return message;
         }
 
         static void start_relay(int peer0, int peer1, UdpClient client0, IPEndPoint ip0,UdpClient client1, IPEndPoint ip1)
