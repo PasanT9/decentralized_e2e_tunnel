@@ -8,6 +8,11 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using dtls_client;
+using System.Runtime.InteropServices;
+using ProxyClient;
+using PairStream;
+
 
 namespace peer
 {
@@ -84,8 +89,6 @@ namespace peer
                     send_message_tcp(sslStream, (client_count-1).ToString());
                     Thread request_t = new Thread(() => handle_relay_requests(sslStream,client));
                     request_t.Start();
-                    //sslStream.Close();
-                    //client.Close();   
                 }
                 else{
                     Console.WriteLine("unrecognized command");
@@ -95,9 +98,6 @@ namespace peer
 
         static void handle_relay_requests(SslStream sslStream, TcpClient client)
         {
-            //int port = 27005;
-            //while(true)
-            //{
             string msg = recieve_message_tcp(sslStream);
             if(String.Compare(msg, "REQUEST") == 0){
                 send_message_tcp(sslStream, "ACCEPT");
@@ -138,27 +138,35 @@ namespace peer
             else{
                 Console.WriteLine("unrecognized command");
             }
-                /*UdpClient udpListener = new UdpClient(port);
-
-                IPEndPoint ipEndPoint = new IPEndPoint(IPAddress.Any, port);
-                byte[] receivedBytes = udpListener.Receive(ref ipEndPoint);
-                string message = Encoding.UTF8.GetString(receivedBytes);
-                Console.WriteLine("ip: " + ipEndPoint);
-                Console.WriteLine("message: " + message);
-                int peer0 = client_map_reverse[ipEndPoint];
-                int peer1 = Int32.Parse(message);
-                Console.WriteLine("Client "+ peer0 + " requesting a connection to " + peer1);
-                udpListener.Close();
-                Thread p2p_connection_t = new Thread(() => init_relay(peer0, peer1));
-                p2p_connection_t.Start();*/
-            //}
-            
-
         }
 
         static void init_relay(int peer0, int peer1)
         {
-            UdpClient client0 = new UdpClient();
+            string[] socket_peer0 = client_map[peer0].ToString().Split(':');
+            string[] socket_peer1 = client_map[peer1].ToString().Split(':');
+
+			DTLSClient dtls_client0 = new DTLSClient(socket_peer0[0], socket_peer0[1], new byte[] {0xBA,0xA0});
+            DTLSClient dtls_client1 = new DTLSClient(socket_peer1[0], socket_peer1[1], new byte[] {0xBA,0xA0});
+            
+			dtls_client0.Start();
+            dtls_client1.Start();
+			statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+			//new Thread(()=>IOStream.CopyTo(dtls_client.GetStream(), 16)).Start();
+			new Thread(() => dtls_client0.GetStream().CopyTo(dtls_client1.GetStream(), 16)).Start();
+            new Thread(() => dtls_client1.GetStream().CopyTo(dtls_client0.GetStream(), 16)).Start();
+            //new Thread(() => dtls_client1.GetStream().CopyTo(IOStream, 16)).Start();
+			//new Thread(() => dtls_client.GetStream().Write(Encoding.Default.GetBytes("It Works!"+Environment.NewLine))).Start();
+			//pair.BindStreams(dtls_client.GetStream(), IOStream);
+			//pair.BindStreams(dtls_client.GetStream(), IOStream);
+			/*while(true)
+			{
+				string input = Console.ReadLine();
+				dtls_client0.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+			}*/
+			//dtls.WaitForExit();
+			dtls_client0.WaitForExit();
+            dtls_client1.WaitForExit();
+            /*UdpClient client0 = new UdpClient();
             IPEndPoint peerIP0 = client_map[peer0];
 
             UdpClient client1 = new UdpClient();
@@ -166,8 +174,8 @@ namespace peer
 
             send_message_udp(client1, peerIP1, ("connected to "+peer0));
             send_message_udp(client0, peerIP0, ("connected to "+peer1));
-            
-            start_relay(peer0, peer1, client0, peerIP0, client1, peerIP1);
+
+            start_relay(peer0, peer1, client0, peerIP0, client1, peerIP1);*/
         }
         static void send_message_udp(UdpClient client, IPEndPoint ip, String message)
         {

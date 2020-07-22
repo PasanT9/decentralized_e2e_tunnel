@@ -8,6 +8,14 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+#if !NETSTANDARD2_0
+using System.Buffers;
+#endif
+using System.Runtime.InteropServices;
+using ProxyClient;
+using PairStream;
+using dtls_server;
+
 
 namespace peer
 {
@@ -24,6 +32,7 @@ namespace peer
             return false;
         }
         static int connection_address;
+        static int local_port;
         static IPEndPoint ipEndPoint;
         static UdpClient peer;
         static void Main(string[] args)
@@ -32,9 +41,10 @@ namespace peer
             int server_port = 27005;   // Server port
 
             Random random = new Random();
-            int local_port = random.Next(20000, 40000);
+            local_port = random.Next(20000, 40000);
 
-            IPAddress ipAddress = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0];
+            //IPAddress ipAddress = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0];
+            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
             TcpClient client = new TcpClient(ipLocalEndPoint);
             client.Connect(server_ip, server_port);
@@ -50,14 +60,12 @@ namespace peer
             IPAddress relay_ip = IPAddress.Parse(server_ip);     // Server IP
 
             ipEndPoint = new IPEndPoint(relay_ip,server_port);
-            peer = new UdpClient(ipLocalEndPoint);
+            //peer = new UdpClient(ipLocalEndPoint);
 
             if(input == "y"){
-                //req_connection(ipEndPoint, peer);
                 req_connection(sslStream, client);
             }
             else{
-                //listen_connection(ipEndPoint, peer);
                 listen_connection(sslStream,client);
             }
         }
@@ -85,10 +93,8 @@ namespace peer
 
             connection_address = Int16.Parse(response);
             Console.WriteLine("Recieved address: "+connection_address);
-            //sslStream.Close();
         }
 
-        //static void req_connection(IPEndPoint ip, UdpClient client)
         static void req_connection(SslStream sslStream, TcpClient client)
         {
             send_message_tcp(sslStream, "REQUEST");
@@ -102,8 +108,27 @@ namespace peer
                     Console.WriteLine("Peer " + peer_address + " accepted the connection");
                     sslStream.Close();
                     client.Close();
+                    Console.WriteLine(local_port);
+                    DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] {0xBA,0xA0});
+						if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
+								dtls.Unbuffer="winpty.exe";
+								dtls.Unbuffer_Args="-Xplain -Xallow-non-tty";
+						}
+						else{
+								dtls.Unbuffer="stdbuf";
+								dtls.Unbuffer_Args="-i0 -o0";
+						}
+						dtls.Start();
+						statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+						new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
+						while(true)
+						{
+							string input = Console.ReadLine();
+							dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+						}
+						dtls.WaitForExit();
 
-                    response = Encoding.UTF8.GetString(peer.Receive(ref ipEndPoint)); 
+                    /*response = Encoding.UTF8.GetString(peer.Receive(ref ipEndPoint)); 
                     Console.WriteLine(response);
                     while(true)
                     {
@@ -111,7 +136,7 @@ namespace peer
                         send_message_udp(peer, ipEndPoint,msg);
                         response = Encoding.UTF8.GetString(peer.Receive(ref ipEndPoint)); 
                         Console.WriteLine(response);
-                    }
+                    }*/
                 }
                 else if(String.Compare(response, "REJECT") == 0){
                     Console.WriteLine("Peer " + peer_address + " rejected the connection");
@@ -121,23 +146,8 @@ namespace peer
             else{
                 Console.WriteLine("Connection declined");
             }
-            
-            /*Console.Write("request connection to peer: ");
-            String peer_address = Console.ReadLine();
-            send_message_udp(client, ip, peer_address);
-            String response = Encoding.UTF8.GetString(client.Receive(ref ip)); 
-            Console.WriteLine(response);
-
-            while(true)
-            {
-                string msg = Console.ReadLine();
-                send_message_udp(client, ip,msg);
-                response = Encoding.UTF8.GetString(client.Receive(ref ip)); 
-                Console.WriteLine(response);
-            }*/
         }
 
-        //static void listen_connection(IPEndPoint ip, UdpClient client)
         static void listen_connection(SslStream sslStream,TcpClient client)
         {
             send_message_tcp(sslStream, "LISTEN");
@@ -153,7 +163,26 @@ namespace peer
                     sslStream.Close();
                     client.Close();
 
-                    response = Encoding.UTF8.GetString(peer.Receive(ref ipEndPoint)); 
+                    DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] {0xBA,0xA0});
+						if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
+								dtls.Unbuffer="winpty.exe";
+								dtls.Unbuffer_Args="-Xplain -Xallow-non-tty";
+						}
+						else{
+								dtls.Unbuffer="stdbuf";
+								dtls.Unbuffer_Args="-i0 -o0";
+						}
+						dtls.Start();
+						statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+						new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
+						while(true)
+						{
+							input = Console.ReadLine();
+							dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+						}
+						dtls.WaitForExit();
+
+                   /* response = Encoding.UTF8.GetString(peer.Receive(ref ipEndPoint)); 
                     Console.WriteLine(response);
                     while(true)
                     {
@@ -161,7 +190,7 @@ namespace peer
                         Console.WriteLine(response);
                         string msg = Console.ReadLine();
                         send_message_udp(peer, ipEndPoint,msg);
-                    }
+                    }*/
                 }
                 else{
                     send_message_tcp(sslStream, "REJECT");
@@ -171,27 +200,8 @@ namespace peer
             else{
                 Console.WriteLine("Connection declined");
             }
-            
-            /*String response = Encoding.UTF8.GetString(client.Receive(ref ip)); 
-            Console.WriteLine(response + " is requesting an connection");
-            Console.Write("Accpet request(y/n): ");
-            String input = Console.ReadLine();
-            if(input == "y"){
-                send_message_udp(client, ip, "ACCEPT");
-                response = Encoding.UTF8.GetString(client.Receive(ref ip)); 
-                Console.WriteLine(response);
-                while(true)
-                {
-                    response = Encoding.UTF8.GetString(client.Receive(ref ip)); 
-                    Console.WriteLine(response);
-                    string msg = Console.ReadLine();
-                    send_message_udp(client, ip,msg);
-                }
-            }
-            else{
-                send_message_udp(client, ip, "REJECT");
-            }*/
         }
+        
         static void send_message_tcp(SslStream sslStream, string message)
         {
             byte[] data = Encoding.UTF8.GetBytes(message);

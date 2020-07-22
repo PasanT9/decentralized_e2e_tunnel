@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>cs_proxy</RootNamespace>
+<StartupObject>Rishi.DTLSC.Program</StartupObject>
+<PackageId>Rishi.Proxy</PackageId>
+<Version>1.3.0-stable</Version>
+<Authors>Rishikeshan L.</Authors>
+<Company>N/A</Company>
+<PackageTags>Proxy;DTLS;netcat</PackageTags>
+<Description>
+SOCKS/HTTP Proxy/DTLS (PSK) support for C# using OpenBSD nc and OpenSSL CLI. nc/OpenSSL should be installed or shipped with this (nc is a small executable). stdbuf (GNU coreutils/BSD) or unbuffer from expect (TCL) should preferably be there too (although this can work without it, there might be buffering delays).
+</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+<projectUrl>https://ris.rocks/</projectUrl>
+<PackageprojectUrl>https://ris.fi/</PackageprojectUrl>
+<RepositoryUrl>https://github.com/ris-public/cs-proxy</RepositoryUrl>
+<PackageIconUrl>https://ris.rocks/favicon.ico</PackageIconUrl>
+<IncludeSource>true</IncludeSource>
+<PackageIcon>icon.png</PackageIcon>
+<Copyright>Copyright © [2019] RISHIKESHAN LAVAKUMAR "github-public [at] ris.fi"
+</Copyright>
+<TargetFrameworks>netcoreapp2.1;netcoreapp2.2</TargetFrameworks>
+<GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="icon.png" Pack="true" Visible="false" PackagePath="" />
+  </ItemGroup>
+</Project>

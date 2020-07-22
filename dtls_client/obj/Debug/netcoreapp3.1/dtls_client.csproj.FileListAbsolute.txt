@@ -1,0 +1,13 @@
+/home/pasan/Desktop/projects/FYP/dtls_client/obj/Debug/netcoreapp3.1/dtls_client.csprojAssemblyReference.cache
+/home/pasan/Desktop/projects/FYP/dtls_client/obj/Debug/netcoreapp3.1/dtls_client.AssemblyInfoInputs.cache
+/home/pasan/Desktop/projects/FYP/dtls_client/obj/Debug/netcoreapp3.1/dtls_client.AssemblyInfo.cs
+/home/pasan/Desktop/projects/FYP/dtls_client/obj/Debug/netcoreapp3.1/dtls_client.csproj.CoreCompileInputs.cache
+/home/pasan/Desktop/projects/FYP/dtls_client/bin/Debug/netcoreapp3.1/dtls_client
+/home/pasan/Desktop/projects/FYP/dtls_client/bin/Debug/netcoreapp3.1/dtls_client.deps.json
+/home/pasan/Desktop/projects/FYP/dtls_client/bin/Debug/netcoreapp3.1/dtls_client.runtimeconfig.json
+/home/pasan/Desktop/projects/FYP/dtls_client/bin/Debug/netcoreapp3.1/dtls_client.runtimeconfig.dev.json
+/home/pasan/Desktop/projects/FYP/dtls_client/bin/Debug/netcoreapp3.1/dtls_client.dll
+/home/pasan/Desktop/projects/FYP/dtls_client/bin/Debug/netcoreapp3.1/dtls_client.pdb
+/home/pasan/Desktop/projects/FYP/dtls_client/obj/Debug/netcoreapp3.1/dtls_client.dll
+/home/pasan/Desktop/projects/FYP/dtls_client/obj/Debug/netcoreapp3.1/dtls_client.pdb
+/home/pasan/Desktop/projects/FYP/dtls_client/obj/Debug/netcoreapp3.1/dtls_client.genruntimeconfig.cache
