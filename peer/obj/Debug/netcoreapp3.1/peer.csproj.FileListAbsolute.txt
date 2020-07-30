@@ -11,3 +11,5 @@
 /home/pasan/Desktop/projects/FYP/peer/obj/Debug/netcoreapp3.1/peer.dll
 /home/pasan/Desktop/projects/FYP/peer/obj/Debug/netcoreapp3.1/peer.pdb
 /home/pasan/Desktop/projects/FYP/peer/obj/Debug/netcoreapp3.1/peer.genruntimeconfig.cache
+/home/pasan/Desktop/projects/FYP/peer/bin/Debug/netcoreapp3.1/Newtonsoft.Json.dll
+/home/pasan/Desktop/projects/FYP/peer/obj/Debug/netcoreapp3.1/peer.csproj.CopyComplete

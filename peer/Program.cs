@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Net;
+using Newtonsoft.Json;
 using System.Net.Sockets;
 using System.Threading;
 using System.Collections.Generic;  
@@ -19,6 +20,7 @@ using dtls_server;
 
 namespace peer
 {
+
     class Program
     {
         public static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
@@ -35,6 +37,8 @@ namespace peer
         static int local_port;
         static IPEndPoint ipEndPoint;
         static UdpClient peer;
+
+        
         static void Main(string[] args)
         {
             string server_ip = "127.0.0.1";     // Server IP
@@ -70,6 +74,8 @@ namespace peer
             }
         }
 
+        
+
         static void init_connection(SslStream sslStream)
         {
 
@@ -88,8 +94,9 @@ namespace peer
                 sslStream.Close();
                 return;
             }
+
             send_message_tcp(sslStream, "HELLO");
-            String response = recieve_message_tcp(sslStream);
+            string response = recieve_message_tcp(sslStream);
 
             connection_address = Int16.Parse(response);
             Console.WriteLine("Recieved address: "+connection_address);
@@ -204,7 +211,9 @@ namespace peer
         
         static void send_message_tcp(SslStream sslStream, string message)
         {
-            byte[] data = Encoding.UTF8.GetBytes(message);
+            Request req = new Request(200, message);
+            string jsonString = JsonConvert.SerializeObject(req);
+            byte[] data = Encoding.UTF8.GetBytes(jsonString);
             sslStream.Write(data);
             sslStream.Flush();
         }
@@ -214,7 +223,8 @@ namespace peer
             Byte[] bytes = new Byte[256];
             sslStream.Read(bytes, 0, bytes.Length);
             string message = Encoding.UTF8.GetString(bytes);
-            return message;
+            Request reply = JsonConvert.DeserializeObject<Request>(message);
+            return reply.body;
         }
 
         static void send_message_udp(UdpClient client, IPEndPoint ip, String message)

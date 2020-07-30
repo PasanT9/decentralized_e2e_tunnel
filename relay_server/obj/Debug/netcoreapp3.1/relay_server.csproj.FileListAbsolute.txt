@@ -11,3 +11,5 @@
 /home/pasan/Desktop/projects/FYP/relay_server/obj/Debug/netcoreapp3.1/relay_server.dll
 /home/pasan/Desktop/projects/FYP/relay_server/obj/Debug/netcoreapp3.1/relay_server.pdb
 /home/pasan/Desktop/projects/FYP/relay_server/obj/Debug/netcoreapp3.1/relay_server.genruntimeconfig.cache
+/home/pasan/Desktop/projects/FYP/relay_server/bin/Debug/netcoreapp3.1/Newtonsoft.Json.dll
+/home/pasan/Desktop/projects/FYP/relay_server/obj/Debug/netcoreapp3.1/relay_server.csproj.CopyComplete

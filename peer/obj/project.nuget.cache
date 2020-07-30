@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "OmYpnlH8trTmoEP9Nc1dg3/LevDH4uW2kD+y7lOnJ2tHMYUqMxMC22FhpScUdMzTHWFBrMprf3vhidzl0PQnmg==",
+  "dgSpecHash": "CIJKIXT1XRrlSC9+CeQH5RYV237gGoDgCMzhjvxceozdXhRQE6oBnnoOrRm5J9kcJ2H84sh8loDtddftt1kuTg==",
   "success": true,
   "projectFilePath": "/home/pasan/Desktop/projects/FYP/peer/peer.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512"
+  ],
   "logs": []
 }

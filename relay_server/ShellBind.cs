@@ -150,7 +150,6 @@ namespace ShellBind {
 						this._RedirectErrorsToConsole=false;
 						this.RedirectErrorsToStream=false;
 						this.VERBOSE=false;
-
 				}
 				///<summary>
 				///Starts the process.

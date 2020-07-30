@@ -1,8 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "nVLGRaaDH/w4Kb7qIGYjtpewoHj1FRhotoS5YUXEWV0lIcDig85kN1UcVmR7YblofcTsN9/3bY3P9qyK2NhK0A==",
+  "dgSpecHash": "oVnTNIQlhwJdf3I+5+/91NohDsMJvdaRANJG1Ga7KZq8AhfjVfQUCvqhO7/xMOCIVlQyjBWgNR8AnV7mQu7+Yw==",
   "success": true,
   "projectFilePath": "/home/pasan/Desktop/projects/FYP/relay_server/relay_server.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512"
+  ],
   "logs": []
 }

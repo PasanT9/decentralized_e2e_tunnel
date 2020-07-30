@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using Newtonsoft.Json;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
@@ -79,6 +80,8 @@ namespace peer
                 sslStream.WriteTimeout = 20000;
                 // Read a message from the client.
                 response = recieve_message_tcp(sslStream);
+
+                Console.WriteLine(response);
                 if(String.Compare(response,"HELLO") == 0){
                     Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint)+" is requesting a connection");
                     client_map[client_count] = (IPEndPoint)client.Client.RemoteEndPoint;
@@ -145,37 +148,19 @@ namespace peer
             string[] socket_peer0 = client_map[peer0].ToString().Split(':');
             string[] socket_peer1 = client_map[peer1].ToString().Split(':');
 
+            
 			DTLSClient dtls_client0 = new DTLSClient(socket_peer0[0], socket_peer0[1], new byte[] {0xBA,0xA0});
             DTLSClient dtls_client1 = new DTLSClient(socket_peer1[0], socket_peer1[1], new byte[] {0xBA,0xA0});
             
 			dtls_client0.Start();
             dtls_client1.Start();
-			statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
-			//new Thread(()=>IOStream.CopyTo(dtls_client.GetStream(), 16)).Start();
+
 			new Thread(() => dtls_client0.GetStream().CopyTo(dtls_client1.GetStream(), 16)).Start();
             new Thread(() => dtls_client1.GetStream().CopyTo(dtls_client0.GetStream(), 16)).Start();
-            //new Thread(() => dtls_client1.GetStream().CopyTo(IOStream, 16)).Start();
-			//new Thread(() => dtls_client.GetStream().Write(Encoding.Default.GetBytes("It Works!"+Environment.NewLine))).Start();
-			//pair.BindStreams(dtls_client.GetStream(), IOStream);
-			//pair.BindStreams(dtls_client.GetStream(), IOStream);
-			/*while(true)
-			{
-				string input = Console.ReadLine();
-				dtls_client0.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-			}*/
-			//dtls.WaitForExit();
+
 			dtls_client0.WaitForExit();
             dtls_client1.WaitForExit();
-            /*UdpClient client0 = new UdpClient();
-            IPEndPoint peerIP0 = client_map[peer0];
 
-            UdpClient client1 = new UdpClient();
-            IPEndPoint peerIP1 = client_map[peer1];
-
-            send_message_udp(client1, peerIP1, ("connected to "+peer0));
-            send_message_udp(client0, peerIP0, ("connected to "+peer1));
-
-            start_relay(peer0, peer1, client0, peerIP0, client1, peerIP1);*/
         }
         static void send_message_udp(UdpClient client, IPEndPoint ip, String message)
         {
@@ -185,7 +170,9 @@ namespace peer
 
         static void send_message_tcp(SslStream sslStream, string message)
         {
-            byte[] data = Encoding.UTF8.GetBytes(message);
+            Request req = new Request(200, message);
+            string jsonString = JsonConvert.SerializeObject(req);
+            byte[] data = Encoding.UTF8.GetBytes(jsonString);
             sslStream.Write(data);
             sslStream.Flush();
         }
@@ -195,28 +182,9 @@ namespace peer
             Byte[] bytes = new Byte[256];
             sslStream.Read(bytes, 0, bytes.Length);
             string message = Encoding.UTF8.GetString(bytes);
-            return message;
+            Request reply = JsonConvert.DeserializeObject<Request>(message);
+            return reply.body;
         }
 
-        static void start_relay(int peer0, int peer1, UdpClient client0, IPEndPoint ip0,UdpClient client1, IPEndPoint ip1)
-        {
-            Thread peer0_t = new Thread(() => con_relay_listner(client0, ip0, peer0));
-            Thread peer1_t = new Thread(() => con_relay_listner(client1, ip1, peer1));
-            peer0_t.Start();
-            peer1_t.Start();
-
-            while(true)
-            {
-                if(client_buffers[peer0] != null){
-                    send_message_udp(client1, ip1,client_buffers[peer0]);
-                    client_buffers[peer0] = null;
-                }
-
-                if(client_buffers[peer1] != null){
-                    send_message_udp(client0, ip0,client_buffers[peer1]);
-                    client_buffers[peer1] = null;
-                }
-            }
-        }
     }
 }
