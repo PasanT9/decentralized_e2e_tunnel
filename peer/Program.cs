@@ -3,19 +3,17 @@ using System.Text;
 using System.Net;
 using Newtonsoft.Json;
 using System.Net.Sockets;
-using System.Threading;
-using System.Collections.Generic;  
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using System.Numerics;
 #if !NETSTANDARD2_0
 using System.Buffers;
 #endif
 using System.Runtime.InteropServices;
 using dtls_server;
-
 
 namespace peer
 {
@@ -32,6 +30,7 @@ namespace peer
             // Do not allow this client to communicate with unauthenticated servers.
             return false;
         }
+        public static ECDiffieHellmanPublicKey peerPubKey;
         static int connection_address;
         static int local_port;
         static IPEndPoint ipEndPoint;
@@ -40,13 +39,14 @@ namespace peer
         
         static void Main(string[] args)
         {
+
             myAes = Aes.Create();
             //myAes.Key = key;
             //myAes.IV = iv;
-        myAes.Key = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+        myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16};
         myAes.IV = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
             string server_ip = "127.0.0.1";     // Server IP
-            int server_port = 27005;   // Server port
+            int server_port = 28005;   // Server port
 
             Random random = new Random();
             local_port = random.Next(20000, 40000);
@@ -202,62 +202,39 @@ namespace peer
                 response = recieve_message_tcp(sslStream);
                 if(String.Compare(response, "ACCEPT") == 0){
                     Console.WriteLine("Peer " + peer_address + " accepted the connection");
+                    response = recieve_message_tcp(sslStream);
+                    Console.WriteLine("server: " + response);
+
+
+                    byte[] bytes = new byte[256];
+                    sslStream.Read(bytes, 0, bytes.Length);
+                    string message = Encoding.UTF8.GetString(bytes);
+                    PublicKeyCoordinates destPubKey = JsonConvert.DeserializeObject<PublicKeyCoordinates>(message);
+
+                    
+
+                    ECDiffieHellmanOpenSsl peer = new ECDiffieHellmanOpenSsl();
+                    ECParameters ep = peer.ExportParameters(false);
+
+                    PublicKeyCoordinates pubKey = new PublicKeyCoordinates(ep.Q.X,ep.Q.Y);
+                    byte[] data = Encoding.UTF8.GetBytes(pubKey.ToString());
+                    sslStream.Write(data);
+                    sslStream.Flush();
+
+                    ECDiffieHellmanOpenSsl temp = new ECDiffieHellmanOpenSsl();
+                    ECParameters epTemp = temp.ExportParameters(false);
+
+                    epTemp.Q.X = destPubKey.X;
+                    epTemp.Q.Y = destPubKey.Y;
+
+                    ECDiffieHellmanPublicKey servePubKey = ECDiffieHellman.Create(epTemp).PublicKey;
+                    byte[] sharedKey = peer.DeriveKeyMaterial(servePubKey);
+
+                    Console.WriteLine(BitConverter.ToString(sharedKey).Replace("-",""));
+
                     sslStream.Close();
                     client.Close();
-                    Console.WriteLine(local_port);
-                    DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] {0xBA,0xA0});
-						if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
-								dtls.Unbuffer="winpty.exe";
-								dtls.Unbuffer_Args="-Xplain -Xallow-non-tty";
-						}
-						else{
-								dtls.Unbuffer="stdbuf";
-								dtls.Unbuffer_Args="-i0 -o0";
-						}
-						dtls.Start();
-                        //Stream stream = new MemoryStream();
-                        //using var sr = new StreamReader(stream);
-                        //using var sw = new StreamWriter(stream);
-						//statpair IOStream = new statpair(sr, sw);
-						//new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
-                        dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
-                        byte[] bytes;
-                        string message = "";
-                        while(String.Compare(message, "SUCCESS") != 0)
-                        {
-                            bytes = new byte[128];
-                            dtls.GetStream().Read(bytes, 0, bytes.Length);
-                            message = Encoding.UTF8.GetString(bytes);
-                            Console.Write(message);
-                        }
 
-                        Console.WriteLine();
-						while(true)
-						{
-							string input = Console.ReadLine();
-                            //byte[] encryptedData = EncryptStringToBytes_Aes((input+Environment.NewLine), myAes.Key, myAes.IV);
-							dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                            //dtls.GetStream().Write(encryptedData);
-                            bytes = new byte[16];
-                            dtls.GetStream().Read(bytes, 0, bytes.Length);
-                            //message = Encoding.UTF8.GetString(bytes);
-                            Console.WriteLine(BitConverter.ToString(bytes).Replace("-",""));
-                            string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
-                            //message = Encoding.UTF8.GetString(bytes);
-                            //Console.WriteLine("-> " + decryptedData);
-                            Console.WriteLine("-> " + decryptedData);
-						}
-						dtls.WaitForExit();
-
-                    /*response = Encoding.UTF8.GetString(peer.Receive(ref ipEndPoint)); 
-                    Console.WriteLine(response);
-                    while(true)
-                    {
-                        string msg = Console.ReadLine();
-                        send_message_udp(peer, ipEndPoint,msg);
-                        response = Encoding.UTF8.GetString(peer.Receive(ref ipEndPoint)); 
-                        Console.WriteLine(response);
-                    }*/
                 }
                 else if(String.Compare(response, "REJECT") == 0){
                     Console.WriteLine("Peer " + peer_address + " rejected the connection");
@@ -281,61 +258,37 @@ namespace peer
                 string input = Console.ReadLine();
                 if(input == "y"){
                     send_message_tcp(sslStream, "ACCEPT");
+                    response = recieve_message_tcp(sslStream);
+                    Console.WriteLine("server: " + response);
+
+                    ECDiffieHellmanOpenSsl peer = new ECDiffieHellmanOpenSsl();
+                    ECParameters ep = peer.ExportParameters(false);
+
+                    PublicKeyCoordinates pubKey = new PublicKeyCoordinates(ep.Q.X,ep.Q.Y);
+                    byte[] data = Encoding.UTF8.GetBytes(pubKey.ToString());
+                    sslStream.Write(data);
+                    sslStream.Flush();
+
+                    byte[] bytes = new Byte[256];
+                    sslStream.Read(bytes, 0, bytes.Length);
+                    string message = Encoding.UTF8.GetString(bytes);
+                    PublicKeyCoordinates destPubKey = JsonConvert.DeserializeObject<PublicKeyCoordinates>(message);
+
                     sslStream.Close();
                     client.Close();
-                    DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] {0xBA,0xA0});
-						if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
-								dtls.Unbuffer="winpty.exe";
-								dtls.Unbuffer_Args="-Xplain -Xallow-non-tty";
-						}
-						else{
-								dtls.Unbuffer="stdbuf";
-								dtls.Unbuffer_Args="-i0 -o0";
-						}
-						dtls.Start();
-                        dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
-                        //Stream stream = new MemoryStream();
-                        //using var sr = new StreamReader(stream);
-                        //using var sw = new StreamWriter(stream);
-						//statpair IOStream = new statpair(sr, sw);
-						//new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
-                        byte[] bytes;
-                        string message = "";
-                        while(String.Compare(message, "SUCCESS") != 0)
-                        {
-                            bytes = new byte[128];
-                            dtls.GetStream().Read(bytes, 0, bytes.Length);
-                            message = Encoding.UTF8.GetString(bytes);
-                            Console.Write(message);
-                        }
-                        Console.WriteLine();
-                        
-						while(true)
-						{
-                            bytes = new byte[128];
-                            dtls.GetStream().Read(bytes, 0, bytes.Length);
-                            //string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
-                            message = Encoding.UTF8.GetString(bytes);
-                            Console.WriteLine("-> " + message);
-							input = Console.ReadLine();
-                            byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
-                            Console.WriteLine(BitConverter.ToString(encryptedData).Replace("-",""));
-                            //string roundtrip = DecryptStringFromBytes_Aes(encryptedData, myAes.Key, myAes.IV);
 
-							//dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                            dtls.GetStream().Write(encryptedData);
-						}
-						dtls.WaitForExit();
+                    
+                    ECDiffieHellmanOpenSsl temp = new ECDiffieHellmanOpenSsl();
+                    ECParameters epTemp = temp.ExportParameters(false);
 
-                   /* response = Encoding.UTF8.GetString(peer.Receive(ref ipEndPoint)); 
-                    Console.WriteLine(response);
-                    while(true)
-                    {
-                        response = Encoding.UTF8.GetString(peer.Receive(ref ipEndPoint)); 
-                        Console.WriteLine(response);
-                        string msg = Console.ReadLine();
-                        send_message_udp(peer, ipEndPoint,msg);
-                    }*/
+                    epTemp.Q.X = destPubKey.X;
+                    epTemp.Q.Y = destPubKey.Y;
+
+                    ECDiffieHellmanPublicKey servePubKey = ECDiffieHellman.Create(epTemp).PublicKey;
+                    byte[] sharedKey = peer.DeriveKeyMaterial(servePubKey);
+
+
+                    Console.WriteLine(BitConverter.ToString(sharedKey).Replace("-",""));
                 }
                 else{
                     send_message_tcp(sslStream, "REJECT");

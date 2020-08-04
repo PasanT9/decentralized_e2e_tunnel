@@ -6,14 +6,14 @@
   "compilationOptions": {},
   "targets": {
     ".NETCoreApp,Version=v3.1": {
-      "peer/1.0.0": {
+      "relay_server/1.0.0": {
         "dependencies": {
           "Newtonsoft.Json": "12.0.3",
           "System.Security.Cryptography.Cng": "4.7.0",
           "System.Security.Cryptography.OpenSsl": "4.7.0"
         },
         "runtime": {
-          "peer.dll": {}
+          "relay_server.dll": {}
         }
       },
       "Newtonsoft.Json/12.0.3": {
@@ -59,7 +59,7 @@
     }
   },
   "libraries": {
-    "peer/1.0.0": {
+    "relay_server/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""

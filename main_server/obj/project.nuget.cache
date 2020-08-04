@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "IDTH0EMcJ3lvgng47qLtmMQxRUmS31n74GKJLVzCWHdZZ2JuhbhHEwwgamsHUQH0dPVPFJ2Q8SawgJ4HLDhlKw==",
+  "dgSpecHash": "FYzpLAA1rbqZ5g93LUU5wX3Mo+eownoWQJ7cHML+Fj8KqdJnYiq8XN8lpv8i5AqcsA3gIP9dGVGbcdh2/Isjig==",
   "success": true,
-  "projectFilePath": "/home/pasan/Desktop/projects/FYP/peer/peer.csproj",
+  "projectFilePath": "/home/pasan/Desktop/projects/FYP/main_server/relay_server.csproj",
   "expectedPackageFiles": [
     "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512",
     "/home/pasan/.nuget/packages/system.security.cryptography.cng/4.7.0/system.security.cryptography.cng.4.7.0.nupkg.sha512",

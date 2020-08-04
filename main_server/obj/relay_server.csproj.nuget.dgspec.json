@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/pasan/Desktop/projects/FYP/peer/peer.csproj": {}
+    "/home/pasan/Desktop/projects/FYP/main_server/relay_server.csproj": {}
   },
   "projects": {
-    "/home/pasan/Desktop/projects/FYP/peer/peer.csproj": {
+    "/home/pasan/Desktop/projects/FYP/main_server/relay_server.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/pasan/Desktop/projects/FYP/peer/peer.csproj",
-        "projectName": "peer",
-        "projectPath": "/home/pasan/Desktop/projects/FYP/peer/peer.csproj",
+        "projectUniqueName": "/home/pasan/Desktop/projects/FYP/main_server/relay_server.csproj",
+        "projectName": "relay_server",
+        "projectPath": "/home/pasan/Desktop/projects/FYP/main_server/relay_server.csproj",
         "packagesPath": "/home/pasan/.nuget/packages/",
-        "outputPath": "/home/pasan/Desktop/projects/FYP/peer/obj/",
+        "outputPath": "/home/pasan/Desktop/projects/FYP/main_server/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/pasan/.nuget/NuGet/NuGet.Config"
