@@ -8,21 +8,18 @@ using System.Collections.Generic;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
-using System.IO;
 using dtls_client;
-using System.Runtime.InteropServices;
-using ProxyClient;
-using PairStream;
 
 
-namespace peer
+namespace relay_server
 {
     class Program
     {
         static string[] client_buffers;
         static Dictionary<int, IPEndPoint> client_map;
-        static Dictionary<IPEndPoint, int> client_map_reverse;
         static int client_count;
+
+        static List<string>  pending_connections;
 
         static X509Certificate2 server_cert;
         
@@ -33,9 +30,9 @@ namespace peer
             {
                 client_buffers[i] = null;
             }
+            pending_connections = new List<string>();
 
             client_map = new Dictionary<int, IPEndPoint>();
-            client_map_reverse = new Dictionary<IPEndPoint, int>();
             client_count=0;
 
             server_cert = new X509Certificate2("/home/pasan/Documents/FYP_certificates/ssl-certificate.pfx", "password", X509KeyStorageFlags.PersistKeySet);
@@ -67,7 +64,7 @@ namespace peer
 
         static void handle_connections(TcpListener server)
         {
-            Console.WriteLine("Server is listening for clients to initialize a connection");
+            Console.WriteLine("relay server is listening for clients to initialize a connection");
             Byte[] bytes = new Byte[256];
             string response;
             while(true)
@@ -80,71 +77,25 @@ namespace peer
                 sslStream.WriteTimeout = 20000;
                 // Read a message from the client.
                 response = recieve_message_tcp(sslStream);
-
                 Console.WriteLine(response);
-                if(String.Compare(response,"HELLO") == 0){
-                    Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint)+" is requesting a connection");
-                    client_map[client_count] = (IPEndPoint)client.Client.RemoteEndPoint;
-                    client_map_reverse[(IPEndPoint)client.Client.RemoteEndPoint] = client_count++;
-
-                    Console.WriteLine("address "+ (client_count-1)+" is now reserved for client " + ((IPEndPoint)client.Client.RemoteEndPoint));
-
-                    send_message_tcp(sslStream, (client_count-1).ToString());
-                    Thread request_t = new Thread(() => handle_relay_requests(sslStream,client));
-                    request_t.Start();
+                string[] temp = response.Split(":");
+                client_map[Int16.Parse(temp[0])] = (IPEndPoint)client.Client.RemoteEndPoint;
+                if(pending_connections.Contains(response)){
+                    init_relay(Int16.Parse(temp[0]), Int16.Parse(temp[1]));
                 }
                 else{
-                    Console.WriteLine("unrecognized command");
+                    string req_connection = temp[1] + ":" + temp[0];
+                    pending_connections.Add(req_connection);
+                    Console.WriteLine("Connection added");
                 }
+                    
             }
         }
 
-        static void handle_relay_requests(SslStream sslStream, TcpClient client)
-        {
-            string msg = recieve_message_tcp(sslStream);
-            if(String.Compare(msg, "REQUEST") == 0){
-                send_message_tcp(sslStream, "ACCEPT");
-                msg = recieve_message_tcp(sslStream);
-                int peer0 = client_map_reverse[((IPEndPoint)client.Client.RemoteEndPoint)];
-                int peer1 = Int32.Parse(msg);
-                Console.WriteLine("Peer "+ peer0 + " requesting a connection to Peer " + peer1);
-                client_buffers[peer1] = peer0.ToString();
-                while(client_buffers[peer0] == null);
-                if(client_buffers[peer0] == "ACCEPT"){
-                    send_message_tcp(sslStream, "ACCEPT");
-                    client_buffers[peer0] = null;
-                    client_buffers[peer1] = null;
-                    sslStream.Close();
-                    client.Close();
-                    Thread p2p_connection_t = new Thread(() => init_relay(peer0, peer1));
-                    p2p_connection_t.Start();
-                }
-                else if(client_buffers[peer0] == "REJECT"){
-                    send_message_tcp(sslStream, "REJECT");
-                }
-            }
-            else if(String.Compare(msg, "LISTEN") == 0){
-                send_message_tcp(sslStream, "ACCEPT");
-                int peer = client_map_reverse[((IPEndPoint)client.Client.RemoteEndPoint)];
-                while(client_buffers[peer] == null);
-                send_message_tcp(sslStream, peer.ToString());
-                msg = recieve_message_tcp(sslStream);
-                if(String.Compare(msg,"ACCEPT") == 0){
-                    client_buffers[Int32.Parse(client_buffers[peer])] = "ACCEPT"; 
-                    sslStream.Close();
-                    client.Close();
-                }
-                else if(String.Compare(msg,"REJECT") == 0){
-                    client_buffers[Int32.Parse(client_buffers[peer])] = "REJECT"; 
-                }
-            }
-            else{
-                Console.WriteLine("unrecognized command");
-            }
-        }
 
         static void init_relay(int peer0, int peer1)
         {
+            Console.WriteLine("Creating connection");
             string[] socket_peer0 = client_map[peer0].ToString().Split(':');
             string[] socket_peer1 = client_map[peer1].ToString().Split(':');
 
@@ -161,11 +112,6 @@ namespace peer
 			dtls_client0.WaitForExit();
             dtls_client1.WaitForExit();
 
-        }
-        static void send_message_udp(UdpClient client, IPEndPoint ip, String message)
-        {
-            byte[] data = Encoding.UTF8.GetBytes(message);
-            client.Send(data, data.Length, ip);
         }
 
         static void send_message_tcp(SslStream sslStream, string message)

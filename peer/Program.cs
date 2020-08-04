@@ -8,6 +8,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
+using System.Threading;
 using System.Numerics;
 #if !NETSTANDARD2_0
 using System.Buffers;
@@ -31,7 +32,8 @@ namespace peer
             return false;
         }
         public static ECDiffieHellmanPublicKey peerPubKey;
-        static int connection_address;
+        static int peer_address;
+        static int dest_address;
         static int local_port;
         static IPEndPoint ipEndPoint;
         static UdpClient peer;
@@ -41,10 +43,9 @@ namespace peer
         {
 
             myAes = Aes.Create();
-            //myAes.Key = key;
-            //myAes.IV = iv;
         myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16};
         myAes.IV = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+            
             string server_ip = "127.0.0.1";     // Server IP
             int server_port = 28005;   // Server port
 
@@ -102,8 +103,8 @@ namespace peer
             send_message_tcp(sslStream, "HELLO");
             string response = recieve_message_tcp(sslStream);
 
-            connection_address = Int16.Parse(response);
-            Console.WriteLine("Recieved address: "+connection_address);
+            peer_address = Int16.Parse(response);
+            Console.WriteLine("Recieved address: "+peer_address);
         }
 
         static byte[] EncryptStringToBytes_Aes(string plainText, byte[] Key, byte[] IV)
@@ -197,14 +198,14 @@ namespace peer
             string response = recieve_message_tcp(sslStream);
             if(String.Compare(response,"ACCEPT") == 0){
                 Console.Write("Enter the destination address: ");
-                string peer_address = Console.ReadLine();
-                send_message_tcp(sslStream, peer_address);
+                dest_address = Int16.Parse(Console.ReadLine());
+                send_message_tcp(sslStream, dest_address.ToString());
                 response = recieve_message_tcp(sslStream);
                 if(String.Compare(response, "ACCEPT") == 0){
                     Console.WriteLine("Peer " + peer_address + " accepted the connection");
                     response = recieve_message_tcp(sslStream);
                     Console.WriteLine("server: " + response);
-
+                    string server_address = response;
 
                     byte[] bytes = new byte[256];
                     sslStream.Read(bytes, 0, bytes.Length);
@@ -230,11 +231,16 @@ namespace peer
                     ECDiffieHellmanPublicKey servePubKey = ECDiffieHellman.Create(epTemp).PublicKey;
                     byte[] sharedKey = peer.DeriveKeyMaterial(servePubKey);
 
+
                     Console.WriteLine(BitConverter.ToString(sharedKey).Replace("-",""));
 
                     sslStream.Close();
                     client.Close();
 
+                    Console.WriteLine(peer_address);
+                    Console.WriteLine("destination peer: " + dest_address);
+
+                    init_relay_connection(server_address);
                 }
                 else if(String.Compare(response, "REJECT") == 0){
                     Console.WriteLine("Peer " + peer_address + " rejected the connection");
@@ -254,13 +260,14 @@ namespace peer
                 Console.WriteLine("waiting for a connection request...");
                 response = recieve_message_tcp(sslStream);
                 Console.WriteLine("Peer "+response+" requesting a connection");
+                dest_address = Int16.Parse(response);
                 Console.Write("accept request?(y/n): ");
                 string input = Console.ReadLine();
                 if(input == "y"){
                     send_message_tcp(sslStream, "ACCEPT");
                     response = recieve_message_tcp(sslStream);
                     Console.WriteLine("server: " + response);
-
+                    string server_address = response;
                     ECDiffieHellmanOpenSsl peer = new ECDiffieHellmanOpenSsl();
                     ECParameters ep = peer.ExportParameters(false);
 
@@ -289,6 +296,10 @@ namespace peer
 
 
                     Console.WriteLine(BitConverter.ToString(sharedKey).Replace("-",""));
+                    Console.WriteLine(peer_address);
+                    Console.WriteLine("destination peer: " + dest_address);
+
+                    init_relay_connection(server_address);
                 }
                 else{
                     send_message_tcp(sslStream, "REJECT");
@@ -297,6 +308,90 @@ namespace peer
             }
             else{
                 Console.WriteLine("Connection declined");
+            }
+        }
+
+        static void init_relay_connection(string server)
+        {
+            Console.WriteLine("requesting a relay connection");
+            string[] temp = server.Split(':');
+            string server_ip = temp[0];     // relay server IP
+            int server_port = Int16.Parse(temp[1]);   // realy server port
+
+            Random random = new Random();
+            local_port = random.Next(20000, 40000);
+
+            //IPAddress ipAddress = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0];
+            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+            TcpClient client = new TcpClient(ipLocalEndPoint);
+            client.Connect(server_ip, server_port);
+            SslStream sslStream = new SslStream(client.GetStream(),false, new RemoteCertificateValidationCallback (ValidateServerCertificate), null);
+            //sslStream.Flush();
+            
+            try
+            {
+                sslStream.AuthenticateAsClient("test", null, SslProtocols.Tls13, true);
+            }
+            catch (AuthenticationException e)
+            {
+                Console.WriteLine("Exception: {0}", e.Message);
+                if (e.InnerException != null)
+                {
+                    Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                }
+                Console.WriteLine ("Authentication failed - closing the connection.");
+                sslStream.Close();
+                return;
+            }
+
+            send_message_tcp(sslStream, (peer_address + ":" + dest_address));
+            sslStream.Close();
+            DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] {0xBA,0xA0});
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
+				dtls.Unbuffer="winpty.exe";
+				dtls.Unbuffer_Args="-Xplain -Xallow-non-tty";
+			}
+			else{
+				dtls.Unbuffer="stdbuf";
+				dtls.Unbuffer_Args="-i0 -o0";
+			}
+			dtls.Start();
+
+            dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
+            byte[] bytes;
+            string message = "";
+            while(String.Compare(message, "SUCCESS") != 0)
+            {
+                bytes = new byte[128];
+                dtls.GetStream().Read(bytes, 0, bytes.Length);
+                message = Encoding.UTF8.GetString(bytes);
+                Console.Write(message);
+            }
+
+            Console.WriteLine();
+            new Thread(() => read_relay(dtls)).Start();
+
+			while(true)
+			{
+				string input = Console.ReadLine();
+                byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
+				//dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+                dtls.GetStream().Write(encryptedData);
+			}
+			dtls.WaitForExit();
+            
+        }
+
+        static void read_relay(DTLSServer dtls)
+        {
+            byte[] bytes;
+            while(true)
+            {
+                bytes = new byte[16];
+                dtls.GetStream().Read(bytes, 0, bytes.Length);
+                string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
+                Console.WriteLine(decryptedData);
             }
         }
         
@@ -316,12 +411,6 @@ namespace peer
             string message = Encoding.UTF8.GetString(bytes);
             Request reply = JsonConvert.DeserializeObject<Request>(message);
             return reply.body;
-        }
-
-        static void send_message_udp(UdpClient client, IPEndPoint ip, String message)
-        {
-            byte[] data = Encoding.UTF8.GetBytes(message);
-            client.Send(data, data.Length, ip);
         }
     }
 }

@@ -140,7 +140,7 @@ namespace main_server
                 send_message_tcp(sslStream, "ACCEPT");
                 int peer = client_map_reverse[((IPEndPoint)client.Client.RemoteEndPoint)];
                 while(client_buffers[peer] == null);
-                send_message_tcp(sslStream, peer.ToString());
+                send_message_tcp(sslStream, client_buffers[peer]);
                 msg = recieve_message_tcp(sslStream);
                 if(String.Compare(msg,"ACCEPT") == 0){
                     Random rnd = new Random();

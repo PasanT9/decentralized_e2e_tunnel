@@ -1,4 +1,4 @@
-namespace peer
+namespace relay_server
 {
     public class Request
     {
