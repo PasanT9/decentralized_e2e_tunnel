@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "daKkr2jFfJY5WEY2Nq0a4eiIKMxI5CiKi2bDrg+qwk/7Hp7k2VO7t22LzFuGHynH9/OXKCfa69CU23CJfystlg==",
+  "dgSpecHash": "gGwtwsQWKUVAJte2KIp19P1YMUfF2BCu2XTVGeLG2+iQdMKPe50M4PxEo+gvVRxjb20RUMW1sMcf4kHt/4UV+g==",
   "success": true,
-  "projectFilePath": "/home/pasan/Desktop/projects/FYP/udp_relay_client/udp_relay_client.csproj",
+  "projectFilePath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/udp_relay_client/udp_relay_client.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

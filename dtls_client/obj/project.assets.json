@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/pasan/Desktop/projects/FYP/dtls_client/dtls_client.csproj",
+      "projectUniqueName": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/dtls_client/dtls_client.csproj",
       "projectName": "dtls_client",
-      "projectPath": "/home/pasan/Desktop/projects/FYP/dtls_client/dtls_client.csproj",
+      "projectPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/dtls_client/dtls_client.csproj",
       "packagesPath": "/home/pasan/.nuget/packages/",
-      "outputPath": "/home/pasan/Desktop/projects/FYP/dtls_client/obj/",
+      "outputPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/dtls_client/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/pasan/.nuget/NuGet/NuGet.Config"
@@ -56,7 +56,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.302/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.402/RuntimeIdentifierGraph.json"
       }
     }
   }

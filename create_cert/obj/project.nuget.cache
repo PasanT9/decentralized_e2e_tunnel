@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "JgcIKKQ/AgVBRAivhdAHuhD7oyNei5RY9/f22smNywnIduxzVc+n7lXNT1gXZ8TCYkYCqPATyg2v5a6lRGd4KQ==",
+  "dgSpecHash": "LuRLjJeqNDYCglrhvAEGbgS5iHpDRGNBcu54oXXUJoz7QO4KgjibwypdakXdzb31uWf1oC1RZdncj8f+YPrXjg==",
   "success": true,
-  "projectFilePath": "/home/pasan/Desktop/projects/FYP/create_cert/create_cert.csproj",
+  "projectFilePath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/create_cert/create_cert.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/pasan/Desktop/projects/FYP/create_cert/create_cert.csproj",
+      "projectUniqueName": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/create_cert/create_cert.csproj",
       "projectName": "create_cert",
-      "projectPath": "/home/pasan/Desktop/projects/FYP/create_cert/create_cert.csproj",
+      "projectPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/create_cert/create_cert.csproj",
       "packagesPath": "/home/pasan/.nuget/packages/",
-      "outputPath": "/home/pasan/Desktop/projects/FYP/create_cert/obj/",
+      "outputPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/create_cert/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/pasan/.nuget/NuGet/NuGet.Config"
@@ -56,7 +56,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.302/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.402/RuntimeIdentifierGraph.json"
       }
     }
   }

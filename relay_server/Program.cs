@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Collections.Generic;  
+using System.Collections.Generic;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
@@ -19,21 +19,21 @@ namespace relay_server
         static Dictionary<int, IPEndPoint> client_map;
         static int client_count;
 
-        static List<string>  pending_connections;
+        static List<string> pending_connections;
 
         static X509Certificate2 server_cert;
-        
+
         static void Main(string[] args)
         {
             client_buffers = new string[10];
-            for(int i=0;i<10;++i)
+            for (int i = 0; i < 10; ++i)
             {
                 client_buffers[i] = null;
             }
             pending_connections = new List<string>();
 
             client_map = new Dictionary<int, IPEndPoint>();
-            client_count=0;
+            client_count = 0;
 
             server_cert = new X509Certificate2("/home/pasan/Documents/FYP_certificates/ssl-certificate.pfx", "password", X509KeyStorageFlags.PersistKeySet);
             X509Store store = new X509Store(StoreName.My);
@@ -53,10 +53,10 @@ namespace relay_server
 
         public static void con_relay_listner(UdpClient client, IPEndPoint ip, int peer)
         {
-            while(true)
+            while (true)
             {
                 string response = Encoding.UTF8.GetString(client.Receive(ref ip));
-                Console.WriteLine("client"+peer+": "+ response);
+                Console.WriteLine("client" + peer + ": " + response);
                 client_buffers[peer] = response;
             }
 
@@ -67,11 +67,11 @@ namespace relay_server
             Console.WriteLine("relay server is listening for clients to initialize a connection");
             Byte[] bytes = new Byte[256];
             string response;
-            while(true)
+            while (true)
             {
                 TcpClient client = server.AcceptTcpClient();
                 SslStream sslStream = new SslStream(client.GetStream(), false);
-                sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false,SslProtocols.Tls13, checkCertificateRevocation: true);
+                sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
 
                 sslStream.ReadTimeout = 20000;
                 sslStream.WriteTimeout = 20000;
@@ -80,15 +80,17 @@ namespace relay_server
                 Console.WriteLine(response);
                 string[] temp = response.Split(":");
                 client_map[Int16.Parse(temp[0])] = (IPEndPoint)client.Client.RemoteEndPoint;
-                if(pending_connections.Contains(response)){
+                if (pending_connections.Contains(response))
+                {
                     init_relay(Int16.Parse(temp[0]), Int16.Parse(temp[1]));
                 }
-                else{
+                else
+                {
                     string req_connection = temp[1] + ":" + temp[0];
                     pending_connections.Add(req_connection);
                     Console.WriteLine("Connection added");
                 }
-                    
+
             }
         }
 
@@ -99,17 +101,17 @@ namespace relay_server
             string[] socket_peer0 = client_map[peer0].ToString().Split(':');
             string[] socket_peer1 = client_map[peer1].ToString().Split(':');
 
-            
-			DTLSClient dtls_client0 = new DTLSClient(socket_peer0[0], socket_peer0[1], new byte[] {0xBA,0xA0});
-            DTLSClient dtls_client1 = new DTLSClient(socket_peer1[0], socket_peer1[1], new byte[] {0xBA,0xA0});
-            
-			dtls_client0.Start();
+
+            DTLSClient dtls_client0 = new DTLSClient(socket_peer0[0], socket_peer0[1], new byte[] { 0xBA, 0xA0 });
+            DTLSClient dtls_client1 = new DTLSClient(socket_peer1[0], socket_peer1[1], new byte[] { 0xBA, 0xA0 });
+
+            dtls_client0.Start();
             dtls_client1.Start();
 
-			new Thread(() => dtls_client0.GetStream().CopyTo(dtls_client1.GetStream(), 16)).Start();
+            new Thread(() => dtls_client0.GetStream().CopyTo(dtls_client1.GetStream(), 16)).Start();
             new Thread(() => dtls_client1.GetStream().CopyTo(dtls_client0.GetStream(), 16)).Start();
 
-			dtls_client0.WaitForExit();
+            dtls_client0.WaitForExit();
             dtls_client1.WaitForExit();
 
         }

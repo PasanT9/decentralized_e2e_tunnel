@@ -204,11 +204,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/pasan/Desktop/projects/FYP/peer/peer.csproj",
+      "projectUniqueName": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/peer/peer.csproj",
       "projectName": "peer",
-      "projectPath": "/home/pasan/Desktop/projects/FYP/peer/peer.csproj",
+      "projectPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/peer/peer.csproj",
       "packagesPath": "/home/pasan/.nuget/packages/",
-      "outputPath": "/home/pasan/Desktop/projects/FYP/peer/obj/",
+      "outputPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/peer/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/pasan/.nuget/NuGet/NuGet.Config"
@@ -261,7 +261,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.302/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.402/RuntimeIdentifierGraph.json"
       }
     }
   }

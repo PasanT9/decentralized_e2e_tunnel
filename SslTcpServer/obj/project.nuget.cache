@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "Ot2YGvp1uEAERX1PQWP0fMv+lqGzFMJQHNKyF7tFwSd/tw/AojO8uqD2H+x0UASte144mphoZoeo0m+49qBDQQ==",
+  "dgSpecHash": "piUh0esiNF2pz2XJTgT07alnbPoSPNIiXefUv1ICKiAZ8ndQlhs2Sjh/QKTCl3l27ZJzNgoXj54+cHOHbzz77g==",
   "success": true,
-  "projectFilePath": "/home/pasan/Desktop/projects/FYP/SslTcpServer/SslTcpServer.csproj",
+  "projectFilePath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/SslTcpServer/SslTcpServer.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }
