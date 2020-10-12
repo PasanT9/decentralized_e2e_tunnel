@@ -23,6 +23,9 @@ namespace superpeer_network
         static int server_port = 28005;
         static int peers_count;
 
+        static string neighbour_ip;
+        static int neighbour_port;
+
         public static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             if (sslPolicyErrors == SslPolicyErrors.None || sslPolicyErrors == SslPolicyErrors.RemoteCertificateChainErrors)
@@ -62,11 +65,25 @@ namespace superpeer_network
 
             TcpClient client = new TcpClient(ipLocalEndPoint);
             client.Connect(server_ip, server_port);
+            superpeer_neighbours.Add(new IPEndPoint(IPAddress.Parse(server_ip), server_port));
             SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
             //sslStream.Flush();
 
             init_connection(sslStream);
 
+            client = new TcpClient(ipLocalEndPoint);
+            client.Connect(neighbour_ip, neighbour_port);
+            superpeer_neighbours.Add(new IPEndPoint(IPAddress.Parse(neighbour_ip), neighbour_port));
+            sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+
+            init_connection(sslStream);
+
+            local_ip = IPAddress.Parse("127.0.0.1");
+
+            TcpListener server = new TcpListener(local_ip, local_port);
+            server.Start();
+
+            handle_connections(server);
         }
 
         static void init_connection(SslStream sslStream)
@@ -94,47 +111,72 @@ namespace superpeer_network
 
             string delimiter = "Y";
             string response;
-
+            string[] temp_split;
             while (delimiter == "Y")
             {
                 response = recieve_message_tcp(sslStream);
-                string[] temp = response.Split('/');
-                insert_peers(temp);
-                delimiter = temp[temp.Length - 1];
+                temp_split = response.Split('/');
+                insert_peers(temp_split);
+                delimiter = temp_split[temp_split.Length - 1];
             }
-            Console.WriteLine("New peers");
+            Console.WriteLine("My peers");
             foreach (var pair in peers)
             {
                 Console.WriteLine(pair.Key);
             }
-            superpeer_neighbours.Add(new IPEndPoint(IPAddress.Parse(server_ip), server_port));
 
             response = recieve_message_tcp(sslStream);
             Console.WriteLine(response);
 
-            string[] temp = response.Split(':');
-            string neighbour_ip = temp[0];
-            int neighbour_port = Int16.Parse(temp[1]);
+            if (response != "SUCCESS")
+            {
+                temp_split = response.Split(':');
+                neighbour_ip = temp_split[0];
+                neighbour_port = Int16.Parse(temp_split[1]);
+            }
 
-            /*
 
-            
 
-            superpeer_neighbours.Add(new IPEndPoint(IPAddress.Parse(neighbour_ip), neighbour_port));
-
-            for (int i = 0; i < 2; ++i)
+            Console.WriteLine("My neighbours: ");
+            for (int i = 0; i < superpeer_neighbours.Count; ++i)
             {
                 Console.WriteLine(superpeer_neighbours[i]);
-            }*/
+            }
 
-
-            /*peer_address = Int16.Parse(response);
-            Console.WriteLine("Recieved address: " + peer_address);*/
+            /*
+                        server_ip = neighbour_ip;
+                        server_port = neighbour_port;*/
         }
+
+        public static void transfer_peers(SslStream sslStream)
+        {
+            string reply = "";
+            int limit_count = 0;
+            int count = 0;
+            foreach (var pair in peers)
+            {
+                if (count > peers_count / 3)
+                {
+                    break;
+                }
+                if (limit_count > 5)
+                {
+                    send_message_tcp(sslStream, reply + "Y");
+                    reply = "";
+                    limit_count = 0;
+                }
+                reply += pair.Key + "/";
+                peers.Remove(pair.Key);
+                count++;
+                limit_count++;
+            }
+            send_message_tcp(sslStream, reply + "N");
+        }
+
 
         static void handle_connections(TcpListener server)
         {
-            Console.WriteLine("Server is listening for clients to initialize a connection");
+            Console.WriteLine("Server is starting on port: " + local_port);
             Byte[] bytes = new Byte[256];
             string response;
             while (true)
@@ -149,9 +191,47 @@ namespace superpeer_network
                 response = recieve_message_tcp(sslStream);
                 if (String.Compare(response, "HELLO") == 0)
                 {
-                    Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint) + " is requesting a connection");
+                    Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint) + " is requesting to join superpeer network");
 
-                    Console.WriteLine((IPEndPoint)client.Client.RemoteEndPoint);
+                    response = recieve_message_tcp(sslStream);
+
+                    string myIp = local_ip.ToString() + ":" + local_port;
+                    Console.WriteLine("Requesting neighbour: " + response);
+                    Console.WriteLine("Sending 1/3 of Peers");
+                    transfer_peers(sslStream);
+
+                    if (myIp == response)
+                    {
+                        send_message_tcp(sslStream, superpeer_neighbours[0].ToString());
+                        superpeer_neighbours[0] = ((IPEndPoint)client.Client.RemoteEndPoint);
+                    }
+                    else
+                    {
+                        string[] temp_split = response.Split(':');
+                        string neighbour_ip = temp_split[0];
+                        int neighbour_port = Int16.Parse(temp_split[1]);
+                        IPEndPoint old_neighbour = new IPEndPoint(IPAddress.Parse(neighbour_ip), neighbour_port);
+                        superpeer_neighbours.Remove(old_neighbour);
+                        superpeer_neighbours.Add(((IPEndPoint)client.Client.RemoteEndPoint));
+                        send_message_tcp(sslStream, "SUCCESS");
+                    }
+
+
+                    Console.WriteLine("My neighbours: ");
+                    for (int i = 0; i < superpeer_neighbours.Count; ++i)
+                    {
+                        Console.WriteLine(superpeer_neighbours[i]);
+                    }
+
+                    Console.WriteLine("My peers");
+                    foreach (var pair in peers)
+                    {
+                        Console.WriteLine(pair.Key);
+                    }
+
+
+
+
                     /*client_map[client_count] = (IPEndPoint)client.Client.RemoteEndPoint;
                     client_map_reverse[(IPEndPoint)client.Client.RemoteEndPoint] = client_count++;
 

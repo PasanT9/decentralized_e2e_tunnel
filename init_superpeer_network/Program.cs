@@ -95,6 +95,7 @@ namespace superpeer_network
                     limit_count = 0;
                 }
                 reply += pair.Key + "/";
+                peers.Remove(pair.Key);
                 count++;
                 limit_count++;
             }
@@ -124,17 +125,37 @@ namespace superpeer_network
 
                     string myIp = local_ip.ToString() + ":" + local_port;
                     Console.WriteLine("Requesting neighbour: " + response);
+                    Console.WriteLine("Sending 1/3 of Peers");
+                    transfer_peers(sslStream);
+
                     if (myIp == response)
                     {
-                        Console.WriteLine("Sending 1/3 of Peers");
-                        transfer_peers(sslStream);
                         send_message_tcp(sslStream, superpeer_neighbours[0].ToString());
                         superpeer_neighbours[0] = ((IPEndPoint)client.Client.RemoteEndPoint);
-                        Console.WriteLine("new neighbour: " + superpeer_neighbours[0]);
-
+                    }
+                    else
+                    {
+                        string[] temp_split = response.Split(':');
+                        string neighbour_ip = temp_split[0];
+                        int neighbour_port = Int16.Parse(temp_split[1]);
+                        IPEndPoint old_neighbour = new IPEndPoint(IPAddress.Parse(neighbour_ip), neighbour_port);
+                        superpeer_neighbours.Remove(old_neighbour);
+                        superpeer_neighbours.Add(((IPEndPoint)client.Client.RemoteEndPoint));
+                        send_message_tcp(sslStream, "SUCCESS");
                     }
 
 
+                    Console.WriteLine("My neighbours: ");
+                    for (int i = 0; i < superpeer_neighbours.Count; ++i)
+                    {
+                        Console.WriteLine(superpeer_neighbours[i]);
+                    }
+
+                    Console.WriteLine("My peers");
+                    foreach (var pair in peers)
+                    {
+                        Console.WriteLine(pair.Key);
+                    }
 
 
 
