@@ -9,6 +9,8 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 
+
+
 namespace superpeer_network
 {
     class Program
@@ -26,6 +28,12 @@ namespace superpeer_network
         static string neighbour_ip;
         static int neighbour_port;
 
+        static TcpListener server;
+
+        static IPEndPoint ipLocalEndPoint;
+
+        static bool exit;
+
         public static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
             if (sslPolicyErrors == SslPolicyErrors.None || sslPolicyErrors == SslPolicyErrors.RemoteCertificateChainErrors)
@@ -42,53 +50,195 @@ namespace superpeer_network
             for (int i = 0; i < new_peers.Length - 1; ++i)
             {
                 peers[new_peers[i]] = null;
+                ++peers_count;
             }
-            peers_count = new_peers.Length - 1;
         }
+
+        public static void redistribute_peers()
+        {
+            server.Server.Disconnect(true);
+            server.Server.Close();
+
+            TcpClient client = new TcpClient(ipLocalEndPoint);
+
+            string neighbour_r = superpeer_neighbours[0].ToString();
+            //superpeer_neighbours.RemoveAt(0);
+
+            string[] temp_split = neighbour_r.Split(':');
+            string neighbour_r_ip = temp_split[0];
+            int neighbour_r_port = Int16.Parse(temp_split[1]);
+
+            client.Connect(neighbour_r_ip, neighbour_r_port);
+
+            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+
+            //sslStream.Flush();
+            end_connection(sslStream);
+
+            sslStream.Close();
+            client.Close();
+            superpeer_neighbours.Reverse();
+
+            client = new TcpClient(ipLocalEndPoint);
+
+            string neighbour_l = superpeer_neighbours[0].ToString();
+            //superpeer_neighbours.RemoveAt(0);
+
+            temp_split = neighbour_l.Split(':');
+            string neighbour_l_ip = temp_split[0];
+            int neighbour_l_port = Int16.Parse(temp_split[1]);
+
+            client.Connect(neighbour_l_ip, neighbour_l_port);
+
+            sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+
+            //sslStream.Flush();
+            end_connection(sslStream);
+
+            sslStream.Close();
+            client.Close();
+
+            //client.Close();
+
+            System.Environment.Exit(1);
+
+        }
+        static void end_connection(SslStream sslStream)
+        {
+            authenticate_client(sslStream);
+
+            send_message_tcp(sslStream, "END");
+            if (exit)
+            {
+                transfer_peers(sslStream, 1);
+            }
+            else
+            {
+                transfer_peers(sslStream, 2);
+            }
+
+
+            Console.WriteLine("My peers");
+            foreach (var pair in peers)
+            {
+                Console.WriteLine(pair.Key);
+            }
+            string neighbour = superpeer_neighbours[1].ToString();
+            //superpeer_neighbours.RemoveAt(0);
+
+            send_message_tcp(sslStream, (neighbour));
+
+            string response = recieve_message_tcp(sslStream);
+            Console.WriteLine(response);
+            exit = true;
+
+
+            /*send_message_tcp(sslStream, (server_ip + ":" + server_port));
+
+
+            string delimiter = "Y";
+            string response;
+            string[] temp_split;
+            while (delimiter == "Y")
+            {
+                response = recieve_message_tcp(sslStream);
+                temp_split = response.Split('/');
+                insert_peers(temp_split);
+                delimiter = temp_split[temp_split.Length - 1];
+            }
+            Console.WriteLine("My peers");
+            foreach (var pair in peers)
+            {
+                Console.WriteLine(pair.Key);
+            }
+
+            response = recieve_message_tcp(sslStream);
+            Console.WriteLine(response);
+
+            if (response != "SUCCESS")
+            {
+                temp_split = response.Split(':');
+                neighbour_ip = temp_split[0];
+                neighbour_port = Int16.Parse(temp_split[1]);
+            }
+
+
+
+            Console.WriteLine("My neighbours: ");
+            for (int i = 0; i < superpeer_neighbours.Count; ++i)
+            {
+                Console.WriteLine(superpeer_neighbours[i]);
+            }*/
+
+        }
+
+
+
+        //Trap ctrl+c to distribute peers among neighbour upon exit
+        private static void On_exit(object sender, ConsoleCancelEventArgs e)
+        {
+            e.Cancel = true;
+            redistribute_peers();
+
+        }
+
 
         static void Main(string[] args)
         {
-            superpeer_neighbours = new List<IPEndPoint>();
+            //To handle on exit function to distribute peers upon exit
+            Console.CancelKeyPress += On_exit;
+            peers_count = 0;
+            exit = false;
 
+            //Initiate database
+            superpeer_neighbours = new List<IPEndPoint>();
             peers = new Dictionary<string, IPEndPoint>();
 
+            //Select a random port number
             Random random = new Random();
             local_port = random.Next(20000, 40000);
 
+
+            //Add ceritificate to the store
             server_cert = new X509Certificate2("/home/pasan/Documents/FYP_certificates/ssl-certificate.pfx", "password", X509KeyStorageFlags.PersistKeySet);
             X509Store store = new X509Store(StoreName.My);
             store.Open(OpenFlags.ReadWrite);
             store.Add(server_cert);
 
+            //Create the local end point(ip+port)
             local_ip = IPAddress.Parse("127.0.0.1");
-            IPEndPoint ipLocalEndPoint = new IPEndPoint(local_ip, local_port);
+            ipLocalEndPoint = new IPEndPoint(local_ip, local_port);
 
+            //Initiate connection with neighbour (Get 1/3 of neighbours peers)
             TcpClient client = new TcpClient(ipLocalEndPoint);
             client.Connect(server_ip, server_port);
             superpeer_neighbours.Add(new IPEndPoint(IPAddress.Parse(server_ip), server_port));
             SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
             //sslStream.Flush();
-
             init_connection(sslStream);
+            sslStream.Close();
+            client.Close();
 
+            //Initiate connection with other neighbour (Get 1/3 of neighbour peers)
             client = new TcpClient(ipLocalEndPoint);
             client.Connect(neighbour_ip, neighbour_port);
             superpeer_neighbours.Add(new IPEndPoint(IPAddress.Parse(neighbour_ip), neighbour_port));
             sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
-
             init_connection(sslStream);
+            sslStream.Close();
+            client.Close();
 
+            //Server start listening to requests
             local_ip = IPAddress.Parse("127.0.0.1");
-
-            TcpListener server = new TcpListener(local_ip, local_port);
+            server = new TcpListener(local_ip, local_port);
             server.Start();
+            handle_connections();
 
-            handle_connections(server);
+
         }
 
-        static void init_connection(SslStream sslStream)
+        static void authenticate_client(SslStream sslStream)
         {
-
             try
             {
                 sslStream.AuthenticateAsClient("test", null, SslProtocols.Tls13, true);
@@ -104,6 +254,11 @@ namespace superpeer_network
                 sslStream.Close();
                 return;
             }
+        }
+
+        static void init_connection(SslStream sslStream)
+        {
+            authenticate_client(sslStream);
 
             send_message_tcp(sslStream, "HELLO");
             send_message_tcp(sslStream, (server_ip + ":" + server_port));
@@ -143,19 +298,17 @@ namespace superpeer_network
                 Console.WriteLine(superpeer_neighbours[i]);
             }
 
-            /*
-                        server_ip = neighbour_ip;
-                        server_port = neighbour_port;*/
         }
 
-        public static void transfer_peers(SslStream sslStream)
+        public static void transfer_peers(SslStream sslStream, int divident)
         {
             string reply = "";
             int limit_count = 0;
             int count = 0;
+
             foreach (var pair in peers)
             {
-                if (count > peers_count / 3)
+                if (count >= peers_count / divident)
                 {
                     break;
                 }
@@ -174,11 +327,12 @@ namespace superpeer_network
         }
 
 
-        static void handle_connections(TcpListener server)
+        static void handle_connections()
         {
             Console.WriteLine("Server is starting on port: " + local_port);
             Byte[] bytes = new Byte[256];
             string response;
+
             while (true)
             {
                 TcpClient client = server.AcceptTcpClient();
@@ -198,7 +352,7 @@ namespace superpeer_network
                     string myIp = local_ip.ToString() + ":" + local_port;
                     Console.WriteLine("Requesting neighbour: " + response);
                     Console.WriteLine("Sending 1/3 of Peers");
-                    transfer_peers(sslStream);
+                    transfer_peers(sslStream, 3);
 
                     if (myIp == response)
                     {
@@ -228,18 +382,6 @@ namespace superpeer_network
                     {
                         Console.WriteLine(pair.Key);
                     }
-
-
-
-
-                    /*client_map[client_count] = (IPEndPoint)client.Client.RemoteEndPoint;
-                    client_map_reverse[(IPEndPoint)client.Client.RemoteEndPoint] = client_count++;
-
-                    Console.WriteLine("address " + (client_count - 1) + " is now reserved for client " + ((IPEndPoint)client.Client.RemoteEndPoint));
-
-                    send_message_tcp(sslStream, (client_count - 1).ToString());
-                    Thread request_t = new Thread(() => handle_relay_requests(sslStream, client));
-                    request_t.Start();*/
                 }
                 else
                 {

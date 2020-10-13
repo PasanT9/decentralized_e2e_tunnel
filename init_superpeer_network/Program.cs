@@ -13,13 +13,15 @@ namespace superpeer_network
 {
     class Program
     {
-        static Dictionary<string, IPEndPoint> peers;
-        static List<IPEndPoint> superpeer_neighbours;
+        static Dictionary<string, IPEndPoint> peers;    //Index of peers
+        static List<IPEndPoint> superpeer_neighbours;   //Neighbours of the super peer network
 
-        static X509Certificate2 server_cert;
+        static X509Certificate2 server_cert;    //Server authentication certificate
         static int local_port;
         static IPAddress local_ip;
-        static int peers_count;
+        static int peers_count; //Number of peers
+
+        //Create random strings to imitate public keys
         public static string random_string()
         {
             string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -33,7 +35,8 @@ namespace superpeer_network
             return rand_string;
         }
 
-        public static void insert_peers()
+        //Insert a randomly created string as peers
+        public static void insert_peers_random()
         {
             for (int i = 0; i < 20; ++i)
             {
@@ -49,6 +52,7 @@ namespace superpeer_network
 
             peers = new Dictionary<string, IPEndPoint>();
 
+            //Add certificate to the certificate store
             server_cert = new X509Certificate2("/home/pasan/Documents/FYP_certificates/ssl-certificate.pfx", "password", X509KeyStorageFlags.PersistKeySet);
             X509Store store = new X509Store(StoreName.My);
             store.Open(OpenFlags.ReadWrite);
@@ -56,6 +60,7 @@ namespace superpeer_network
 
             local_ip = IPAddress.Parse("127.0.0.1");
 
+            //Initiate first and seconds servers of the super peer network
             TcpListener server;
             try
             {
@@ -72,19 +77,20 @@ namespace superpeer_network
                 superpeer_neighbours.Add(new IPEndPoint(local_ip, 27005));
             }
 
-            insert_peers();
+            insert_peers_random();
 
+            //Handle requests from other super peers
             handle_connections(server);
         }
 
-        public static void transfer_peers(SslStream sslStream)
+        public static void transfer_peers(SslStream sslStream, int divident)
         {
             string reply = "";
             int limit_count = 0;
             int count = 0;
             foreach (var pair in peers)
             {
-                if (count > peers_count / 3)
+                if (count >= peers_count / divident)
                 {
                     break;
                 }
@@ -100,6 +106,15 @@ namespace superpeer_network
                 limit_count++;
             }
             send_message_tcp(sslStream, reply + "N");
+        }
+
+        public static void insert_peers(string[] new_peers)
+        {
+            for (int i = 0; i < new_peers.Length - 1; ++i)
+            {
+                peers[new_peers[i]] = null;
+                ++peers_count;
+            }
         }
 
         static void handle_connections(TcpListener server)
@@ -126,7 +141,7 @@ namespace superpeer_network
                     string myIp = local_ip.ToString() + ":" + local_port;
                     Console.WriteLine("Requesting neighbour: " + response);
                     Console.WriteLine("Sending 1/3 of Peers");
-                    transfer_peers(sslStream);
+                    transfer_peers(sslStream, 3);
 
                     if (myIp == response)
                     {
@@ -157,17 +172,49 @@ namespace superpeer_network
                         Console.WriteLine(pair.Key);
                     }
 
+                    client.Close();
+                    sslStream.Close();
+                }
+                else if (String.Compare(response, "END") == 0)
+                {
+                    Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint) + " is leaving the superpeer network");
 
+                    string delimiter = "Y";
+                    string[] temp_split;
+                    while (delimiter == "Y")
+                    {
+                        response = recieve_message_tcp(sslStream);
+                        temp_split = response.Split('/');
+                        insert_peers(temp_split);
+                        delimiter = temp_split[temp_split.Length - 1];
+                    }
+                    response = recieve_message_tcp(sslStream);
+                    Console.WriteLine("My peers");
+                    foreach (var pair in peers)
+                    {
+                        Console.WriteLine(pair.Key);
+                    }
 
+                    Console.WriteLine(response);
 
-                    /*client_map[client_count] = (IPEndPoint)client.Client.RemoteEndPoint;
-                    client_map_reverse[(IPEndPoint)client.Client.RemoteEndPoint] = client_count++;
+                    temp_split = response.Split(':');
+                    string neighbour_ip = temp_split[0];
+                    int neighbour_port = Int16.Parse(temp_split[1]);
 
-                    Console.WriteLine("address " + (client_count - 1) + " is now reserved for client " + ((IPEndPoint)client.Client.RemoteEndPoint));
+                    IPEndPoint new_neighbour = new IPEndPoint(IPAddress.Parse(neighbour_ip), neighbour_port);
+                    superpeer_neighbours.Remove(((IPEndPoint)client.Client.RemoteEndPoint));
+                    superpeer_neighbours.Add(new_neighbour);
 
-                    send_message_tcp(sslStream, (client_count - 1).ToString());
-                    Thread request_t = new Thread(() => handle_relay_requests(sslStream, client));
-                    request_t.Start();*/
+                    Console.WriteLine("My neighbours: ");
+                    for (int i = 0; i < superpeer_neighbours.Count; ++i)
+                    {
+                        Console.WriteLine(superpeer_neighbours[i]);
+                    }
+
+                    send_message_tcp(sslStream, "SUCCESS");
+                    sslStream.Close();
+                    client.Close();
+
                 }
                 else
                 {
