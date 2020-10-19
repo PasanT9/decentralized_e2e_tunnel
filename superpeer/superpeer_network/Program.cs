@@ -67,7 +67,7 @@ namespace superpeer_network
                         {
                             response = TCPCommunication.recieve_message_tcp(superpeer_neighbours[neighbour]);
 
-                            Console.WriteLine(response);
+                            Console.WriteLine($"Receive({neighbour}): {response}");
                             if (String.Compare(response, "END") == 0)
                             {
                                 TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], "ACCEPT_END");
@@ -249,58 +249,62 @@ namespace superpeer_network
                     foreach (var neighbour in change_neighbours)
                     {
                         Console.WriteLine("Disconnecting neighbour: " + neighbour.ToString());
-                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], "END");
+                        message_buffer[-1 + ":END"] = neighbour;
                     }
                     change_neighbours.Clear();
                 }
 
                 if (superpeer_neighbours.Count != 0)
                 {
-                    Console.WriteLine("Neighbours(Send): " + superpeer_neighbours.Count);
+                    //Console.WriteLine("Neighbours(Send): " + superpeer_neighbours.Count);
                     List<IPEndPoint> superpeer_neighbours_list = new List<IPEndPoint>(superpeer_neighbours.Keys);
                     foreach (var neighbour in superpeer_neighbours_list)
                     {
-                        try
+                        if (message_buffer.Count != 0)
                         {
-                            Console.WriteLine("Messages count: " + message_buffer.Count);
-                            if (message_buffer.Count != 0)
+                            try
                             {
 
-                                var message_itr = message_buffer.GetEnumerator();
-                                message_itr.MoveNext();
-                                string message_full = message_itr.Current.Key;
+                                List<string> message_buffer_list = new List<string>(message_buffer.Keys);
+
+                                //message_itr.MoveNext();
+                                string message_full = message_buffer_list[0];
                                 string message = message_full.Split(':')[1];
-                                IPEndPoint restrict_ip = message_itr.Current.Value;
-                                //Console.WriteLine("restrict: " + restrict_ip.ToString());
-                                Console.WriteLine("current: " + neighbour.ToString());
-                                if (restrict_ip != neighbour)
-                                {
-                                    Console.WriteLine("Sending search request");
-                                    message_tunnel[neighbour] = restrict_ip;
-                                    TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], "SEARCH:" + message);
-                                    new Thread(() => remove_tunnel(neighbour)).Start();
-                                }
-                                message_buffer.Remove(message_full);
-                            }
-                            else
-                            {
-                                Console.WriteLine("sending: " + count);
-                                TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], "HELLO(" + count++ + ")");
-                            }
 
-                        }
-                        catch (System.InvalidOperationException e)
-                        {
-                            Console.WriteLine(e);
-                            break;
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                            break;
+                                //Get corresponding destination of the message
+                                IPEndPoint destination_ip = message_buffer[message_full];
+
+                                if (destination_ip == neighbour)
+                                {
+                                    Console.WriteLine($"Sending({neighbour}): {message}");
+
+                                    //message_tunnel[neighbour] = restrict_ip;
+                                    //TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], "SEARCH:" + message);
+                                    TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message);
+                                    message_buffer.Remove(message_full);
+                                    //new Thread(() => remove_tunnel(neighbour)).Start();
+                                }
+
+                                /*else
+                                {
+                                    Console.WriteLine("sending: " + count);
+                                    TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], "HELLO(" + count++ + ")");
+                                }*/
+                            }
+                            catch (System.InvalidOperationException e)
+                            {
+                                Console.WriteLine(e);
+                                break;
+                            }
+                            catch (Exception e)
+                            {
+                                Console.WriteLine(e);
+                                break;
+                            }
                         }
                     }
-                    Thread.Sleep(2000);
+
+                    //Thread.Sleep(2000);
                 }
             }
             Console.WriteLine("Thread Closed");
@@ -357,7 +361,21 @@ namespace superpeer_network
 
         }
 
-
+        static void hello_neighbour()
+        {
+            while (true)
+            {
+                int count = 0;
+                List<IPEndPoint> superpeer_neighbours_list = new List<IPEndPoint>(superpeer_neighbours.Keys);
+                foreach (IPEndPoint neighbour in superpeer_neighbours_list)
+                {
+                    Thread.Sleep(5000);
+                    message_buffer[count + ":HELLO"] = neighbour;
+                    count++;
+                }
+            }
+            Console.WriteLine("Exit hello_neighbour thread");
+        }
         static void Main(string[] args)
         {
             //To handle on exit function to distribute peers upon exit
@@ -399,6 +417,9 @@ namespace superpeer_network
             init_connection(neighbour_ip, neighbour_port);
 
             new Thread(() => handle_neighbour(1)).Start();
+
+
+            new Thread(() => hello_neighbour()).Start();
             server = new TcpListener(local_ip, local_port);
             server.Start();
 
@@ -462,7 +483,7 @@ namespace superpeer_network
             string response;
             string[] temp_split;
 
-            TCPCommunication.send_message_tcp(sslStream, "HELLO");
+            TCPCommunication.send_message_tcp(sslStream, "HELLO_S");
             TCPCommunication.send_message_tcp(sslStream, (server_ip + ":" + server_port));
 
             recieve_peers(sslStream);
@@ -521,7 +542,7 @@ namespace superpeer_network
                 // Read a message from the client.
                 response = TCPCommunication.recieve_message_tcp(sslStream);
                 Console.WriteLine(response);
-                if (String.Compare(response, "HELLO") == 0)
+                if (String.Compare(response, "HELLO_S") == 0)
                 {
                     Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint) + " is requesting to join superpeer network");
 
@@ -547,7 +568,7 @@ namespace superpeer_network
 
                         change_neighbours.Add(neighbour);
 
-                        Thread.Sleep(2000);
+                        Thread.Sleep(1000);
 
                         TCPCommunication.send_message_tcp(sslStream, neighbour.ToString());
                         superpeer_neighbours[(IPEndPoint)client.Client.RemoteEndPoint] = sslStream;
