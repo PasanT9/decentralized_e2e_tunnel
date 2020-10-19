@@ -131,6 +131,7 @@ namespace superpeer_peer
 
             string response = recieve_message_tcp(sslStream);
             Console.WriteLine(response);
+            /*
             string[] temp_split = response.Split(':');
             string op_code = temp_split[0];
             string data0 = (temp_split.Length == 3) ? temp_split[1] : "";
@@ -164,7 +165,7 @@ namespace superpeer_peer
             else if (String.Compare(op_code, "NOTFOUND") == 0)
             {
                 Console.WriteLine("User is not registered");
-            }
+            }*/
 
 
         }
