@@ -1,4 +1,4 @@
-namespace superpeer_peer
+namespace TCP
 {
     public class Request
     {

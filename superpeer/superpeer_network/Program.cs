@@ -121,7 +121,7 @@ namespace superpeer_network
 
                     else if (String.Compare(response, "ACCEPT_END") == 0)
                     {
-                        TCPCommunication.send_message_tcp(sslStream, "ACCEPT_END");
+                        // TCPCommunication.send_message_tcp(sslStream, "ACCEPT_END");
 
                         disconnect_neighbour(ip);
 
@@ -176,7 +176,7 @@ namespace superpeer_network
                             if (peers.ContainsKey(data0))
                             {
                                 Console.WriteLine("Key is found");
-                                peers.Remove(data0);
+                                //peers.Remove(data0);
                                 Console.WriteLine("Sending key");
                                 TCPCommunication.send_message_tcp(sslStream, "FOUND:" + data0 + ":" + local_ip.ToString() + ":" + local_port);
                                 Console.WriteLine("Sent");
@@ -190,6 +190,7 @@ namespace superpeer_network
                                     {
                                         Console.WriteLine("Adding search to buffer for: " + dest.Key);
                                         message_tunnel[dest.Key] = ip;
+                                        new Thread(() => remove_tunnel(dest.Key)).Start();
                                         message_buffer[-1 + ":SEARCH:" + data0] = dest.Key;
                                     }
                                 }
@@ -246,32 +247,34 @@ namespace superpeer_network
         {
             //new Thread(() => listen_neighbours()).Start();
             int count = index * 1000;
+            bool exit_neighbour = false;
+            bool break_loop = false;
             while (true)
             {
                 if (exit_neighbours.Count != 0)
                 {
 
-                    int exit_neighbour_count = exit_neighbours.Count;
                     foreach (IPEndPoint neighbour in exit_neighbours.ToArray())
                     {
                         Console.WriteLine("Disconnecting neighbour: " + neighbour.ToString());
                         TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], "EXIT");
-                        if (exit_neighbour_count == 2)
+                        if (!exit_neighbour)
                         {
                             transfer_peers(superpeer_neighbours[neighbour], 2);
                             TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], exit_neighbours[superpeer_neighbours.Count - 1].ToString() + ":Y");
+                            exit_neighbour = true;
                         }
                         else
                         {
                             transfer_peers(superpeer_neighbours[neighbour], 1);
                             TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], exit_neighbours[superpeer_neighbours.Count - 1].ToString() + ":N");
+                            break_loop = true;
 
                         }
-                        --exit_neighbour_count;
 
                     }
                     exit_neighbours.Clear();
-                    if (exit_neighbour_count == 0)
+                    if (break_loop)
                     {
                         break;
                     }
@@ -371,9 +374,13 @@ namespace superpeer_network
 
         static void remove_tunnel(IPEndPoint ip)
         {
-            Thread.Sleep(10000);
-            Console.WriteLine("tunnel " + ip.ToString() + " " + message_tunnel[ip] + " is removed");
-            message_tunnel.Remove(ip);
+            Thread.Sleep(5000);
+            if (message_tunnel.ContainsKey(ip))
+            {
+                Console.WriteLine("tunnel " + ip.ToString() + " " + message_tunnel[ip] + " is removed");
+                message_tunnel.Remove(ip);
+
+            }
         }
 
 
@@ -388,7 +395,7 @@ namespace superpeer_network
             neighbour_itr.MoveNext();
             neighbour = neighbour_itr.Current.Key;
             exit_neighbours.Add(neighbour);
-            //Thread.Sleep(2000);
+            //Thread.Sleep(1000);
 
             neighbour_itr.MoveNext();
             neighbour = neighbour_itr.Current.Key;

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
@@ -8,10 +9,15 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 
+using System.Runtime.InteropServices;
+
 
 using Cryptography;
 using Authentication;
 using TCP;
+using dtls_client;
+using dtls_server;
+using PairStream;
 
 namespace superpeer_network
 {
@@ -27,6 +33,8 @@ namespace superpeer_network
         static Dictionary<IPEndPoint, IPEndPoint> message_tunnel;
 
         static Dictionary<string, string> reply_buffer;
+
+        static List<IPEndPoint> pending_requests;
 
         static X509Certificate2 server_cert;    //Server authentication certificate
         static int local_port;
@@ -120,7 +128,6 @@ namespace superpeer_network
             sslStream.Close();
         }
 
-        //POP
         static void listen_neighbours(KeyValuePair<IPEndPoint, SslStream> neighbour)
         {
             Console.WriteLine("A listen thread created");
@@ -148,7 +155,7 @@ namespace superpeer_network
 
                     else if (String.Compare(response, "ACCEPT_END") == 0)
                     {
-                        TCPCommunication.send_message_tcp(sslStream, "ACCEPT_END");
+                        //TCPCommunication.send_message_tcp(sslStream, "ACCEPT_END");
 
                         disconnect_neighbour(ip);
 
@@ -168,6 +175,8 @@ namespace superpeer_network
                         string neighbour_ip = temp_split[0];
                         int neighbour_port = Int32.Parse(temp_split[1]);
                         string condition = temp_split[2];
+
+
 
                         TCPCommunication.send_message_tcp(sslStream, "ACCEPT_EXIT");
                         if (String.Compare(condition, "Y") == 0)
@@ -203,7 +212,7 @@ namespace superpeer_network
                             if (peers.ContainsKey(data0))
                             {
                                 Console.WriteLine("Key is found");
-                                peers.Remove(data0);
+                                //peers.Remove(data0);
                                 Console.WriteLine("Sending key");
                                 TCPCommunication.send_message_tcp(sslStream, "FOUND:" + data0 + ":" + local_ip.ToString() + ":" + local_port);
                                 Console.WriteLine("Sent");
@@ -215,6 +224,7 @@ namespace superpeer_network
                                     if (dest.Key != ip)
                                     {
                                         message_tunnel[dest.Key] = ip;
+                                        new Thread(() => remove_tunnel(dest.Key)).Start();
                                         message_buffer[-1 + ":SEARCH:" + data0] = dest.Key;
                                     }
                                 }
@@ -354,7 +364,8 @@ namespace superpeer_network
                             }
                             catch (Exception e)
                             {
-                                Console.WriteLine(e);
+                                Console.WriteLine("neighbours have changed");
+                                Thread.Sleep(100);
                                 break;
                             }
                         }
@@ -368,9 +379,13 @@ namespace superpeer_network
 
         static void remove_tunnel(IPEndPoint ip)
         {
-            Thread.Sleep(10000);
-            Console.WriteLine("tunnel " + ip.ToString() + " " + message_tunnel[ip] + " is removed");
-            message_tunnel.Remove(ip);
+            Thread.Sleep(5000);
+            if (message_tunnel.ContainsKey(ip))
+            {
+                Console.WriteLine("tunnel " + ip.ToString() + " " + message_tunnel[ip] + " is removed");
+                message_tunnel.Remove(ip);
+
+            }
         }
 
         static void hello_neighbour()
@@ -409,6 +424,7 @@ namespace superpeer_network
             message_buffer = new Dictionary<string, IPEndPoint>();
             message_tunnel = new Dictionary<IPEndPoint, IPEndPoint>();
             reply_buffer = new Dictionary<string, string>();
+            pending_requests = new List<IPEndPoint>();
 
             insert_peers_random();
 
@@ -553,10 +569,17 @@ namespace superpeer_network
             Thread.Sleep(8000);
             if (reply_buffer.ContainsKey(key))
             {
-                peers[key] = null;
+                //peers[key] = null;
                 TCPCommunication.send_message_tcp(sslStream, reply_buffer[key]);
                 reply_buffer.Remove(key);
-                TCPCommunication.send_message_tcp(sslStream, "FOUND");
+                //TCPCommunication.send_message_tcp(sslStream, "FOUND");
+
+                response = TCPCommunication.recieve_message_tcp(sslStream);
+                peers.Remove(HashString.GetHashString(response));
+                TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
+                sslStream.Close();
+
+
 
                 /*response = TCPCommunication.recieve_message_tcp(sslStream);
 
@@ -698,14 +721,14 @@ namespace superpeer_network
 
                     peers[hash] = (IPEndPoint)client.Client.RemoteEndPoint;
 
-                    Console.WriteLine(response + " is added to peers");
+                    Console.WriteLine(hash + " is added to peers");
                     sslStream.Close();
                     client.Close();
                 }
                 else if (String.Compare(response, "FIND_P") == 0)
                 {
                     response = TCPCommunication.recieve_message_tcp(sslStream);
-                    if (peers.ContainsKey(HashString.GetHashString(response)))
+                    if (peers.ContainsKey(response))
                     {
                         TCPCommunication.send_message_tcp(sslStream, "FOUND");
                     }
@@ -716,16 +739,75 @@ namespace superpeer_network
                         foreach (var neighbour in superpeer_neighbours_list)
                         {
                             message_tunnel[neighbour] = null;
-                            message_buffer[(count++) + ":SEARCH:" + HashString.GetHashString(response)] = neighbour;
+                            message_buffer[(count++) + ":SEARCH:" + response] = neighbour;
                         }
-                        new Thread(() => wait_reply(sslStream, HashString.GetHashString(response))).Start();
+                        new Thread(() => wait_reply(sslStream, response)).Start();
                     }
+                }
+                else if (String.Compare(response, "CONNECT_P") == 0)
+                {
+                    response = TCPCommunication.recieve_message_tcp(sslStream);
+                    Console.WriteLine($"Connection request received for {response}");
+
+                    IPEndPoint sender_ip = (IPEndPoint)client.Client.RemoteEndPoint;
+                    IPEndPoint receiver_ip = peers[response];
+
+                    if (pending_requests.Contains(receiver_ip))
+                    {
+                        TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
+
+                        sslStream.Close();
+                        client.Close();
+                        new Thread(() => handle_relay(sender_ip, receiver_ip)).Start();
+                    }
+                    else
+                    {
+                        TCPCommunication.send_message_tcp(sslStream, "REJECT");
+
+                        sslStream.Close();
+                        client.Close();
+                    }
+                }
+                else if (String.Compare(response, "LISTEN_P") == 0)
+                {
+                    //response = TCPCommunication.recieve_message_tcp(sslStream);
+                    Console.WriteLine($"Listen request received for {response}");
+
+                    TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
+                    IPEndPoint relay_ip = (IPEndPoint)client.Client.RemoteEndPoint;
+                    pending_requests.Add(relay_ip);
+
+                    sslStream.Close();
+                    client.Close();
+
+                    //new Thread(() => handle_relay(relay_ip)).Start();
                 }
                 else
                 {
                     Console.WriteLine("unrecognized command");
                 }
             }
+        }
+
+        static void handle_relay(IPEndPoint client0, IPEndPoint client1)
+        {
+            pending_requests.Remove(client1);
+
+            Console.WriteLine("start relay");
+            DTLSClient dtls_client0 = new DTLSClient(client0.Address.ToString(), client0.Port.ToString(), new byte[] { 0xBA, 0xA0 });
+            DTLSClient dtls_client1 = new DTLSClient(client1.Address.ToString(), client1.Port.ToString(), new byte[] { 0xBA, 0xA0 });
+
+            dtls_client0.Start();
+            dtls_client1.Start();
+
+            //statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+
+            new Thread(() => dtls_client0.GetStream().CopyTo(dtls_client1.GetStream(), 16)).Start();
+            new Thread(() => dtls_client1.GetStream().CopyTo(dtls_client0.GetStream(), 16)).Start();
+
+            //dtls.WaitForExit();
+            dtls_client0.WaitForExit();
+            dtls_client1.WaitForExit();
         }
     }
 }

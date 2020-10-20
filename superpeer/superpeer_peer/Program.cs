@@ -15,6 +15,12 @@ using System.Buffers;
 #endif
 using System.Runtime.InteropServices;
 
+using TCP;
+using dtls_server;
+using dtls_client;
+using PairStream;
+using Cryptography;
+
 namespace superpeer_peer
 {
 
@@ -27,6 +33,10 @@ namespace superpeer_peer
         static int local_port;
 
         static PublicKeyCoordinates pubKey;
+
+        //static Aes myAes;
+        static string dest_ip;
+        static int dest_port;
 
         public static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
         {
@@ -85,11 +95,16 @@ namespace superpeer_peer
 
             sslStream.Close();
             client.Close();
-
-            Console.Write("server port: ");
-            server_port = Int32.Parse(Console.ReadLine());
-
-            find_superpeer();
+            Console.Write("init connection: ");
+            string input = Console.ReadLine();
+            if (input == "y")
+            {
+                find_superpeer();
+            }
+            else
+            {
+                listen_superpeer();
+            }
 
 
         }
@@ -100,8 +115,8 @@ namespace superpeer_peer
             //Authenticate certificate
             authenticate_server(sslStream);
 
-            send_message_tcp(sslStream, "HELLO_P");
-            string response = recieve_message_tcp(sslStream);
+            TCPCommunication.send_message_tcp(sslStream, "HELLO_P");
+            string response = TCPCommunication.recieve_message_tcp(sslStream);
             Console.WriteLine(response);
 
             ECDiffieHellmanOpenSsl peer = new ECDiffieHellmanOpenSsl();
@@ -109,14 +124,19 @@ namespace superpeer_peer
 
             pubKey = new PublicKeyCoordinates(ep.Q.X, ep.Q.Y);
 
+            Console.WriteLine("My hash key: " + HashString.GetHashString(pubKey.ToString()));
+
             //Console.WriteLine(pubKey.ToString());
 
-            send_message_tcp(sslStream, pubKey.ToString());
+            TCPCommunication.send_message_tcp(sslStream, pubKey.ToString());
 
         }
 
         static void find_superpeer()
         {
+
+            Console.Write("Destination: ");
+            string dest_key = Console.ReadLine();
             IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
 
@@ -126,51 +146,171 @@ namespace superpeer_peer
             SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
             authenticate_server(sslStream);
 
-            send_message_tcp(sslStream, "FIND_P");
-            send_message_tcp(sslStream, pubKey.ToString());
+            TCPCommunication.send_message_tcp(sslStream, "FIND_P");
+            //TCPCommunication.send_message_tcp(sslStream, pubKey.ToString());
+            TCPCommunication.send_message_tcp(sslStream, dest_key);
 
-            string response = recieve_message_tcp(sslStream);
-            Console.WriteLine(response);
-            /*
+            string response = TCPCommunication.recieve_message_tcp(sslStream);
+
             string[] temp_split = response.Split(':');
-            string op_code = temp_split[0];
-            string data0 = (temp_split.Length == 3) ? temp_split[1] : "";
-            string data1 = (temp_split.Length == 3) ? temp_split[2] : "";
+            dest_ip = temp_split[1];
+            dest_port = Int32.Parse(temp_split[2]);
 
-            if (String.Compare(op_code, "FOUND") == 0)
-            {
-                Console.Write("Enter destination: ");
-                string dest_peer = Console.ReadLine();
+            Console.WriteLine($"destination peer in {dest_ip}:{dest_port}");
 
-                send_message_tcp(sslStream, "FIND_P");
-                send_message_tcp(sslStream, dest_peer);
+            TCPCommunication.send_message_tcp(sslStream, pubKey.ToString());
+            response = TCPCommunication.recieve_message_tcp(sslStream);
+            Console.WriteLine(response);
+            sslStream.Close();
+            client.Close();
 
-                response = recieve_message_tcp(sslStream);
+            client = new TcpClient(ipLocalEndPoint);
+            client.Connect(dest_ip, dest_port);
+            sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+            authenticate_server(sslStream);
 
-                temp_split = response.Split(':');
-                op_code = temp_split[0];
-                data0 = (temp_split.Length == 3) ? temp_split[1] : "";
-                data1 = (temp_split.Length == 3) ? temp_split[2] : "";
+            req_connection(sslStream, client, dest_key);
 
 
-                if (String.Compare(op_code, "FOUND") == 0)
-                {
-                    Console.WriteLine("Destination peer exists");
-                }
-                else if (String.Compare(op_code, "NOTFOUND") == 0)
-                {
-                    Console.WriteLine("Destination peer does not exits");
-                }
-            }
-            else if (String.Compare(op_code, "NOTFOUND") == 0)
-            {
-                Console.WriteLine("User is not registered");
-            }*/
+            sslStream.Close();
+            client.Close();
 
 
         }
 
+        static void listen_superpeer()
+        {
+            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+            TcpClient client = new TcpClient(ipLocalEndPoint);
 
+            client.Connect(server_ip, server_port);
+            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+            authenticate_server(sslStream);
+
+            listen_connection(sslStream, client);
+            //req_connection(sslStream, client, dest_key);
+
+
+            sslStream.Close();
+            client.Close();
+        }
+
+        static void req_connection(SslStream sslStream, TcpClient client, string dest_key)
+        {
+
+            TCPCommunication.send_message_tcp(sslStream, "CONNECT_P");
+            TCPCommunication.send_message_tcp(sslStream, dest_key);
+
+            string response = TCPCommunication.recieve_message_tcp(sslStream);
+            Console.WriteLine(response);
+            sslStream.Close();
+
+            if (String.Compare(response, "ACCEPT") == 0)
+            {
+                DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    dtls.Unbuffer = "winpty.exe";
+                    dtls.Unbuffer_Args = "-Xplain -Xallow-non-tty";
+                }
+                else
+                {
+                    dtls.Unbuffer = "stdbuf";
+                    dtls.Unbuffer_Args = "-i0 -o0";
+                }
+                dtls.Start();
+
+
+                dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
+                byte[] bytes;
+                string message = "";
+                while (String.Compare(message, "SUCCESS") != 0)
+                {
+                    bytes = new byte[128];
+                    dtls.GetStream().Read(bytes, 0, bytes.Length);
+                    message = Encoding.UTF8.GetString(bytes);
+                    Console.Write(message);
+                }
+
+                Console.WriteLine();
+
+                statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+
+                new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
+                new Thread(() => read_relay(dtls)).Start();
+
+                while (true)
+                {
+                    string input = Console.ReadLine();
+                    dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));
+                }
+                dtls.WaitForExit();
+            }
+            else if (String.Compare(response, "REJECT") == 0)
+            {
+                Console.WriteLine("Connection rejected");
+            }
+
+
+
+            /*}
+            else
+            {
+                Console.WriteLine("Connection declined");
+            }*/
+        }
+
+        static void listen_connection(SslStream sslStream, TcpClient client)
+        {
+
+            TCPCommunication.send_message_tcp(sslStream, "LISTEN_P");
+            //TCPCommunication.send_message_tcp(sslStream, dest_key);
+
+            string response = TCPCommunication.recieve_message_tcp(sslStream);
+            Console.WriteLine(response);
+            sslStream.Close();
+
+
+            DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                dtls.Unbuffer = "winpty.exe";
+                dtls.Unbuffer_Args = "-Xplain -Xallow-non-tty";
+            }
+            else
+            {
+                dtls.Unbuffer = "stdbuf";
+                dtls.Unbuffer_Args = "-i0 -o0";
+            }
+            dtls.Start();
+
+
+            dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
+            byte[] bytes;
+            string message = "";
+            while (String.Compare(message, "SUCCESS") != 0)
+            {
+                bytes = new byte[128];
+                dtls.GetStream().Read(bytes, 0, bytes.Length);
+                message = Encoding.UTF8.GetString(bytes);
+                Console.Write(message);
+            }
+
+            Console.WriteLine();
+
+            statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+
+            new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
+            new Thread(() => read_relay(dtls)).Start();
+
+            while (true)
+            {
+                string input = Console.ReadLine();
+                dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));
+            }
+            dtls.WaitForExit();
+        }
 
         static void send_message_tcp(SslStream sslStream, string message)
         {
@@ -189,6 +329,19 @@ namespace superpeer_peer
             Request reply = JsonConvert.DeserializeObject<Request>(message);
             return reply.body;
         }
+
+        static void read_relay(DTLSServer dtls)
+        {
+            byte[] bytes;
+            while (true)
+            {
+                bytes = new byte[16];
+                dtls.GetStream().Read(bytes, 0, bytes.Length);
+                //string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
+                Console.WriteLine(bytes.ToString());
+            }
+        }
+
     }
 
 }
