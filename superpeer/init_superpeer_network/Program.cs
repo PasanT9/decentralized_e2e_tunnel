@@ -433,7 +433,7 @@ namespace superpeer_network
             insert_peers_random();
 
             //Add certificate to the certificate store
-            server_cert = new X509Certificate2("/home/pasan/Documents/FYP_certificates/ssl-certificate.pfx", "password", X509KeyStorageFlags.PersistKeySet);
+            server_cert = new X509Certificate2("../../FYP_certificates/ssl-certificate.pfx", "password", X509KeyStorageFlags.PersistKeySet);
             X509Store store = new X509Store(StoreName.My);
             store.Open(OpenFlags.ReadWrite);
             store.Add(server_cert);
