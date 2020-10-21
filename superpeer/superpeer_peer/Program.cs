@@ -340,13 +340,13 @@ namespace superpeer_peer
                 while (true)
                 {
 
-                    /*string input = Console.ReadLine();
+                    string input = Console.ReadLine();
                     byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
                     //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                    dtls.GetStream().Write(encryptedData);*/
+                    dtls.GetStream().Write(encryptedData);
 
-                    string input = Console.ReadLine();
-                    dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));
+                    /*string input = Console.ReadLine();
+                    dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));*/
                 }
                 dtls.WaitForExit();
             }
@@ -384,9 +384,8 @@ namespace superpeer_peer
             {
                 bytes = new byte[16];
                 dtls.GetStream().Read(bytes, 0, bytes.Length);
-                //string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
-                //Console.WriteLine(decryptedData);
-                Console.WriteLine(bytes.ToString());
+                string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
+                Console.WriteLine(decryptedData);
             }
         }
 
