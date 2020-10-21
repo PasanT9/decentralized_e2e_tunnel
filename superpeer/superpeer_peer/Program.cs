@@ -147,33 +147,45 @@ namespace superpeer_peer
             authenticate_server(sslStream);
 
             TCPCommunication.send_message_tcp(sslStream, "FIND_P");
-            //TCPCommunication.send_message_tcp(sslStream, pubKey.ToString());
-            TCPCommunication.send_message_tcp(sslStream, dest_key);
+            TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
 
             string response = TCPCommunication.recieve_message_tcp(sslStream);
+            if(String.Compare(response, "ACCEPT") == 0)
+            {
+                TCPCommunication.send_message_tcp(sslStream, dest_key);
 
-            string[] temp_split = response.Split(':');
-            dest_ip = temp_split[1];
-            dest_port = Int32.Parse(temp_split[2]);
+                response = TCPCommunication.recieve_message_tcp(sslStream);
 
-            Console.WriteLine($"destination peer in {dest_ip}:{dest_port}");
+                string[] temp_split = response.Split(':');
+                dest_ip = temp_split[1];
+                dest_port = Int32.Parse(temp_split[2]);
 
-            TCPCommunication.send_message_tcp(sslStream, pubKey.ToString());
-            response = TCPCommunication.recieve_message_tcp(sslStream);
-            Console.WriteLine(response);
-            sslStream.Close();
-            client.Close();
+                Console.WriteLine($"destination peer in {dest_ip}:{dest_port}");
 
-            client = new TcpClient(ipLocalEndPoint);
-            client.Connect(dest_ip, dest_port);
-            sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
-            authenticate_server(sslStream);
+                //TCPCommunication.send_message_tcp(sslStream, pubKey.ToString());
+                //response = TCPCommunication.recieve_message_tcp(sslStream);
+                //Console.WriteLine(response);
+                sslStream.Close();
+                client.Close();
 
-            req_connection(sslStream, client, dest_key);
+                client = new TcpClient(ipLocalEndPoint);
+                client.Connect(dest_ip, dest_port);
+                sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+                authenticate_server(sslStream);
+
+                req_connection(sslStream, client, dest_key);
 
 
-            sslStream.Close();
-            client.Close();
+                sslStream.Close();
+                client.Close();
+            }
+            else if(String.Compare(response, "REJECT") == 0)
+            {
+                Console.WriteLine("Connection rejected");
+                sslStream.Close();
+                client.Close();
+            }
+
 
 
         }
@@ -200,21 +212,93 @@ namespace superpeer_peer
         {
 
             TCPCommunication.send_message_tcp(sslStream, "CONNECT_P");
-            TCPCommunication.send_message_tcp(sslStream, dest_key);
+            TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
 
             string response = TCPCommunication.recieve_message_tcp(sslStream);
-            Console.WriteLine(response);
-            sslStream.Close();
-
-            if (String.Compare(response, "ACCEPT") == 0)
+            if(String.Compare(response, "ACCEPT") == 0)
             {
+
+                TCPCommunication.send_message_tcp(sslStream, dest_key);
+
+                response = TCPCommunication.recieve_message_tcp(sslStream);
+                Console.WriteLine(response);
+                sslStream.Close();
+
+                if (String.Compare(response, "ACCEPT") == 0)
+                {
+                    DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        dtls.Unbuffer = "winpty.exe";
+                        dtls.Unbuffer_Args = "-Xplain -Xallow-non-tty";
+                    }
+                    else
+                    {
+                        dtls.Unbuffer = "stdbuf";
+                        dtls.Unbuffer_Args = "-i0 -o0";
+                    }
+                    dtls.Start();
+
+
+                    dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
+                    byte[] bytes;
+                    string message = "";
+                    while (String.Compare(message, "SUCCESS") != 0)
+                    {
+                        bytes = new byte[128];
+                        dtls.GetStream().Read(bytes, 0, bytes.Length);
+                        message = Encoding.UTF8.GetString(bytes);
+                        Console.Write(message);
+                    }
+
+                    Console.WriteLine();
+
+                    statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+
+                    new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
+                    new Thread(() => read_relay(dtls)).Start();
+
+                    while (true)
+                    {
+                        string input = Console.ReadLine();
+                        dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));
+                    }
+                    dtls.WaitForExit();
+                }
+                else if (String.Compare(response, "REJECT") == 0)
+                {
+                    Console.WriteLine("Connection rejected");
+                }
+            }
+            else if(String.Compare(response, "REJECT") == 0)
+            {
+                Console.WriteLine("Connection rejected");
+                sslStream.Close();
+                client.Close();
+            }
+        }
+
+        static void listen_connection(SslStream sslStream, TcpClient client)
+        {
+
+            TCPCommunication.send_message_tcp(sslStream, "LISTEN_P");
+            TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
+
+            string response = TCPCommunication.recieve_message_tcp(sslStream);
+            if(String.Compare(response, "ACCEPT") == 0)
+            {
+                response = TCPCommunication.recieve_message_tcp(sslStream);
+                Console.WriteLine(response);
+                sslStream.Close();
+
+
                 DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     dtls.Unbuffer = "winpty.exe";
                     dtls.Unbuffer_Args = "-Xplain -Xallow-non-tty";
                 }
-                else
+                else 
                 {
                     dtls.Unbuffer = "stdbuf";
                     dtls.Unbuffer_Args = "-i0 -o0";
@@ -247,69 +331,13 @@ namespace superpeer_peer
                 }
                 dtls.WaitForExit();
             }
-            else if (String.Compare(response, "REJECT") == 0)
+            else if(String.Compare(response, "REJECT") == 0)
             {
                 Console.WriteLine("Connection rejected");
+                sslStream.Close();
+                client.Close();
             }
 
-
-
-            /*}
-            else
-            {
-                Console.WriteLine("Connection declined");
-            }*/
-        }
-
-        static void listen_connection(SslStream sslStream, TcpClient client)
-        {
-
-            TCPCommunication.send_message_tcp(sslStream, "LISTEN_P");
-            //TCPCommunication.send_message_tcp(sslStream, dest_key);
-
-            string response = TCPCommunication.recieve_message_tcp(sslStream);
-            Console.WriteLine(response);
-            sslStream.Close();
-
-
-            DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                dtls.Unbuffer = "winpty.exe";
-                dtls.Unbuffer_Args = "-Xplain -Xallow-non-tty";
-            }
-            else
-            {
-                dtls.Unbuffer = "stdbuf";
-                dtls.Unbuffer_Args = "-i0 -o0";
-            }
-            dtls.Start();
-
-
-            dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
-            byte[] bytes;
-            string message = "";
-            while (String.Compare(message, "SUCCESS") != 0)
-            {
-                bytes = new byte[128];
-                dtls.GetStream().Read(bytes, 0, bytes.Length);
-                message = Encoding.UTF8.GetString(bytes);
-                Console.Write(message);
-            }
-
-            Console.WriteLine();
-
-            statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
-
-            new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
-            new Thread(() => read_relay(dtls)).Start();
-
-            while (true)
-            {
-                string input = Console.ReadLine();
-                dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));
-            }
-            dtls.WaitForExit();
         }
 
         static void send_message_tcp(SslStream sslStream, string message)
