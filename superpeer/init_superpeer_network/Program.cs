@@ -17,6 +17,7 @@ using Authentication;
 using TCP;
 using dtls_client;
 using PairStream;
+using dtls_server;
 
 namespace superpeer_network
 {
@@ -33,7 +34,7 @@ namespace superpeer_network
 
         static Dictionary<string, string> reply_buffer;
 
-        static List<IPEndPoint> pending_requests;
+        static Dictionary<IPEndPoint, int> pending_requests;
 
         static X509Certificate2 server_cert;    //Server authentication certificate
         static int local_port;
@@ -428,17 +429,17 @@ namespace superpeer_network
             message_buffer = new Dictionary<string, IPEndPoint>();
             message_tunnel = new Dictionary<IPEndPoint, IPEndPoint>();
             reply_buffer = new Dictionary<string, string>();
-            pending_requests = new List<IPEndPoint>();
+            pending_requests = new Dictionary<IPEndPoint, int>();
 
             insert_peers_random();
 
             //Add certificate to the certificate store
-            server_cert = new X509Certificate2("/home/pasan/Documents/FYP_certificates/ssl-certificate.pfx", "password", X509KeyStorageFlags.PersistKeySet);
+            server_cert = new X509Certificate2("../../FYP_certificates/ssl-certificate.pfx", "password", X509KeyStorageFlags.PersistKeySet);
             X509Store store = new X509Store(StoreName.My);
             store.Open(OpenFlags.ReadWrite);
             store.Add(server_cert);
 
-            local_ip = IPAddress.Parse("68.183.91.69");
+            local_ip = IPAddress.Parse("127.0.0.1");
 
             //Initiate first and seconds servers of the super peer network
             // TcpListener server;
@@ -481,13 +482,13 @@ namespace superpeer_network
 
                 //Initiate connection with neighbour (Get 1/3 of neighbours peers)
                 TcpClient client = new TcpClient(ipLocalEndPoint);
-                client.Connect("68.183.91.69", 27005);
+                client.Connect("127.0.0.1", 27005);
                 SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(SSLValidation.ValidateServerCertificate), null);
                 SSLValidation.authenticate_client(sslStream);
 
 
 
-                superpeer_neighbours[new IPEndPoint(IPAddress.Parse("68.183.91.69"), 27005)] = sslStream;
+                superpeer_neighbours[new IPEndPoint(IPAddress.Parse("127.0.0.1"), 27005)] = sslStream;
 
                 TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
                 new Thread(() => handle_neighbour(1)).Start();
@@ -748,13 +749,16 @@ namespace superpeer_network
                         IPEndPoint sender_ip = (IPEndPoint)client.Client.RemoteEndPoint;
                         IPEndPoint receiver_ip = peers[response];
 
-                        if (pending_requests.Contains(receiver_ip))
+                        if (pending_requests.ContainsKey(receiver_ip))
                         {
+                            
                             TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
+                            TCPCommunication.send_message_tcp(sslStream, pending_requests[receiver_ip].ToString());
+                            Thread.Sleep(1000);
+                            pending_requests.Remove(receiver_ip);
 
                             sslStream.Close();
                             client.Close();
-                            new Thread(() => handle_relay(sender_ip, receiver_ip)).Start();
                         }
                         else
                         {
@@ -777,13 +781,24 @@ namespace superpeer_network
                     string sender_key = TCPCommunication.recieve_message_tcp(sslStream);
                     if (peers.ContainsKey(sender_key))
                     {
-                        TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
                         //response = TCPCommunication.recieve_message_tcp(sslStream);
                         Console.WriteLine($"Listen request received for {response}");
 
-                        TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
+                        Random random = new Random();
+                        int dtls_port = random.Next(20000, 40000);
+
                         IPEndPoint relay_ip = (IPEndPoint)client.Client.RemoteEndPoint;
-                        pending_requests.Add(relay_ip);
+
+                        pending_requests[relay_ip] = dtls_port;
+                        
+                        new Thread(() => handle_relay(dtls_port, relay_ip)).Start();
+                        Thread.Sleep(1000);
+
+                        TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
+                        
+                        //TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
+
+                        //pending_requests.Add(relay_ip);
 
                         sslStream.Close();
                         client.Close();
@@ -805,12 +820,70 @@ namespace superpeer_network
             }
         }
 
-        static void handle_relay(IPEndPoint client0, IPEndPoint client1)
+        static void handle_relay(int port, IPEndPoint receiver)
         {
-            pending_requests.Remove(client1);
+            //pending_requests.Remove(client1);
 
             Console.WriteLine("start relay");
-            DTLSClient dtls_client0 = new DTLSClient(client0.Address.ToString(), client0.Port.ToString(), new byte[] { 0xBA, 0xA0 });
+
+            DTLSServer dtls_server0 = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
+            DTLSServer dtls_server1 = new DTLSServer(port.ToString(), new byte[] { 0xBA, 0xA0 });
+
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    dtls_server0.Unbuffer = "winpty.exe";
+                    dtls_server0.Unbuffer_Args = "-Xplain -Xallow-non-tty";
+                    dtls_server1.Unbuffer = "winpty.exe";
+                    dtls_server1.Unbuffer_Args = "-Xplain -Xallow-non-tty";
+                }
+                else 
+                {
+                    dtls_server0.Unbuffer = "stdbuf";
+                    dtls_server0.Unbuffer_Args = "-i0 -o0";
+                    dtls_server1.Unbuffer = "stdbuf";
+                    dtls_server1.Unbuffer_Args = "-i0 -o0";
+                }
+
+                
+
+            dtls_server0.Start();
+            dtls_server1.Start();
+
+            while(pending_requests.ContainsKey(receiver));
+
+            new Thread(() => dtls_server0.GetStream().CopyTo(dtls_server1.GetStream(), 16)).Start();
+            new Thread(() => dtls_server1.GetStream().CopyTo(dtls_server0.GetStream(), 16)).Start();
+
+            dtls_server0.WaitForExit();
+            dtls_server1.WaitForExit();
+
+
+            /*dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
+            byte[] bytes;
+            string message = "";
+            while (String.Compare(message, "SUCCESS") != 0)
+            {
+                bytes = new byte[128];
+                dtls.GetStream().Read(bytes, 0, bytes.Length);
+                message = Encoding.UTF8.GetString(bytes);
+                Console.Write(message);
+            }
+
+            Console.WriteLine();
+            new Thread(() => read_relay(dtls)).Start();
+
+            while (true)
+            {
+                string input = Console.ReadLine();
+                byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
+                //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+                dtls.GetStream().Write(encryptedData);
+            }
+            dtls.WaitForExit();*/
+
+
+            /*DTLSClient dtls_client0 = new DTLSClient(client0.Address.ToString(), client0.Port.ToString(), new byte[] { 0xBA, 0xA0 });
             DTLSClient dtls_client1 = new DTLSClient(client1.Address.ToString(), client1.Port.ToString(), new byte[] { 0xBA, 0xA0 });
 
             dtls_client0.Start();
@@ -823,7 +896,9 @@ namespace superpeer_network
 
             //dtls.WaitForExit();
             dtls_client0.WaitForExit();
-            dtls_client1.WaitForExit();
+            dtls_client1.WaitForExit();*/
         }
+
+
     }
 }

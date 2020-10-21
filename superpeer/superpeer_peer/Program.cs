@@ -26,10 +26,12 @@ namespace superpeer_peer
 
     class Program
     {
-        static string server_ip = "68.183.91.69";
+        //static string server_ip = "68.183.91.69";
+        static string server_ip = "127.0.0.1";
         static int server_port;
 
-        static string local_ip = "192.168.1.106";
+        //static string local_ip = "192.168.1.106";
+        static string local_ip = "127.0.0.1";
         static int local_port;
 
         static PublicKeyCoordinates pubKey;
@@ -83,7 +85,7 @@ namespace superpeer_peer
             local_port = random.Next(20000, 40000);
 
             //Create local endpoint for connection
-            IPAddress ipAddress = IPAddress.Parse("192.168.1.106");
+            IPAddress ipAddress = IPAddress.Parse(local_ip);
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
 
             //Connect to server
@@ -138,7 +140,7 @@ namespace superpeer_peer
 
             Console.Write("Destination: ");
             string dest_key = Console.ReadLine();
-            IPAddress ipAddress = IPAddress.Parse("192.168.1.106");
+            IPAddress ipAddress = IPAddress.Parse(local_ip);
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
 
             //Connect to server
@@ -193,7 +195,7 @@ namespace superpeer_peer
 
         static void listen_superpeer()
         {
-            IPAddress ipAddress = IPAddress.Parse("192.168.1.106");
+            IPAddress ipAddress = IPAddress.Parse(local_ip);
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
             TcpClient client = new TcpClient(ipLocalEndPoint);
 
@@ -228,11 +230,44 @@ namespace superpeer_peer
 
                 response = TCPCommunication.recieve_message_tcp(sslStream);
                 Console.WriteLine(response);
-                sslStream.Close();
 
                 if (String.Compare(response, "ACCEPT") == 0)
                 {
-                    DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
+                    response = TCPCommunication.recieve_message_tcp(sslStream);
+                    int dtls_port = Int32.Parse(response);
+
+                    sslStream.Close();
+                    client.Close();
+
+
+
+
+                    DTLSClient dtls_client = new DTLSClient("127.0.0.1", dtls_port.ToString(), new byte[] {0xBA,0xA0});
+
+              if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
+				dtls_client.Unbuffer="winpty.exe";
+				dtls_client.Unbuffer_Args="-Xplain -Xallow-non-tty";
+			}
+			else{
+				dtls_client.Unbuffer="stdbuf";
+				dtls_client.Unbuffer_Args="-i0 -o0";
+			}
+			dtls_client.Start();
+			statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+			//new Thread(()=>IOStream.CopyTo(dtls_client.GetStream(), 16)).Start();
+			new Thread(() => dtls_client.GetStream().CopyTo(IOStream, 16)).Start();
+			//new Thread(() => dtls_client.GetStream().Write(Encoding.Default.GetBytes("It Works!"+Environment.NewLine))).Start();
+			//pair.BindStreams(dtls_client.GetStream(), IOStream);
+			//pair.BindStreams(dtls_client.GetStream(), IOStream);
+			while(true)
+			{
+				string input = Console.ReadLine();
+				dtls_client.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+			}
+			//dtls.WaitForExit();
+			dtls_client.WaitForExit();
+
+                    /*DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
                     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                     {
                         dtls.Unbuffer = "winpty.exe";
@@ -246,32 +281,28 @@ namespace superpeer_peer
                     dtls.Start();
 
 
-                    dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
-                    byte[] bytes;
-                    string message = "";
-                    while (String.Compare(message, "SUCCESS") != 0)
-                    {
-                        bytes = new byte[128];
-                        dtls.GetStream().Read(bytes, 0, bytes.Length);
-                        message = Encoding.UTF8.GetString(bytes);
-                        Console.Write(message);
-                    }
+           dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
+            byte[] bytes;
+            string message = "";
+            while (String.Compare(message, "SUCCESS") != 0)
+            {
+                bytes = new byte[128];
+                dtls.GetStream().Read(bytes, 0, bytes.Length);
+                message = Encoding.UTF8.GetString(bytes);
+                Console.Write(message);
+            }
 
-                    Console.WriteLine();
+            Console.WriteLine();
+            new Thread(() => read_relay(dtls)).Start();
 
-                    statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
-
-                    new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
-                    new Thread(() => read_relay(dtls)).Start();
-
-                    while (true)
-                    {
-                        string input = Console.ReadLine();
-                        byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
-                        //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                        dtls.GetStream().Write(encryptedData);
-                    }
-                    dtls.WaitForExit();
+            while (true)
+            {
+                string input = Console.ReadLine();
+                byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
+                //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+                dtls.GetStream().Write(encryptedData);
+            }
+            dtls.WaitForExit();*/
                 }
                 else if (String.Compare(response, "REJECT") == 0)
                 {
@@ -300,12 +331,38 @@ namespace superpeer_peer
             string response = TCPCommunication.recieve_message_tcp(sslStream);
             if(String.Compare(response, "ACCEPT") == 0)
             {
-                response = TCPCommunication.recieve_message_tcp(sslStream);
-                Console.WriteLine(response);
+                /*response = TCPCommunication.recieve_message_tcp(sslStream);
+                Console.WriteLine(response);*/
                 sslStream.Close();
+                client.Close();
+
+                    DTLSClient dtls_client = new DTLSClient("127.0.0.1", server_port.ToString(), new byte[] {0xBA,0xA0});
+
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
+				dtls_client.Unbuffer="winpty.exe";
+				dtls_client.Unbuffer_Args="-Xplain -Xallow-non-tty";
+			}
+			else{
+				dtls_client.Unbuffer="stdbuf";
+				dtls_client.Unbuffer_Args="-i0 -o0";
+			}
+			dtls_client.Start();
+			statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+			//new Thread(()=>IOStream.CopyTo(dtls_client.GetStream(), 16)).Start();
+			new Thread(() => dtls_client.GetStream().CopyTo(IOStream, 16)).Start();
+			//new Thread(() => dtls_client.GetStream().Write(Encoding.Default.GetBytes("It Works!"+Environment.NewLine))).Start();
+			//pair.BindStreams(dtls_client.GetStream(), IOStream);
+			//pair.BindStreams(dtls_client.GetStream(), IOStream);
+			while(true)
+			{
+				string input = Console.ReadLine();
+				dtls_client.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+			}
+			//dtls.WaitForExit();
+			dtls_client.WaitForExit();
 
 
-                DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
+                /*DTLSServer dtls = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     dtls.Unbuffer = "winpty.exe";
@@ -319,36 +376,28 @@ namespace superpeer_peer
                 dtls.Start();
 
 
-                dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
-                byte[] bytes;
-                string message = "";
-                while (String.Compare(message, "SUCCESS") != 0)
-                {
-                    bytes = new byte[128];
-                    dtls.GetStream().Read(bytes, 0, bytes.Length);
-                    message = Encoding.UTF8.GetString(bytes);
-                    Console.Write(message);
-                }
+           dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
+            byte[] bytes;
+            string message = "";
+            while (String.Compare(message, "SUCCESS") != 0)
+            {
+                bytes = new byte[128];
+                dtls.GetStream().Read(bytes, 0, bytes.Length);
+                message = Encoding.UTF8.GetString(bytes);
+                Console.Write(message);
+            }
 
-                Console.WriteLine();
+            Console.WriteLine();
+            new Thread(() => read_relay(dtls)).Start();
 
-                statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
-
-                new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
-                new Thread(() => read_relay(dtls)).Start();
-
-                while (true)
-                {
-
-                    string input = Console.ReadLine();
-                    byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
-                    //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                    dtls.GetStream().Write(encryptedData);
-
-                    /*string input = Console.ReadLine();
-                    dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));*/
-                }
-                dtls.WaitForExit();
+            while (true)
+            {
+                string input = Console.ReadLine();
+                byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
+                //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+                dtls.GetStream().Write(encryptedData);
+            }
+            dtls.WaitForExit();*/
             }
             else if(String.Compare(response, "REJECT") == 0)
             {
@@ -377,15 +426,15 @@ namespace superpeer_peer
             return reply.body;
         }
 
-        static void read_relay(DTLSServer dtls)
+        static void read_relay(DTLSClient dtls)
         {
             byte[] bytes;
             while (true)
             {
                 bytes = new byte[16];
                 dtls.GetStream().Read(bytes, 0, bytes.Length);
-                string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
-                Console.WriteLine(decryptedData);
+                //string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
+                Console.WriteLine(bytes.ToString());
             }
         }
 

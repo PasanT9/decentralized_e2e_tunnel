@@ -46,14 +46,14 @@ namespace peer
             myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
             myAes.IV = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
-            string server_ip = "127.0.0.1";     // Server IP
+            string server_ip = "68.183.91.69";     // Server IP
             int server_port = 28005;   // Server port
 
             Random random = new Random();
             local_port = random.Next(20000, 40000);
 
             //IPAddress ipAddress = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0];
-            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+            IPAddress ipAddress = IPAddress.Parse("192.168.1.106");
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
             TcpClient client = new TcpClient(ipLocalEndPoint);
             client.Connect(server_ip, server_port);
@@ -332,7 +332,7 @@ namespace peer
             local_port = random.Next(20000, 40000);
 
             //IPAddress ipAddress = Dns.GetHostEntry(Dns.GetHostName()).AddressList[0];
-            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+            IPAddress ipAddress = IPAddress.Parse("192.168.1.106");
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
             TcpClient client = new TcpClient(ipLocalEndPoint);
             client.Connect(server_ip, server_port);

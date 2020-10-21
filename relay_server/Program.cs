@@ -41,7 +41,7 @@ namespace relay_server
             store.Add(server_cert);
 
             int port = 27005;
-            IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+            IPAddress localAddr = IPAddress.Parse("68.183.91.69");
             TcpListener server = new TcpListener(localAddr, port);
 
             server.Start();
