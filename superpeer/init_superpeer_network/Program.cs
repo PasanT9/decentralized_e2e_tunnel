@@ -16,6 +16,7 @@ using Cryptography;
 using Authentication;
 using TCP;
 using dtls_client;
+using dtls_server;
 using PairStream;
 
 namespace superpeer_network
@@ -438,7 +439,8 @@ namespace superpeer_network
             store.Open(OpenFlags.ReadWrite);
             store.Add(server_cert);
 
-            local_ip = IPAddress.Parse("127.0.0.1");
+            //local_ip = IPAddress.Parse("127.0.0.1");
+            local_ip = IPAddress.Parse("68.183.91.69");
 
             //Initiate first and seconds servers of the super peer network
             // TcpListener server;
@@ -481,13 +483,14 @@ namespace superpeer_network
 
                 //Initiate connection with neighbour (Get 1/3 of neighbours peers)
                 TcpClient client = new TcpClient(ipLocalEndPoint);
-                client.Connect("127.0.0.1", 27005);
+                //client.Connect("127.0.0.1", 27005);
+                client.Connect("68.183.91.69", 27005);
                 SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(SSLValidation.ValidateServerCertificate), null);
                 SSLValidation.authenticate_client(sslStream);
 
 
 
-                superpeer_neighbours[new IPEndPoint(IPAddress.Parse("127.0.0.1"), 27005)] = sslStream;
+                superpeer_neighbours[new IPEndPoint(IPAddress.Parse("68.183.91.69"), 27005)] = sslStream;
 
                 TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
                 new Thread(() => handle_neighbour(1)).Start();
@@ -809,21 +812,60 @@ namespace superpeer_network
         {
             pending_requests.Remove(client1);
 
-            Console.WriteLine("start relay");
+            Console.WriteLine("start relay " + client0.ToString() + " " + client1.ToString());
             DTLSClient dtls_client0 = new DTLSClient(client0.Address.ToString(), client0.Port.ToString(), new byte[] { 0xBA, 0xA0 });
-            DTLSClient dtls_client1 = new DTLSClient(client1.Address.ToString(), client1.Port.ToString(), new byte[] { 0xBA, 0xA0 });
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
+				dtls_client0.Unbuffer="winpty.exe";
+				dtls_client0.Unbuffer_Args="-Xplain -Xallow-non-tty";
+			}
+			else{
+				dtls_client0.Unbuffer="stdbuf";
+				dtls_client0.Unbuffer_Args="-i0 -o0";
+			}
+
+
+            //DTLSClient dtls_client1 = new DTLSClient(client1.Address.ToString(), client1.Port.ToString(), new byte[] { 0xBA, 0xA0 });
 
             dtls_client0.Start();
-            dtls_client1.Start();
+
+            statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+			//new Thread(()=>IOStream.CopyTo(dtls_client.GetStream(), 16)).Start();
+			new Thread(() => dtls_client0.GetStream().CopyTo(IOStream, 16)).Start();
+            new Thread(() => read_relay(dtls_client0)).Start();
+			//new Thread(() => dtls_client.GetStream().Write(Encoding.Default.GetBytes("It Works!"+Environment.NewLine))).Start();
+			//pair.BindStreams(dtls_client.GetStream(), IOStream);
+			//pair.BindStreams(dtls_client.GetStream(), IOStream);
+			while(true)
+			{
+				string input = Console.ReadLine();
+				dtls_client0.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+			}
+
+
+            //dtls_client1.Start();
 
             //statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
 
-            new Thread(() => dtls_client0.GetStream().CopyTo(dtls_client1.GetStream(), 128)).Start();
-            new Thread(() => dtls_client1.GetStream().CopyTo(dtls_client0.GetStream(), 128)).Start();
+            //new Thread(() => dtls_client0.GetStream().CopyTo(dtls_client1.GetStream(), 128)).Start();
+            //new Thread(() => dtls_client1.GetStream().CopyTo(dtls_client0.GetStream(), 128)).Start();
 
             //dtls.WaitForExit();
             dtls_client0.WaitForExit();
-            dtls_client1.WaitForExit();
+            //dtls_client1.WaitForExit();
+        }
+
+        static void read_relay(DTLSClient dtls)
+        {
+            byte[] bytes;
+            while (true)
+            {
+                bytes = new byte[16];
+                dtls.GetStream().Read(bytes, 0, bytes.Length);
+                //string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
+                //Console.WriteLine(decryptedData);
+                Console.WriteLine(bytes.ToString());
+            }
         }
     }
 }

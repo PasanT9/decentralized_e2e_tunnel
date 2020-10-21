@@ -26,10 +26,10 @@ namespace superpeer_peer
 
     class Program
     {
-        static string server_ip = "127.0.0.1";
+        static string server_ip = "68.183.91.69";
         static int server_port;
 
-        static string local_ip = "127.0.0.1";
+        static string local_ip = "192.168.1.106";
         static int local_port;
 
         static PublicKeyCoordinates pubKey;
@@ -83,7 +83,7 @@ namespace superpeer_peer
             local_port = random.Next(20000, 40000);
 
             //Create local endpoint for connection
-            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+            IPAddress ipAddress = IPAddress.Parse("192.168.1.106");
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
 
             //Connect to server
@@ -138,7 +138,7 @@ namespace superpeer_peer
 
             Console.Write("Destination: ");
             string dest_key = Console.ReadLine();
-            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+            IPAddress ipAddress = IPAddress.Parse("192.168.1.106");
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
 
             //Connect to server
@@ -193,7 +193,7 @@ namespace superpeer_peer
 
         static void listen_superpeer()
         {
-            IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+            IPAddress ipAddress = IPAddress.Parse("192.168.1.106");
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
             TcpClient client = new TcpClient(ipLocalEndPoint);
 
@@ -340,13 +340,13 @@ namespace superpeer_peer
                 while (true)
                 {
 
-                    string input = Console.ReadLine();
+                    /*string input = Console.ReadLine();
                     byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
                     //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                    dtls.GetStream().Write(encryptedData);
+                    dtls.GetStream().Write(encryptedData);*/
 
-                    /*string input = Console.ReadLine();
-                    dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));*/
+                    string input = Console.ReadLine();
+                    dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));
                 }
                 dtls.WaitForExit();
             }
@@ -384,8 +384,9 @@ namespace superpeer_peer
             {
                 bytes = new byte[16];
                 dtls.GetStream().Read(bytes, 0, bytes.Length);
-                string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
-                Console.WriteLine(decryptedData);
+                //string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
+                //Console.WriteLine(decryptedData);
+                Console.WriteLine(bytes.ToString());
             }
         }
 
