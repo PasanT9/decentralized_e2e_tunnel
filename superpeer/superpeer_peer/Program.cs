@@ -33,6 +33,7 @@ namespace superpeer_peer
         static int local_port;
 
         static PublicKeyCoordinates pubKey;
+        static Aes myAes;
 
         //static Aes myAes;
         static string dest_ip;
@@ -211,6 +212,11 @@ namespace superpeer_peer
         static void req_connection(SslStream sslStream, TcpClient client, string dest_key)
         {
 
+            myAes = Aes.Create();
+            myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
+            myAes.IV = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+
             TCPCommunication.send_message_tcp(sslStream, "CONNECT_P");
             TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
 
@@ -261,7 +267,9 @@ namespace superpeer_peer
                     while (true)
                     {
                         string input = Console.ReadLine();
-                        dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));
+                        byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
+                        //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+                        dtls.GetStream().Write(encryptedData);
                     }
                     dtls.WaitForExit();
                 }
@@ -280,6 +288,11 @@ namespace superpeer_peer
 
         static void listen_connection(SslStream sslStream, TcpClient client)
         {
+
+            myAes = Aes.Create();
+            myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
+            myAes.IV = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
 
             TCPCommunication.send_message_tcp(sslStream, "LISTEN_P");
             TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
@@ -326,8 +339,14 @@ namespace superpeer_peer
 
                 while (true)
                 {
+
                     string input = Console.ReadLine();
-                    dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));
+                    byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
+                    //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+                    dtls.GetStream().Write(encryptedData);
+
+                    /*string input = Console.ReadLine();
+                    dtls.GetStream().Write(Encoding.Default.GetBytes(input + Environment.NewLine));*/
                 }
                 dtls.WaitForExit();
             }
@@ -365,10 +384,97 @@ namespace superpeer_peer
             {
                 bytes = new byte[16];
                 dtls.GetStream().Read(bytes, 0, bytes.Length);
-                //string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
-                Console.WriteLine(bytes.ToString());
+                string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
+                Console.WriteLine(decryptedData);
             }
         }
+
+        static byte[] EncryptStringToBytes_Aes(string plainText, byte[] Key, byte[] IV)
+        {
+            // Check arguments.
+            if (plainText == null || plainText.Length <= 0)
+                throw new ArgumentNullException("plainText");
+            if (Key == null || Key.Length <= 0)
+                throw new ArgumentNullException("Key");
+            if (IV == null || IV.Length <= 0)
+                throw new ArgumentNullException("IV");
+            byte[] encrypted;
+
+            // Create an Aes object
+            // with the specified key and IV.
+            using (Aes aesAlg = Aes.Create())
+            {
+                aesAlg.Key = Key;
+                aesAlg.IV = IV;
+                aesAlg.Padding = PaddingMode.Zeros;
+
+                // Create an encryptor to perform the stream transform.
+                ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
+
+                // Create the streams used for encryption.
+                using (MemoryStream msEncrypt = new MemoryStream())
+                {
+                    using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+                    {
+                        using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
+                        {
+                            //Write all data to the stream.
+                            swEncrypt.Write(plainText);
+                        }
+                        encrypted = msEncrypt.ToArray();
+                    }
+                }
+            }
+
+            // Return the encrypted bytes from the memory stream.
+            return encrypted;
+        }
+
+        static string DecryptStringFromBytes_Aes(byte[] cipherText, byte[] Key, byte[] IV)
+        {
+            // Check arguments.
+            if (cipherText == null || cipherText.Length <= 0)
+                throw new ArgumentNullException("cipherText");
+            if (Key == null || Key.Length <= 0)
+                throw new ArgumentNullException("Key");
+            if (IV == null || IV.Length <= 0)
+                throw new ArgumentNullException("IV");
+
+            // Declare the string used to hold
+            // the decrypted text.
+            string plaintext = null;
+
+            // Create an Aes object
+            // with the specified key and IV.
+            using (Aes aesAlg = Aes.Create())
+            {
+                aesAlg.Key = Key;
+                aesAlg.IV = IV;
+                aesAlg.Padding = PaddingMode.Zeros;
+
+                // Create a decryptor to perform the stream transform.
+                ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+
+                // Create the streams used for decryption.
+                using (MemoryStream msDecrypt = new MemoryStream(cipherText))
+                {
+                    using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                    {
+                        using (StreamReader srDecrypt = new StreamReader(csDecrypt))
+                        {
+
+                            // Read the decrypted bytes from the decrypting stream
+                            // and place them in a string.
+                            plaintext = srDecrypt.ReadToEnd();
+                        }
+                    }
+                }
+            }
+
+            return plaintext;
+        }
+
+
 
     }
 

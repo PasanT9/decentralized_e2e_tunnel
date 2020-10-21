@@ -818,8 +818,8 @@ namespace superpeer_network
 
             //statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
 
-            new Thread(() => dtls_client0.GetStream().CopyTo(dtls_client1.GetStream(), 16)).Start();
-            new Thread(() => dtls_client1.GetStream().CopyTo(dtls_client0.GetStream(), 16)).Start();
+            new Thread(() => dtls_client0.GetStream().CopyTo(dtls_client1.GetStream(), 128)).Start();
+            new Thread(() => dtls_client1.GetStream().CopyTo(dtls_client0.GetStream(), 128)).Start();
 
             //dtls.WaitForExit();
             dtls_client0.WaitForExit();

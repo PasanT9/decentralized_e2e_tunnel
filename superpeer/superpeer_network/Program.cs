@@ -111,7 +111,6 @@ namespace superpeer_network
                 {
                     response = TCPCommunication.recieve_message_tcp(sslStream);
                     Console.WriteLine($"Receive({ip}): {response}");
-
                     if (String.Compare(response, "END") == 0)
                     {
                         TCPCommunication.send_message_tcp(sslStream, "ACCEPT_END");
@@ -586,20 +585,22 @@ namespace superpeer_network
 
         }
 
-        static void wait_reply(SslStream sslStream, string key)
+        static void wait_reply(SslStream sslStream, string receiver_key, string sender_key)
         {
             string response;
             Thread.Sleep(8000);
-            if (reply_buffer.ContainsKey(key))
+            if (reply_buffer.ContainsKey(receiver_key))
             {
                 //peers[key] = null;
-                TCPCommunication.send_message_tcp(sslStream, reply_buffer[key]);
-                reply_buffer.Remove(key);
+                TCPCommunication.send_message_tcp(sslStream, reply_buffer[receiver_key]);
+
+                reply_buffer.Remove(receiver_key);
                 //TCPCommunication.send_message_tcp(sslStream, "FOUND");
 
-                response = TCPCommunication.recieve_message_tcp(sslStream);
-                peers.Remove(HashString.GetHashString(response));
-                TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
+                //response = TCPCommunication.recieve_message_tcp(sslStream);
+                peers.Remove(sender_key);
+                Console.WriteLine(sender_key + " is removed");
+                //TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
                 sslStream.Close();
 
             }
