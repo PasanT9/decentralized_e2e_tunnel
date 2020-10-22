@@ -8,7 +8,7 @@ using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.IO;
-using System.Threading;
+using System.Threading; 
 using System.Numerics;
 #if !NETSTANDARD2_0
 using System.Buffers;
@@ -242,6 +242,7 @@ namespace superpeer_peer
 
 
 
+                    //DTLSClient dtls_client = new DTLSClient("68.183.91.69", dtls_port.ToString(), new byte[] {0xBA,0xA0});
                     DTLSClient dtls_client = new DTLSClient("127.0.0.1", dtls_port.ToString(), new byte[] {0xBA,0xA0});
 
               if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
@@ -336,9 +337,10 @@ namespace superpeer_peer
                 sslStream.Close();
                 client.Close();
 
+                    //DTLSClient dtls_client = new DTLSClient("68.183.91.69", server_port.ToString(), new byte[] {0xBA,0xA0});
                     DTLSClient dtls_client = new DTLSClient("127.0.0.1", server_port.ToString(), new byte[] {0xBA,0xA0});
 
-			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
+		    	if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
 				dtls_client.Unbuffer="winpty.exe";
 				dtls_client.Unbuffer_Args="-Xplain -Xallow-non-tty";
 			}

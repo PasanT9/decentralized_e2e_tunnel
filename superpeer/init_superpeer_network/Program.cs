@@ -8,10 +8,11 @@ using System.Collections.Generic;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Diagnostics;
 
 using System.Runtime.InteropServices;
 
-
+ 
 using Cryptography;
 using Authentication;
 using TCP;
@@ -21,7 +22,7 @@ using dtls_server;
 
 namespace superpeer_network
 {
-    class Program
+     class Program
     {
         static Dictionary<string, IPEndPoint> peers;    //Index of peers
         static Dictionary<IPEndPoint, SslStream> superpeer_neighbours;   //Neighbours of the super peer network
@@ -42,6 +43,7 @@ namespace superpeer_network
         static int peers_count; //Number of peers
 
         static TcpListener server;
+        static Stopwatch sw;
 
 
         static List<IPEndPoint> change_neighbours;
@@ -440,6 +442,7 @@ namespace superpeer_network
             store.Add(server_cert);
 
             local_ip = IPAddress.Parse("127.0.0.1");
+            //local_ip = IPAddress.Parse("68.183.91.69");
 
             //Initiate first and seconds servers of the super peer network
             // TcpListener server;
@@ -571,7 +574,7 @@ namespace superpeer_network
         static void wait_reply(SslStream sslStream, string receiver_key, string sender_key)
         {
             string response;
-            Thread.Sleep(8000);
+            /*Thread.Sleep(8000);
             if (reply_buffer.ContainsKey(receiver_key))
             {
                 //peers[key] = null;
@@ -591,7 +594,23 @@ namespace superpeer_network
             {
                 TCPCommunication.send_message_tcp(sslStream, "NOTFOUND");
                 sslStream.Close();
-            }
+            }*/
+
+                while(!reply_buffer.ContainsKey(receiver_key));
+                var time = sw.Elapsed;
+                Console.WriteLine("Time elapsed: " + time);
+                TCPCommunication.send_message_tcp(sslStream, reply_buffer[receiver_key]);
+
+                reply_buffer.Remove(receiver_key);
+                //TCPCommunication.send_message_tcp(sslStream, "FOUND");
+
+                //response = TCPCommunication.recieve_message_tcp(sslStream);
+                peers.Remove(sender_key);
+                Console.WriteLine(sender_key + " is removed");
+                //TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
+                sslStream.Close();
+
+                
             //sslStream.Close();
         }
 
@@ -706,6 +725,7 @@ namespace superpeer_network
                 }
                 else if (String.Compare(response, "FIND_P") == 0)
                 {
+                    sw = Stopwatch.StartNew();
                     string sender_key = TCPCommunication.recieve_message_tcp(sslStream);
                     if (peers.ContainsKey(sender_key))
                     {
@@ -857,46 +877,6 @@ namespace superpeer_network
 
             dtls_server0.WaitForExit();
             dtls_server1.WaitForExit();
-
-
-            /*dtls.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
-            byte[] bytes;
-            string message = "";
-            while (String.Compare(message, "SUCCESS") != 0)
-            {
-                bytes = new byte[128];
-                dtls.GetStream().Read(bytes, 0, bytes.Length);
-                message = Encoding.UTF8.GetString(bytes);
-                Console.Write(message);
-            }
-
-            Console.WriteLine();
-            new Thread(() => read_relay(dtls)).Start();
-
-            while (true)
-            {
-                string input = Console.ReadLine();
-                byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
-                //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                dtls.GetStream().Write(encryptedData);
-            }
-            dtls.WaitForExit();*/
-
-
-            /*DTLSClient dtls_client0 = new DTLSClient(client0.Address.ToString(), client0.Port.ToString(), new byte[] { 0xBA, 0xA0 });
-            DTLSClient dtls_client1 = new DTLSClient(client1.Address.ToString(), client1.Port.ToString(), new byte[] { 0xBA, 0xA0 });
-
-            dtls_client0.Start();
-            dtls_client1.Start();
-
-            //statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
-
-            new Thread(() => dtls_client0.GetStream().CopyTo(dtls_client1.GetStream(), 16)).Start();
-            new Thread(() => dtls_client1.GetStream().CopyTo(dtls_client0.GetStream(), 16)).Start();
-
-            //dtls.WaitForExit();
-            dtls_client0.WaitForExit();
-            dtls_client1.WaitForExit();*/
         }
 
 
