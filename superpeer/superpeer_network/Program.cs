@@ -8,6 +8,8 @@ using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 
+using System.Diagnostics;
+
 using System.Runtime.InteropServices;
 
 using Cryptography;
@@ -47,6 +49,8 @@ namespace superpeer_network
 
         static List<IPEndPoint> exit_neighbours;
         static List<IPEndPoint> change_neighbours;
+
+        static Stopwatch sw;
 
         public static void insert_peers(string[] new_peers)
         {
@@ -591,7 +595,7 @@ namespace superpeer_network
         static void wait_reply(SslStream sslStream, string receiver_key, string sender_key)
         {
             string response;
-            Thread.Sleep(8000);
+            /*Thread.Sleep(8000);
             if (reply_buffer.ContainsKey(receiver_key))
             {
                 //peers[key] = null;
@@ -611,7 +615,23 @@ namespace superpeer_network
             {
                 TCPCommunication.send_message_tcp(sslStream, "NOTFOUND");
                 sslStream.Close();
-            }
+            }*/
+
+                while(!reply_buffer.ContainsKey(receiver_key));
+                var time = sw.Elapsed;
+                Console.WriteLine("Time elapsed: " + time);
+                TCPCommunication.send_message_tcp(sslStream, reply_buffer[receiver_key]);
+
+                reply_buffer.Remove(receiver_key);
+                //TCPCommunication.send_message_tcp(sslStream, "FOUND");
+
+                //response = TCPCommunication.recieve_message_tcp(sslStream);
+                peers.Remove(sender_key);
+                Console.WriteLine(sender_key + " is removed");
+                //TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
+                sslStream.Close();
+
+                
             //sslStream.Close();
         }
 
@@ -727,6 +747,7 @@ namespace superpeer_network
                 }
                 else if (String.Compare(response, "FIND_P") == 0)
                 {
+                    sw = Stopwatch.StartNew();
                     string sender_key = TCPCommunication.recieve_message_tcp(sslStream);
                     if (peers.ContainsKey(sender_key))
                     {
