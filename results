@@ -1,0 +1,112 @@
+Peer discovery
+
+BLR <-> USA
+
+Time elapsed: 00:00:00.5425184
+
+Time elapsed: 00:00:00.5711633
+
+Time elapsed: 00:00:00.5734049
+
+Time elapsed: 00:00:00.6887381
+
+Time elapsed: 00:00:00.5589907
+
+
+BLR <-> USA <-> BLR
+
+Time elapsed: 00:00:00.8681148
+
+Time elapsed: 00:00:00.9516707
+
+Time elapsed: 00:00:00.9842145
+
+Time elapsed: 00:00:00.9245004
+
+Time elapsed: 00:00:00.8039091
+
+
+BLR <-> FRA <-> USA <-> BLR
+
+Time elapsed: 00:00:00.8516383
+
+Time elapsed: 00:00:00.8037491
+
+Time elapsed: 00:00:00.8096387
+
+Time elapsed: 00:00:00.9924482
+
+Time elapsed: 00:00:00.8203137
+
+BLR <-> FRA <-> USA <-> FRA <-> BLR
+
+Time elapsed: 00:00:00.9800000
+
+Time elapsed: 00:00:00.8643217
+
+Time elapsed: 00:00:00.8959604
+
+Time elapsed: 00:00:00.7803466
+
+Time elapsed: 00:00:00.8876417
+
+BLR <-> FRA <-> BLR <-> USA <-> FRA <-> BLR
+
+Time elapsed: 00:00:01.0440333
+
+Time elapsed: 00:00:01.2489069
+
+Time elapsed: 00:00:01.2035071
+
+Time elapsed: 00:00:01.5876321
+
+Time elapsed: 00:00:01.3040449
+
+BLR <-> FRA <-> BLR <-> USA <-> FRA <-> USA <-> BLR
+
+Time elapsed: 00:00:01.6913845
+
+Time elapsed: 00:00:01.5640850
+
+Time elapsed: 00:00:01.7442719
+
+Time elapsed: 00:00:01.8082448
+
+Time elapsed: 00:00:01.6248595
+
+BLR <-> USA <-> FRA <-> BLR <-> FRA <-> BLR <-> USA  <-> BLR 
+
+Time elapsed: 00:00:01.9916300
+
+Time elapsed: 00:00:01.7507951
+
+Time elapsed: 00:00:01.7402044
+
+Time elapsed: 00:00:01.7721004
+
+Time elapsed: 00:00:01.7526952
+
+BLR <-> USA <-> FRA <-> BLR <-> FRA <-> BLR <-> USA  <-> FRA <-> BLR 
+
+Time elapsed: 00:00:01.9930522
+
+Time elapsed: 00:00:01.6881045
+
+Time elapsed: 00:00:02.1517549
+
+Time elapsed: 00:00:01.9720421
+
+Time elapsed: 00:00:01.7822013
+
+BLR <-> USA <-> FRA <-> BLR <-> FRA <-> BLR <-> USA <-> SGP <-> FRA <-> BLR
+
+
+
+
+
+
+
+
+
+
+

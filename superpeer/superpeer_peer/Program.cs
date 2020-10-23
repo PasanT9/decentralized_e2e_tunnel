@@ -26,12 +26,12 @@ namespace superpeer_peer
 
     class Program
     {
-        //static string server_ip = "68.183.91.69";
-        static string server_ip = "127.0.0.1";
+        static string server_ip = "68.183.91.69";
+        //static string server_ip = "127.0.0.1";
         static int server_port;
 
-        //static string local_ip = "192.168.1.106";
-        static string local_ip = "127.0.0.1";
+        static string local_ip = "192.168.1.106";
+        //static string local_ip = "127.0.0.1";
         static int local_port;
 
         static PublicKeyCoordinates pubKey;
@@ -242,8 +242,8 @@ namespace superpeer_peer
 
 
 
-                    //DTLSClient dtls_client = new DTLSClient("68.183.91.69", dtls_port.ToString(), new byte[] {0xBA,0xA0});
-                    DTLSClient dtls_client = new DTLSClient("127.0.0.1", dtls_port.ToString(), new byte[] {0xBA,0xA0});
+                    DTLSClient dtls_client = new DTLSClient(server_ip, dtls_port.ToString(), new byte[] {0xBA,0xA0});
+                    //DTLSClient dtls_client = new DTLSClient("127.0.0.1", dtls_port.ToString(), new byte[] {0xBA,0xA0});
 
               if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
 				dtls_client.Unbuffer="winpty.exe";
@@ -337,8 +337,8 @@ namespace superpeer_peer
                 sslStream.Close();
                 client.Close();
 
-                    //DTLSClient dtls_client = new DTLSClient("68.183.91.69", server_port.ToString(), new byte[] {0xBA,0xA0});
-                    DTLSClient dtls_client = new DTLSClient("127.0.0.1", server_port.ToString(), new byte[] {0xBA,0xA0});
+                    DTLSClient dtls_client = new DTLSClient(server_ip, server_port.ToString(), new byte[] {0xBA,0xA0});
+                    //DTLSClient dtls_client = new DTLSClient("127.0.0.1", server_port.ToString(), new byte[] {0xBA,0xA0});
 
 		    	if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
 				dtls_client.Unbuffer="winpty.exe";

@@ -36,8 +36,8 @@ namespace superpeer_network
         static X509Certificate2 server_cert;
         static IPAddress local_ip;
         static int local_port;
-        static string server_ip = "127.0.0.1";
-        static int server_port = 28005;
+        static string server_ip;
+        static int server_port;
         static int peers_count;
 
         static string neighbour_ip;
@@ -315,6 +315,12 @@ namespace superpeer_network
                         Thread.Sleep(100);
                         continue;
                     }
+                    catch (System.IndexOutOfRangeException)
+                    {
+                        Console.WriteLine("neighbours have changed");
+                        Thread.Sleep(100);
+                        continue;                
+                    }
                     foreach (var neighbour in superpeer_neighbours_list)
                     {
                         if (message_buffer.Count != 0)
@@ -502,8 +508,12 @@ namespace superpeer_network
             neighbour_ip = null;
             neighbour_port = -1;
 
+            Console.Write("Server ip: ");
+            server_ip = Console.ReadLine();
+
             Console.Write("Server port: ");
             server_port = Convert.ToInt32(Console.ReadLine());
+
 
             //Initiate database
             superpeer_neighbours = new Dictionary<IPEndPoint, SslStream>();
@@ -656,8 +666,8 @@ namespace superpeer_network
                 }
                 SslStream sslStream = new SslStream(client.GetStream(), false);
                 sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
-                sslStream.ReadTimeout = 20000;
-                sslStream.WriteTimeout = 20000;
+                sslStream.ReadTimeout = 40000;
+                sslStream.WriteTimeout = 40000;
                 // Read a message from the client.
                 response = TCPCommunication.recieve_message_tcp(sslStream);
                 Console.WriteLine(response);

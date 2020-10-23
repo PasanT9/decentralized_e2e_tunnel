@@ -459,8 +459,8 @@ namespace superpeer_network
                 SslStream sslStream = new SslStream(client.GetStream(), false);
                 sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
 
-                sslStream.ReadTimeout = 20000;
-                sslStream.WriteTimeout = 20000;
+                sslStream.ReadTimeout = 40000;
+                sslStream.WriteTimeout = 40000;
 
 
                 string response = TCPCommunication.recieve_message_tcp(sslStream);
@@ -634,8 +634,8 @@ namespace superpeer_network
                 }
                 SslStream sslStream = new SslStream(client.GetStream(), false);
                 sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
-                sslStream.ReadTimeout = 20000;
-                sslStream.WriteTimeout = 20000;
+                sslStream.ReadTimeout = 40000;
+                sslStream.WriteTimeout = 40000;
                 // Read a message from the client.
                 response = TCPCommunication.recieve_message_tcp(sslStream);
                 Console.WriteLine(response);
