@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "9JMBZ370cDEQZYJg4pGCY/QB0CPaEwEMpvFOO7Mv7oBQcHQaieiWrL1Qgt8R2F2CCKfYC8/b745Jm0BH86oNlw==",
+  "success": true,
+  "projectFilePath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/superpeer/superpeer_network/superpeer_network.csproj",
+  "expectedPackageFiles": [
+    "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}
