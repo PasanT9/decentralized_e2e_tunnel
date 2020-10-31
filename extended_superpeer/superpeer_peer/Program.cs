@@ -26,7 +26,7 @@ namespace superpeer_peer
 
     class Program
     {
-        //static string server_ip = "68.183.91.69";
+        //static string server_ip = "128.199.95.237";
         static string server_ip = "127.0.0.1";
         static int server_port;
 
@@ -102,8 +102,8 @@ namespace superpeer_peer
             client.Close();
             Console.Write("init connection: ");
             string input = Console.ReadLine();
-            //locate_peer();
-            anonym_peer();
+            locate_peer();
+            //anonym_peer();
             /*if (input == "y")
             {
                 find_superpeer();
@@ -160,7 +160,7 @@ namespace superpeer_peer
 
         static void locate_peer()
         {
-            Console.Write("Key: ");
+            Console.Write("Key: "); 
             string key = Console.ReadLine();
             IPAddress ipAddress = IPAddress.Parse(local_ip);
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
@@ -171,10 +171,11 @@ namespace superpeer_peer
             SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
             authenticate_server(sslStream);
 
-            TCPCommunication.send_message_tcp(sslStream, "HELLO_P");
+            TCPCommunication.send_message_tcp(sslStream, "LOCATE_P");
             TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
 
             string response = TCPCommunication.recieve_message_tcp(sslStream);
+            Console.WriteLine(response);
             if(String.Compare(response, "ACCEPT") == 0)
             {
                 TCPCommunication.send_message_tcp(sslStream, key);

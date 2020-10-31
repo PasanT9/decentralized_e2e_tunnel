@@ -172,6 +172,7 @@ Time elapsed: 00:00:08.9922163
 
 
 
+ffmpeg -s 1024x786 -i /dev/video0 -preset ultrafast -tune zerolatency -codec libx264 -f mpegts udp://127.0.0.1:32000
 
 
 

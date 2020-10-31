@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/superpeer/superpeer_peer/superpeer_peer.csproj": {}
+    "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_peer/superpeer_peer.csproj": {}
   },
   "projects": {
-    "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/superpeer/superpeer_peer/superpeer_peer.csproj": {
+    "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_peer/superpeer_peer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/superpeer/superpeer_peer/superpeer_peer.csproj",
+        "projectUniqueName": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_peer/superpeer_peer.csproj",
         "projectName": "superpeer_peer",
-        "projectPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/superpeer/superpeer_peer/superpeer_peer.csproj",
+        "projectPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_peer/superpeer_peer.csproj",
         "packagesPath": "/home/pasan/.nuget/packages/",
-        "outputPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/superpeer/superpeer_peer/obj/",
+        "outputPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_peer/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/pasan/.nuget/NuGet/NuGet.Config"
