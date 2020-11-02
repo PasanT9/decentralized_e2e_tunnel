@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "P8OTbBC52gUkh4PPnFZbijSoKbJWV51H1Aw+ACVJzw3p2cXM34sI7JuPhtJA3+5v0MK5YqCSlf4lkV2Aa3Z5pw==",
+  "success": true,
+  "projectFilePath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_peer_ssh/superpeer_peer.csproj",
+  "expectedPackageFiles": [
+    "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512",
+    "/home/pasan/.nuget/packages/system.security.cryptography.openssl/4.7.0/system.security.cryptography.openssl.4.7.0.nupkg.sha512"
+  ],
+  "logs": []
+}

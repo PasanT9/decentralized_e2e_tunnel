@@ -18,7 +18,8 @@ class Program
 		{
 				static void Main(string[] args)
 				{
-						DTLSServer dtls = new DTLSServer("10000", new byte[] {0xBA,0xA5});
+						Console.WriteLine("Hello World!");
+						DTLSServer dtls = new DTLSServer("10000", new byte[] {0xBA,0xA0});
 						if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
 								dtls.Unbuffer="winpty.exe";
 								dtls.Unbuffer_Args="-Xplain -Xallow-non-tty";
@@ -28,13 +29,7 @@ class Program
 								dtls.Unbuffer_Args="-i0 -o0";
 						}
 						dtls.Start();
-						statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
-						new Thread(() => dtls.GetStream().CopyTo(IOStream, 16)).Start();
-						while(true)
-						{
-							string input = Console.ReadLine();
-							dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-						}
+						dtls.GetStream().Write(Encoding.Default.GetBytes("It's Working!"+Environment.NewLine));
 						dtls.WaitForExit();
 				}
 		} 
