@@ -27,11 +27,11 @@ namespace superpeer_peer
     class Program
     {
         //static string server_ip = "128.199.95.237";
-        static string server_ip = "127.0.0.1";
+        static string server_ip;
         static int server_port;
 
-        //static string local_ip = "192.168.1.106";
-        static string local_ip = "127.0.0.1";
+        static string local_ip;
+        //static string local_ip = "127.0.0.1";
         static int local_port;
 
         static PublicKeyCoordinates pubKey;
@@ -53,6 +53,19 @@ namespace superpeer_peer
             // Do not allow this client to communicate with unauthenticated servers.
             return false;
         }
+
+        public static string GetLocalIPAddress()
+        {
+            string localIP;
+            using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+            {
+                socket.Connect("8.8.8.8", 65530);
+                IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
+                localIP = endPoint.Address.ToString();
+            }
+            return localIP;
+        }
+        
 
 
 
@@ -79,6 +92,10 @@ namespace superpeer_peer
         {
 
             //Get user input for server port
+            local_ip =  GetLocalIPAddress();
+            //Console.WriteLine(local_ip);
+            Console.Write("Server ip: ");
+            server_ip = Console.ReadLine();
             Console.Write("Server port: ");
             server_port = Int32.Parse(Console.ReadLine());
 
@@ -262,7 +279,9 @@ namespace superpeer_peer
                 client.Close();
 
                 client = new TcpClient(ipLocalEndPoint);
+                Console.WriteLine("Client connecting");
                 client.Connect(dest_ip, dest_port);
+                Console.WriteLine("Client connected");
                 sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
                 authenticate_server(sslStream);
 
@@ -308,6 +327,7 @@ namespace superpeer_peer
             myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
             myAes.IV = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 
+            Console.WriteLine("requesting");
             TCPCommunication.send_message_tcp(sslStream, "CONNECT_P");
             TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
 
@@ -355,16 +375,6 @@ namespace superpeer_peer
 
                     DTLSClient dtls_client = new DTLSClient(server_ip, dtls_port.ToString(), new byte[] {0xBA,0xA0});
 
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    {
-                        dtls_client.Unbuffer="winpty.exe";
-                        dtls_client.Unbuffer_Args="-Xplain -Xallow-non-tty";
-                    }
-                    else
-                    {
-                        dtls_client.Unbuffer="stdbuf";
-                        dtls_client.Unbuffer_Args="-i0 -o0";
-                    }
                     dtls_client.Start();
 
                     new Thread(() => read_relay(dtls_client)).Start();
@@ -437,18 +447,7 @@ namespace superpeer_peer
                 
 
                 DTLSClient dtls_client = new DTLSClient(server_ip, server_port.ToString(), new byte[] {0xBA,0xA0});
-
-                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                    {
-                        dtls_client.Unbuffer="winpty.exe";
-                        dtls_client.Unbuffer_Args="-Xplain -Xallow-non-tty";
-                    }
-                    else
-                    {
-                        dtls_client.Unbuffer="stdbuf";
-                        dtls_client.Unbuffer_Args="-i0 -o0";
-                    }
-
+                
                     dtls_client.Start();
 
                     new Thread(() => read_relay(dtls_client)).Start();
