@@ -366,103 +366,20 @@ namespace superpeer_peer
                         dtls_client.Unbuffer_Args="-i0 -o0";
                     }
                     dtls_client.Start();
-                    
-                /*statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
-                new Thread(() => dtls_client.GetStream().CopyTo(IOStream, 16)).Start();*/
 
-                    //new Thread(() => read_relay(dtls_client)).Start();
-
-                    UdpClient receivingUdpClient = new UdpClient(32000);
-
-                    //Creates an IPEndPoint to record the IP Address and port number of the sender.
-                    // The IPEndPoint will allow you to read datagrams sent from any source.
-                    IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
-
-                    /*Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-                    IPAddress broadcast = IPAddress.Parse("127.0.0.1");
-
-                    //byte[] sendbuf = Encoding.ASCII.GetBytes(args[0]);
-                    IPEndPoint ep = new IPEndPoint(broadcast, 11000);*/
-
-                    dtls_client.GetStream().Write(Encoding.Default.GetBytes("SUCCESS\n"));
-                     dtls_client.GetStream().Write(Encoding.Default.GetBytes("SUCCESS\n"));
-                    //dtls_client.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
+                    new Thread(() => read_relay(dtls_client)).Start();
 
                     while(true)
                     {
-                        byte[] receiveBytes = receivingUdpClient.Receive(ref RemoteIpEndPoint);
-                        //dtls_client.GetStream().Write(receiveBytes);
-                        //dtls_client.GetStream().Flush();
-
-                        string input = BitConverter.ToString(receiveBytes)+'\n';
-                        //Console.WriteLine(input);
-
-                        byte[] send = Encoding.Default.GetBytes(input);
-                        
-                        //Console.WriteLine(receiveBytes);
-                        dtls_client.GetStream().Write(send);
-                        //Thread.Sleep(50);
-                        
-                        
-
-
-                        
-                        //byte[] rec = Encoding.Default.GetBytes(cut_str);
-                        //Console.WriteLine(bytes);
-
-                        //s.SendTo(bytes, ep);
-
-                        //dtls_client.GetStream().Write(Encoding.Default.GetBytes(input));
-
-                        /*string input = Encoding.Default.GetString(receiveBytes);
-
-                        byte[] send = Encoding.Default.GetBytes(input);
-
-                        s.SendTo(send, ep);*/
-
-                        /*byte[] out_byte = Encoding.Default.GetBytes(input);
-
-                        string out_str = Encoding.Default.GetString(out_byte);
-
-                        String[] arr=out_str.Split('-');
-                        byte[] bytes=new byte[arr.Length];
-                        for(int i=0; i<arr.Length; i++) bytes[i]=Convert.ToByte(arr[i],16);
-
-                        s.SendTo(bytes, ep);*/
-
-                        /*String[] arr=input.Split('-');
-                        byte[] bytes=new byte[arr.Length];
-                        for(int i=0; i<arr.Length; i++) bytes[i]=Convert.ToByte(arr[i],16);*/
-
-                        /*String[] arr_in=input.Split('-');
-                        byte[] array_in=new byte[arr.Length];
-                        for(int i=0; i<arr.Length; i++) array[i]=Convert.ToByte(arr[i],16);
-
-                        string out_str = BitConverter.ToString(out_bt);
-
-                        String[] arr=out_str.Split('-');
-                        byte[] bytes=new byte[arr.Length];
-                        for(int i=0; i<arr.Length; i++) bytes[i]=Convert.ToByte(arr[i],16);
-
-                        //byte[] bytes = BitConverter.GetBytes(input);
-
-                        s.SendTo(bytes, ep);*/
-                        
-
-                        //string input = BitConverter.ToString(receiveBytes);
-
-                        //byte[] encryptedData = EncryptStringToBytes_Aes(BitConverter.ToString(receiveBytes), myAes.Key, myAes.IV);
-
-                        //dtls_client.GetStream().Write(encryptedData);
-
-                        //dtls_client.GetStream().Write(receiveBytes);
-                        //dtls_client.GetStream().Write(bytes);
-                        //dtls_client.GetStream().Write();
+                        string input = Console.ReadLine();
+                        byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
+                        dtls_client.GetStream().Write(encryptedData);
+                        //dtls_client.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
                     }
-
+                    //dtls.WaitForExit();
                     dtls_client.WaitForExit();
                 }
+
                 else if (String.Compare(response, "REJECT") == 0)
                 {
                     Console.WriteLine("Connection rejected");
@@ -520,33 +437,31 @@ namespace superpeer_peer
                 
 
                 DTLSClient dtls_client = new DTLSClient(server_ip, server_port.ToString(), new byte[] {0xBA,0xA0});
-                
-		    	if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    dtls_client.Unbuffer="winpty.exe";
-                    dtls_client.Unbuffer_Args="-Xplain -Xallow-non-tty";
-                }
-                else
-                {
-                    dtls_client.Unbuffer="stdbuf";
-                    dtls_client.Unbuffer_Args="-i0 -o0";
-                }
-                dtls_client.Start();
 
-               /* statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
-                new Thread(() => dtls_client.GetStream().CopyTo(IOStream, 16)).Start();*/
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        dtls_client.Unbuffer="winpty.exe";
+                        dtls_client.Unbuffer_Args="-Xplain -Xallow-non-tty";
+                    }
+                    else
+                    {
+                        dtls_client.Unbuffer="stdbuf";
+                        dtls_client.Unbuffer_Args="-i0 -o0";
+                    }
 
-                read_relay(dtls_client);
+                    dtls_client.Start();
 
-                /*while(true)
-                {
-                    string input = Console.ReadLine();
-                    byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
-                    dtls_client.GetStream().Write(encryptedData);
-                    //dtls_client.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                }*/
-                
-                dtls_client.WaitForExit();
+                    new Thread(() => read_relay(dtls_client)).Start();
+
+                    while(true)
+                    {
+                        string input = Console.ReadLine();
+                        byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
+                        dtls_client.GetStream().Write(encryptedData);
+                        //dtls_client.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+                    }
+                    //dtls.WaitForExit();
+                    dtls_client.WaitForExit();
 
 
             }
@@ -580,142 +495,12 @@ namespace superpeer_peer
         static void read_relay(DTLSClient dtls)
         {
             byte[] bytes;
-            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-
-            IPAddress broadcast = IPAddress.Parse("127.0.0.1");
-
-            //byte[] sendbuf = Encoding.ASCII.GetBytes(args[0]);
-            IPEndPoint ep = new IPEndPoint(broadcast, 11000);
-
-                    /*string message = "";
-                    
-                    while(String.Compare(message,"SUCCESS") != 0)
-                    {
-                        bytes = new byte[16];
-                        dtls.GetStream().Read(bytes, 0, bytes.Length);
-                        message = Encoding.Default.GetString(bytes);
-                        Console.Write(message);  
-                    }
-                    Console.WriteLine("Done");*/
-
-
-            //s.SendTo(sendbuf, ep);
-            StringBuilder sb = new StringBuilder();
             while (true)
             {
-                bytes = new byte[50000];
+                bytes = new byte[16];
                 dtls.GetStream().Read(bytes, 0, bytes.Length);
-
-                string out_p = Encoding.Default.GetString(bytes);
-                //StringBuilder sb = new StringBuilder();
-                for(int i=0;i<out_p.Length;++i)
-                {
-                    if(out_p[i] != '\n')
-                    {
-                        sb.Append(out_p[i]);
-                    }
-                    else
-                    {
-                        string rec = sb.ToString();
-                        //Console.WriteLine(rec);
-                        //Console.WriteLine("------------------------------");
-
-                        String[] arr=rec.Split('-');
-                        byte[] bytes_out=new byte[arr.Length];
-                        for(int j=0; j<arr.Length; j++)
-                        {
-                            try
-                            {
-                                bytes_out[j]=Convert.ToByte(arr[j],16);
-                            }
-                            catch(Exception e)
-                            {
-
-                            }
-                        }
-
-
-                        //Console.WriteLine(bytes_out);
-                        //Console.WriteLine("*************************************");
-                        s.SendTo(bytes_out, ep);
-
-                        /*String[] arr=rec.Split('-');
-                        byte[] bytes_out=new byte[arr.Length];
-                        int j=0;
-                        try
-                        {
-                            for(j=0; j<arr.Length; j++) bytes_out[j]=Convert.ToByte(arr[j],16);
-                        }
-                        catch(Exception e)
-                        {
-                            Console.WriteLine(e);
-                        }
-
-                        Console.WriteLine(vid);
-                        s.SendTo(bytes_out, ep);*/
-
-                        sb = new StringBuilder();
-                    }
-                }
-
-                /*Console.WriteLine("-------------------------------");
-                bytes = new byte[10000];
-                dtls.GetStream().Read(bytes, 0, bytes.Length);
-               // message = Encoding.UTF8.GetString(bytes);
-                
-                string out_p = Encoding.Default.GetString(bytes);
-
-                String[] arr=out_p.Split('-');
-                byte[] bytes_out=new byte[arr.Length];
-                int i=0;
-                try
-                {
-                    for(i=0; i<arr.Length; i++) bytes_out[i]=Convert.ToByte(arr[i],16);
-                }
-                catch(Exception e)
-                {
-                    bytes = new byte[10000];
-                    dtls.GetStream().Read(bytes, 0, bytes.Length);
-                    // message = Encoding.UTF8.GetString(bytes);
-                    
-                    string out_p = Encoding.Default.GetString(bytes);
-
-                    arr=out_p.Split('-');
-                    bytes_out=new byte[arr.Length];
-                    try
-                    {
-                        for(int j=i; i<arr.Length; i++) bytes_out[i]=Convert.ToByte(arr[i],16);
-                    }
-                    catch(Exception e)
-                    {
-                        Console.WriteLine(e);
-                    }
-                }
-
-                Console.WriteLine(out_p);
-
-                s.SendTo(bytes_out, ep);*/
-                
-
-
-                /*string out_str = Encoding.Default.GetString(bytes);
-                Console.WriteLine(out_str);
-                String[] arr=out_str.Split('-');
-                byte[] bytes_arr=new byte[arr.Length];
-                try
-                {
-                    for(int i=0; i<arr.Length; i++) bytes_arr[i]=Convert.ToByte(arr[i],16);
-                    s.SendTo(bytes_arr, ep);
-                }
-                catch(Exception)
-                {
-                    Console.WriteLine("e");
-                }*/
-
-                /*string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
-                Console.WriteLine(decryptedData);*/
-                //Console.WriteLine(BitConverter.ToString(bytes));
-                
+                string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
+                Console.WriteLine(decryptedData);
             }
         }
 

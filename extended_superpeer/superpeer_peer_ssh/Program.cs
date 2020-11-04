@@ -14,7 +14,6 @@ using System.Numerics;
 using System.Buffers;
 #endif
 using System.Runtime.InteropServices;
-using System.Diagnostics;
 
 using TCP;
 using dtls_server;
@@ -113,6 +112,7 @@ namespace superpeer_peer
             {
                 listen_superpeer();
             }
+
 
         }
 
@@ -353,88 +353,113 @@ namespace superpeer_peer
                     //myAes.Key = sharedKey;
                     //myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
 
-                    
-                    var inputArgs = "-s 1024x786 -i /dev/video0 -preset ultrafast -tune zerolatency -codec libx264 -f mpegts udp://127.0.0.1:32000";
-                    //var outputArgs = "-vcodec libx264 -crf 23 -pix_fmt yuv420p -preset ultrafast -r 20 out.mp4";
-
-                    var process = new Process
-                    {
-                        StartInfo =
-                        {
-                            FileName = "ffmpeg",
-                            //Arguments = $"{inputArgs} {outputArgs}",
-                            Arguments = $"{inputArgs}",
-                            UseShellExecute = false,
-                            CreateNoWindow = true,
-                            RedirectStandardInput = true
-                        }
-                    };
-
-                    process.Start();
-                    
-
-                    /*var ffmpegIn = process.StandardInput.BaseStream;
-
-                    // Write Data
-                    //ffmpegIn.Write(Data, Offset, Count);
-
-                    // After you are done
-                    ffmpegIn.Flush();
-                    ffmpegIn.Close();*/
-
-                    // Make sure ffmpeg has finished the work
-
-                    
-                    
-                    
                     DTLSClient dtls_client = new DTLSClient(server_ip, dtls_port.ToString(), new byte[] {0xBA,0xA0});
+
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        dtls_client.Unbuffer="winpty.exe";
+                        dtls_client.Unbuffer_Args="-Xplain -Xallow-non-tty";
+                    }
+                    else
+                    {
+                        dtls_client.Unbuffer="stdbuf";
+                        dtls_client.Unbuffer_Args="-i0 -o0";
+                    }
                     dtls_client.Start();
                     
                 /*statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
-			new Thread(()=>IOStream.CopyTo(dtls_client.GetStream(), 16)).Start();
-			new Thread(() => dtls_client.GetStream().CopyTo(IOStream, 16)).Start();
-			//new Thread(() => dtls.GetStream().Write(Encoding.Default.GetBytes("It Works!"+Environment.NewLine))).Start();
-			pair.BindStreams(dtls_client.GetStream(), IOStream);
-			pair.BindStreams(dtls_client.GetStream(), IOStream);*/
+                new Thread(() => dtls_client.GetStream().CopyTo(IOStream, 16)).Start();*/
 
-                    Console.WriteLine("Sending...");
+                    //new Thread(() => read_relay(dtls_client)).Start();
 
+                    UdpClient receivingUdpClient = new UdpClient(32000);
 
-                    statpair IOStream = new statpair(new StreamReader(process.StandardInput.BaseStream), new StreamWriter(process.StandardOutput.BaseStream));
-			new Thread(()=>IOStream.CopyTo(dtls_client.GetStream(), 16)).Start();
-			new Thread(() => dtls_client.GetStream().CopyTo(IOStream, 16)).Start();
-			//new Thread(() => dtls.GetStream().Write(Encoding.Default.GetBytes("It Works!"+Environment.NewLine))).Start();
-			pair.BindStreams(dtls_client.GetStream(), IOStream);
-			pair.BindStreams(dtls_client.GetStream(), IOStream);
-                
+                    //Creates an IPEndPoint to record the IP Address and port number of the sender.
+                    // The IPEndPoint will allow you to read datagrams sent from any source.
+                    IPEndPoint RemoteIpEndPoint = new IPEndPoint(IPAddress.Any, 0);
 
-                    process.WaitForExit();
-                    /*byte[] bytes;
-                    string message = "";
-                    
-                    while(String.Compare(message, "SUCCESS") != 0)
+                    /*Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+                    IPAddress broadcast = IPAddress.Parse("127.0.0.1");
+
+                    //byte[] sendbuf = Encoding.ASCII.GetBytes(args[0]);
+                    IPEndPoint ep = new IPEndPoint(broadcast, 11000);*/
+
+                    dtls_client.GetStream().Write(Encoding.Default.GetBytes("SUCCESS\n"));
+                     dtls_client.GetStream().Write(Encoding.Default.GetBytes("SUCCESS\n"));
+                    //dtls_client.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
+
+                    while(true)
                     {
-                        bytes = new byte[128];
-                        dtls_client.GetStream().Read(bytes, 0, bytes.Length);
-                        message = Encoding.UTF8.GetString(bytes);
-                        Console.Write(message);  
+                        byte[] receiveBytes = receivingUdpClient.Receive(ref RemoteIpEndPoint);
+                        //dtls_client.GetStream().Write(receiveBytes);
+                        //dtls_client.GetStream().Flush();
+
+                        string input = BitConverter.ToString(receiveBytes)+'\n';
+                        //Console.WriteLine(input);
+
+                        byte[] send = Encoding.Default.GetBytes(input);
+                        
+                        //Console.WriteLine(receiveBytes);
+                        dtls_client.GetStream().Write(send);
+                        //Thread.Sleep(50);
+                        
+                        
+
+
+                        
+                        //byte[] rec = Encoding.Default.GetBytes(cut_str);
+                        //Console.WriteLine(bytes);
+
+                        //s.SendTo(bytes, ep);
+
+                        //dtls_client.GetStream().Write(Encoding.Default.GetBytes(input));
+
+                        /*string input = Encoding.Default.GetString(receiveBytes);
+
+                        byte[] send = Encoding.Default.GetBytes(input);
+
+                        s.SendTo(send, ep);*/
+
+                        /*byte[] out_byte = Encoding.Default.GetBytes(input);
+
+                        string out_str = Encoding.Default.GetString(out_byte);
+
+                        String[] arr=out_str.Split('-');
+                        byte[] bytes=new byte[arr.Length];
+                        for(int i=0; i<arr.Length; i++) bytes[i]=Convert.ToByte(arr[i],16);
+
+                        s.SendTo(bytes, ep);*/
+
+                        /*String[] arr=input.Split('-');
+                        byte[] bytes=new byte[arr.Length];
+                        for(int i=0; i<arr.Length; i++) bytes[i]=Convert.ToByte(arr[i],16);*/
+
+                        /*String[] arr_in=input.Split('-');
+                        byte[] array_in=new byte[arr.Length];
+                        for(int i=0; i<arr.Length; i++) array[i]=Convert.ToByte(arr[i],16);
+
+                        string out_str = BitConverter.ToString(out_bt);
+
+                        String[] arr=out_str.Split('-');
+                        byte[] bytes=new byte[arr.Length];
+                        for(int i=0; i<arr.Length; i++) bytes[i]=Convert.ToByte(arr[i],16);
+
+                        //byte[] bytes = BitConverter.GetBytes(input);
+
+                        s.SendTo(bytes, ep);*/
+                        
+
+                        //string input = BitConverter.ToString(receiveBytes);
+
+                        //byte[] encryptedData = EncryptStringToBytes_Aes(BitConverter.ToString(receiveBytes), myAes.Key, myAes.IV);
+
+                        //dtls_client.GetStream().Write(encryptedData);
+
+                        //dtls_client.GetStream().Write(receiveBytes);
+                        //dtls_client.GetStream().Write(bytes);
+                        //dtls_client.GetStream().Write();
                     }
-                    Console.WriteLine();
-
-                    dtls_client.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));*/
-
-                    /*while(true)
-                    {   
-                        string input = Console.ReadLine();
-                        byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
-                        dtls_client.GetStream().Write(encryptedData);
-
-                        bytes = new byte[16];
-                        dtls_client.GetStream().Read(bytes, 0, bytes.Length);
-                        string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
-                        Console.WriteLine(decryptedData);
-                        //dtls_client.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                    }*/
 
                     dtls_client.WaitForExit();
                 }
@@ -493,106 +518,31 @@ namespace superpeer_peer
                 //myAes.Key = sharedKey;
                 //myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
                 
-                    /*var inputArgs = "udp://@:32000";
-                    //var outputArgs = "-vcodec libx264 -crf 23 -pix_fmt yuv420p -preset ultrafast -r 20 out.mp4";
-
-                    var process = new Process
-                    {
-                        StartInfo =
-                        {
-                            FileName = "ffplay",
-                            //Arguments = $"{inputArgs} {outputArgs}",
-                            Arguments = $"{inputArgs}",
-                            UseShellExecute = false,
-                            CreateNoWindow = true,
-                            RedirectStandardInput = true
-                        }
-                    };
-
-                    process.Start();
-
-                    var ffmpegIn = process.StandardInput.BaseStream;
-
-                    // Write Data
-                    //ffmpegIn.Write(Data, Offset, Count);
-
-                    // After you are done
-                    ffmpegIn.Flush();
-                    ffmpegIn.Close();
-
-                    // Make sure ffmpeg has finished the work
-                    process.WaitForExit();*/
 
                 DTLSClient dtls_client = new DTLSClient(server_ip, server_port.ToString(), new byte[] {0xBA,0xA0});
+                
+		    	if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    dtls_client.Unbuffer="winpty.exe";
+                    dtls_client.Unbuffer_Args="-Xplain -Xallow-non-tty";
+                }
+                else
+                {
+                    dtls_client.Unbuffer="stdbuf";
+                    dtls_client.Unbuffer_Args="-i0 -o0";
+                }
                 dtls_client.Start();
 
-                statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
-                new Thread(()=>IOStream.CopyTo(dtls_client.GetStream(), 16)).Start();
-                new Thread(() => dtls_client.GetStream().CopyTo(IOStream, 16)).Start();
-                //new Thread(() => dtls.GetStream().Write(Encoding.Default.GetBytes("It Works!"+Environment.NewLine))).Start();
-                pair.BindStreams(dtls_client.GetStream(), IOStream);
-                pair.BindStreams(dtls_client.GetStream(), IOStream);
+               /* statpair IOStream = new statpair(new StreamReader(Console.OpenStandardInput()), new StreamWriter(Console.OpenStandardOutput()));
+                new Thread(() => dtls_client.GetStream().CopyTo(IOStream, 16)).Start();*/
 
+                read_relay(dtls_client);
 
-
-                /*dtls_client.GetStream().Write(Encoding.Default.GetBytes("SUCCESS"));
-                    
-                byte[] bytes;
-                string message = "";
-                    
-                while(String.Compare(message, "SUCCESS") != 0)
-                {
-                    bytes = new byte[128];
-                    dtls_client.GetStream().Read(bytes, 0, bytes.Length);
-                    message = Encoding.UTF8.GetString(bytes);
-                    Console.Write(message);  
-                }
-                Console.WriteLine();*/
-
-                //POP
                 /*while(true)
                 {
-                        bytes = new byte[16];
-                        dtls_client.GetStream().Read(bytes, 0, bytes.Length);
-                        string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
-                        Console.WriteLine(decryptedData);
-
-                        string input = Console.ReadLine();
-                        byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
-                        dtls_client.GetStream().Write(encryptedData);
-
-
-
-                    //Create process
-                    System.Diagnostics.Process pProcess = new System.Diagnostics.Process();
-
-                    //strCommand is path and file name of command to run
-                    pProcess.StartInfo.FileName = decryptedData;
-
-                    //strCommandParameters are parameters to pass to program
-                    //pProcess.StartInfo.Arguments = strCommandParameters;
-
-                    pProcess.StartInfo.UseShellExecute = false;
-
-                    //Set output of program to be written to process output stream
-                    pProcess.StartInfo.RedirectStandardOutput = true;   
-
-                    //Optional
-                    //pProcess.StartInfo.WorkingDirectory = strWorkingDirectory;
-
-                    //Start the process
-                    pProcess.Start();
-
-                    //Get program output
-                    string strOutput = pProcess.StandardOutput.ReadToEnd();
-
-                    //Wait for process to finish
-                    pProcess.WaitForExit();
-
-                    //string input = Console.ReadLine();
-                    byte[] encryptedData = EncryptStringToBytes_Aes(strOutput, myAes.Key, myAes.IV);
+                    string input = Console.ReadLine();
+                    byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
                     dtls_client.GetStream().Write(encryptedData);
-
                     //dtls_client.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
                 }*/
                 
@@ -625,6 +575,148 @@ namespace superpeer_peer
             string message = Encoding.UTF8.GetString(bytes);
             Request reply = JsonConvert.DeserializeObject<Request>(message);
             return reply.body;
+        }
+
+        static void read_relay(DTLSClient dtls)
+        {
+            byte[] bytes;
+            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+
+            IPAddress broadcast = IPAddress.Parse("127.0.0.1");
+
+            //byte[] sendbuf = Encoding.ASCII.GetBytes(args[0]);
+            IPEndPoint ep = new IPEndPoint(broadcast, 11000);
+
+                    /*string message = "";
+                    
+                    while(String.Compare(message,"SUCCESS") != 0)
+                    {
+                        bytes = new byte[16];
+                        dtls.GetStream().Read(bytes, 0, bytes.Length);
+                        message = Encoding.Default.GetString(bytes);
+                        Console.Write(message);  
+                    }
+                    Console.WriteLine("Done");*/
+
+
+            //s.SendTo(sendbuf, ep);
+            StringBuilder sb = new StringBuilder();
+            while (true)
+            {
+                bytes = new byte[50000];
+                dtls.GetStream().Read(bytes, 0, bytes.Length);
+
+                string out_p = Encoding.Default.GetString(bytes);
+                //StringBuilder sb = new StringBuilder();
+                for(int i=0;i<out_p.Length;++i)
+                {
+                    if(out_p[i] != '\n')
+                    {
+                        sb.Append(out_p[i]);
+                    }
+                    else
+                    {
+                        string rec = sb.ToString();
+                        //Console.WriteLine(rec);
+                        //Console.WriteLine("------------------------------");
+
+                        String[] arr=rec.Split('-');
+                        byte[] bytes_out=new byte[arr.Length];
+                        for(int j=0; j<arr.Length; j++)
+                        {
+                            try
+                            {
+                                bytes_out[j]=Convert.ToByte(arr[j],16);
+                            }
+                            catch(Exception e)
+                            {
+
+                            }
+                        }
+
+
+                        //Console.WriteLine(bytes_out);
+                        //Console.WriteLine("*************************************");
+                        s.SendTo(bytes_out, ep);
+
+                        /*String[] arr=rec.Split('-');
+                        byte[] bytes_out=new byte[arr.Length];
+                        int j=0;
+                        try
+                        {
+                            for(j=0; j<arr.Length; j++) bytes_out[j]=Convert.ToByte(arr[j],16);
+                        }
+                        catch(Exception e)
+                        {
+                            Console.WriteLine(e);
+                        }
+
+                        Console.WriteLine(vid);
+                        s.SendTo(bytes_out, ep);*/
+
+                        sb = new StringBuilder();
+                    }
+                }
+
+                /*Console.WriteLine("-------------------------------");
+                bytes = new byte[10000];
+                dtls.GetStream().Read(bytes, 0, bytes.Length);
+               // message = Encoding.UTF8.GetString(bytes);
+                
+                string out_p = Encoding.Default.GetString(bytes);
+
+                String[] arr=out_p.Split('-');
+                byte[] bytes_out=new byte[arr.Length];
+                int i=0;
+                try
+                {
+                    for(i=0; i<arr.Length; i++) bytes_out[i]=Convert.ToByte(arr[i],16);
+                }
+                catch(Exception e)
+                {
+                    bytes = new byte[10000];
+                    dtls.GetStream().Read(bytes, 0, bytes.Length);
+                    // message = Encoding.UTF8.GetString(bytes);
+                    
+                    string out_p = Encoding.Default.GetString(bytes);
+
+                    arr=out_p.Split('-');
+                    bytes_out=new byte[arr.Length];
+                    try
+                    {
+                        for(int j=i; i<arr.Length; i++) bytes_out[i]=Convert.ToByte(arr[i],16);
+                    }
+                    catch(Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }
+
+                Console.WriteLine(out_p);
+
+                s.SendTo(bytes_out, ep);*/
+                
+
+
+                /*string out_str = Encoding.Default.GetString(bytes);
+                Console.WriteLine(out_str);
+                String[] arr=out_str.Split('-');
+                byte[] bytes_arr=new byte[arr.Length];
+                try
+                {
+                    for(int i=0; i<arr.Length; i++) bytes_arr[i]=Convert.ToByte(arr[i],16);
+                    s.SendTo(bytes_arr, ep);
+                }
+                catch(Exception)
+                {
+                    Console.WriteLine("e");
+                }*/
+
+                /*string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
+                Console.WriteLine(decryptedData);*/
+                //Console.WriteLine(BitConverter.ToString(bytes));
+                
+            }
         }
 
         static byte[] EncryptStringToBytes_Aes(string plainText, byte[] Key, byte[] IV)

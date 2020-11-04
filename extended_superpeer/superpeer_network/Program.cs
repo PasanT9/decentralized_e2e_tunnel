@@ -51,7 +51,7 @@ namespace superpeer_network
         static List<IPEndPoint> exit_neighbours;
         static List<IPEndPoint> change_neighbours;
 
-        static int hop_count = 1;
+        static int hop_count = 2;
         static int flood_phases = 2;
 
         public static void insert_peers(string[] new_peers)
@@ -106,7 +106,10 @@ namespace superpeer_network
                 try
                 {
                     response = TCPCommunication.recieve_message_tcp(sslStream);
-                    Console.WriteLine($"Receive({ip}): {response}");
+                    Console.Write($"Receive({ip}): ");
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine(response);
+                    Console.ResetColor();
                     if (String.Compare(response, "END") == 0)
                     {
                         TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
@@ -328,12 +331,18 @@ namespace superpeer_network
 
                                     if (data0 != "")
                                     {
-                                        Console.WriteLine($"Sending({neighbour}): {message}:{data0}");
+                                        Console.Write($"Sending({neighbour}): ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine($"{message}: {data0}");
+                                        Console.ResetColor();
                                         TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message + ":" + data0 + ":" + data1 + ":"+hops);
                                     }
                                     else
                                     {
-                                        Console.WriteLine($"Sending({neighbour}): {message}");
+                                        Console.Write($"Sending({neighbour}): ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine($"{message}");
+                                        Console.ResetColor();
                                         TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message);
                                     }
                                     message_buffer.Remove(message_full);
@@ -620,19 +629,6 @@ namespace superpeer_network
         static void wait_reply(SslStream sslStream, string receiver_key, string sender_key)
         {
             Console.WriteLine("Thread");
-            /*string response;
-            Thread.Sleep(3000);
-            if(!reply_buffer.ContainsKey(receiver_key))
-            {
-                List<IPEndPoint> superpeer_neighbours_list = new List<IPEndPoint>(superpeer_neighbours.Keys);
-                int count = 0;
-                foreach (var neighbour in superpeer_neighbours_list)
-                {
-                    message_tunnel[neighbour] = null;
-                    message_buffer[(count++) + ":SEARCH:" + receiver_key + ":" + sender_key+":"+hop_count] = neighbour;
-                }
-                //new Thread(() => wait_reply(sslStream, receiver_key, sender_key)).Start();
-            }*/
             for(int i=0;i<flood_phases;++i)
             {
                 Thread.Sleep(3000);
@@ -705,7 +701,9 @@ namespace superpeer_network
                 sslStream.WriteTimeout = 40000;
                 // Read a message from the client.
                 response = TCPCommunication.recieve_message_tcp(sslStream);
+                Console.ForegroundColor = ConsoleColor.Red;
                 Console.WriteLine(response);
+                Console.ResetColor();
                 if (String.Compare(response, "HELLO_S") == 0)
                 {
                     Console.WriteLine(((IPEndPoint)client.Client.RemoteEndPoint) + " is requesting to join superpeer network");
@@ -716,7 +714,7 @@ namespace superpeer_network
 
                     if (myIp == response)
                     {
-                        if(superpeer_neighbours.Count < 3)
+                        if(superpeer_neighbours.Count < 2)
                         {
                             TCPCommunication.send_message_tcp(sslStream, "CONNECT_S"); 
                             Console.WriteLine("Sending 1/2 of Peers");
@@ -780,15 +778,6 @@ namespace superpeer_network
                         Console.WriteLine(pair.Key);
                     }
                 }
-                /*else if (String.Compare(response, "NEIGHBOUR") == 0)
-                {
-                    Console.WriteLine("Neighbour request received");
-                    TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
-                    superpeer_neighbours[(IPEndPoint)client.Client.RemoteEndPoint] = sslStream;
-
-                    KeyValuePair<IPEndPoint, SslStream> new_neighbour = new KeyValuePair<IPEndPoint, SslStream>((IPEndPoint)client.Client.RemoteEndPoint, sslStream);
-                    new Thread(() => listen_neighbours(new_neighbour)).Start();
-                }*/
                 else if (String.Compare(response, "INIT_P") == 0)
                 {
                     Console.WriteLine((IPEndPoint)client.Client.RemoteEndPoint + " peer is registering");
