@@ -373,21 +373,31 @@ namespace superpeer_peer
                     //myAes.Key = sharedKey;
                     //myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
 
-                    DTLSClient dtls_client = new DTLSClient(server_ip, dtls_port.ToString(), new byte[] {0xBA,0xA0});
+                    DTLSClient dtls = new DTLSClient(dest_ip, dtls_port.ToString(), new byte[] {0xBA,0xA0});
 
-                    dtls_client.Start();
+                    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                    {
+                        dtls.Unbuffer = "winpty.exe";
+                        dtls.Unbuffer_Args = "-Xplain -Xallow-non-tty";
+                    }
+                    else
+                    {
+                        dtls.Unbuffer = "stdbuf";
+                        dtls.Unbuffer_Args = "-i0 -o0";
+                    }
+                    dtls.Start();
 
-                    new Thread(() => read_relay(dtls_client)).Start();
+                    new Thread(() => read_relay(dtls)).Start();
 
-                    while(true)
+                    while (true)
                     {
                         string input = Console.ReadLine();
                         byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
-                        dtls_client.GetStream().Write(encryptedData);
-                        //dtls_client.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+                        //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+                        dtls.GetStream().Write(encryptedData);
                     }
-                    //dtls.WaitForExit();
-                    dtls_client.WaitForExit();
+                    dtls.WaitForExit();
+                    
                 }
 
                 else if (String.Compare(response, "REJECT") == 0)
@@ -446,21 +456,32 @@ namespace superpeer_peer
                 //myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
                 
 
-                DTLSClient dtls_client = new DTLSClient(server_ip, server_port.ToString(), new byte[] {0xBA,0xA0});
+                DTLSClient dtls = new DTLSClient(server_ip, server_port.ToString(), new byte[] {0xBA,0xA0});
                 
-                    dtls_client.Start();
+		    	if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                dtls.Unbuffer = "winpty.exe";
+                dtls.Unbuffer_Args = "-Xplain -Xallow-non-tty";
+            }
+            else
+            {
+                dtls.Unbuffer = "stdbuf";
+                dtls.Unbuffer_Args = "-i0 -o0";
+            }
+            dtls.Start();
 
-                    new Thread(() => read_relay(dtls_client)).Start();
+            byte[] bytes;
 
-                    while(true)
-                    {
-                        string input = Console.ReadLine();
-                        byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
-                        dtls_client.GetStream().Write(encryptedData);
-                        //dtls_client.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                    }
-                    //dtls.WaitForExit();
-                    dtls_client.WaitForExit();
+            new Thread(() => read_relay(dtls)).Start();
+
+            while (true)
+            {
+                string input = Console.ReadLine();
+                byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
+                //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
+                dtls.GetStream().Write(encryptedData);
+            }
+            dtls.WaitForExit();
 
 
             }
@@ -500,6 +521,7 @@ namespace superpeer_peer
                 dtls.GetStream().Read(bytes, 0, bytes.Length);
                 string decryptedData = DecryptStringFromBytes_Aes(bytes, myAes.Key, myAes.IV);
                 Console.WriteLine(decryptedData);
+                //Console.WriteLine(Encoding.Default.GetString(bytes));
             }
         }
 

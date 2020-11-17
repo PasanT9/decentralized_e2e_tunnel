@@ -971,6 +971,8 @@ namespace superpeer_network
                         sslStream.Close();
                         client.Close();
                     }
+
+
                     //new Thread(() => handle_relay(relay_ip)).Start();
                 }
                 else

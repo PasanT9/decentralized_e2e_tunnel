@@ -617,7 +617,7 @@ namespace superpeer_peer
                     else
                     {
                         string rec = sb.ToString();
-                        //Console.WriteLine(rec);
+                        Console.WriteLine(rec);
                         //Console.WriteLine("------------------------------");
 
                         String[] arr=rec.Split('-');

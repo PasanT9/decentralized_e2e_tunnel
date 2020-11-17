@@ -1,0 +1,11 @@
+{
+  "name": "authentication_server_back",
+  "version": "1.0.0",
+  "description": "Backend application of the UmbraNet authentication server",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Pasan Tennakoon",
+  "license": "ISC"
+}
