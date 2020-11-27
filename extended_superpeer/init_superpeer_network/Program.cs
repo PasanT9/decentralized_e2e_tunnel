@@ -11,6 +11,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Diagnostics;
 using Newtonsoft.Json;
 using System.Runtime.InteropServices;
+using CliWrap;
  
 using Cryptography;
 using Authentication;
@@ -58,6 +59,8 @@ namespace superpeer_network
         static IPEndPoint ipLocalEndPoint;
         static int hop_count = 2;
         static int flood_phases = 2;
+
+        static Dictionary<string, float> local_trust;
 
         //Create random strings to imitate public keys
         public static string random_string()
@@ -401,7 +404,7 @@ namespace superpeer_network
                                 //message_itr.MoveNext();
                                 string message_full = message_buffer_list[0];
                                 string[] temp_split = message_full.Split(':');
-
+ 
                                 string message = (temp_split.Length >= 1) ? temp_split[1] : "";
                                 //string message = message_full.Split(':')[1];
                                 string data0 = (temp_split.Length > 2) ? temp_split[2] : "";
@@ -508,7 +511,7 @@ namespace superpeer_network
             peers = new Dictionary<string, IPEndPoint>();
             exit_neighbours = new List<IPEndPoint>();
             change_neighbours = new List<IPEndPoint>();
-
+            local_trust = new Dictionary<string, float>();
 
             message_buffer = new Dictionary<string, IPEndPoint>();
             message_tunnel = new Dictionary<IPEndPoint, IPEndPoint>();
@@ -560,6 +563,9 @@ namespace superpeer_network
 
                     new Thread(() => hello_neighbour()).Start();
                 }
+                ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = $"python2", Arguments = $"../../dht/mydhtserver.py -p 27006  -s localhost:28006", }; 
+                Process proc = new Process() { StartInfo = startInfo, };
+                proc.Start();
                 handle_connections();
             }
             else if (local_port == 28005)
@@ -589,6 +595,10 @@ namespace superpeer_network
 
                 server = new TcpListener(local_ip, local_port);
                 server.Start();
+                ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = $"python2", Arguments = $"../../dht/mydhtserver.py -p 28006 -r 1", };
+
+                Process proc = new Process() { StartInfo = startInfo, };
+                proc.Start();
                 handle_connections();
             }
 

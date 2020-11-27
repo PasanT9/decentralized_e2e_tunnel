@@ -5,44 +5,41 @@ import { register } from "./Functions";
 class Home extends Component {
 
    state = {
-      key:'',
-   }
-
-   handleChange = input => e => {
-      this.setState({
-         [input]: e.target.value
-      });
+      csr:'',
    }
 
    continue = e => {
       e.preventDefault();
-      const {key} = this.state;
+      const {csr} = this.state;
 
       const data = {
-         key: key,
+         csr: csr,
      };
 
+     //register({data});
       register({data}).then(res => {
+         console.log(res);
          if (res) {
-            //let statusCode = res.statusCode;
-            console.log(res);
-            /*if(statusCode === 'S2000'){
-               console.log(res.authToken);
-               //localStorage.setItem('usertoken', res.authToken);
-               setUserToken(res.authToken);
-               this.setState({validInput: true});
-               window.location.href = '/home';
-            }
-            else {
-               this.setState({validInput: false, invalidMsg: res.error});
-            }*/
+            res.blob().then(blob => {
+					let url = window.URL.createObjectURL(blob);
+					let a = document.createElement('a');
+					a.href = url;
+					a.download = 'certificate.csr';
+					a.click();
+				});
          }
          else {
-            console.log('Error');
+            console.log('2:Error');
          }
       })
    }
 
+   onChangeHandler=event=>{
+      this.setState({
+        csr: event.target.files[0],
+        loaded: 0,
+      })
+    }
 
    render() {
       
@@ -54,8 +51,8 @@ class Home extends Component {
                      Register
                   </Card.Title>
                   <Form.Group >
-                     <Form.Label>Public Key</Form.Label>
-                     <Form.Control type="text"  value = {this.state.key} onChange = {this.handleChange('key')} required/>
+                     <Form.Label>CSR</Form.Label>
+                     <Form.Control type="file" name="file" onChange={this.onChangeHandler} required/>
                   </Form.Group>
                   <br />
                   <Button variant="success" type="submit" block>

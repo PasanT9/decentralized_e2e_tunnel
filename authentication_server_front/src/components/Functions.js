@@ -1,17 +1,19 @@
 export const register = newUser => {
 
-    let data = {
-        key: newUser.key,
-    }
+
+    const data = new FormData()
+   data.append('file', newUser.data.csr)
 
     console.log("register");
  
-    return fetch('localhost:3000/api/register/', {
+    return fetch('http://localhost:8081/api/register/', {
        method: 'POST',
-       headers: {},
-       body: JSON.stringify(data)
+       headers: {
+         'Access-Control-Allow-Origin': '*',
+      },
+      body:data,
     })
-    .then((response) => response.json())
+    //.then((response) => response.json())
     .then(response => {
        return response;
     })

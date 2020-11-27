@@ -1,10 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "zkGjwigLRbWM1zrglfaQ9KHWLlHy7A2TUExxCwqrLJ2lLzEWusYyND919VYuegzF5eCBcQIENrpQ/JQynXP8Ew==",
+  "dgSpecHash": "AIfKjBgJbybCVpbFVFr+Oygf463NB4dpI9hX8HkhhulrucN+UyIdvcoRhU7QUW8j7O+0CIKpl21IBmvgFIoo/Q==",
   "success": true,
   "projectFilePath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/superpeer_network.csproj",
   "expectedPackageFiles": [
-    "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512"
+    "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512",
+    "/home/pasan/.nuget/packages/microsoft.aspnetcore.app.ref/3.1.8/microsoft.aspnetcore.app.ref.3.1.8.nupkg.sha512",
+    "/home/pasan/.nuget/packages/microsoft.netcore.app.host.linux-x64/3.1.9/microsoft.netcore.app.host.linux-x64.3.1.9.nupkg.sha512"
   ],
   "logs": []
 }

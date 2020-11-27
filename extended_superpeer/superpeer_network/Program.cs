@@ -562,6 +562,9 @@ namespace superpeer_network
             local_port = random.Next(20000, 40000);
 
             init_connection(server_ip, server_port);
+            ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = $"python2", Arguments = $"../../dht/mydhtserver.py -p {local_port+1}  -s localhost:{server_port+1}", }; 
+            Process proc = new Process() { StartInfo = startInfo, };
+            proc.Start();
 
             if(neighbour_ip != null)
             {

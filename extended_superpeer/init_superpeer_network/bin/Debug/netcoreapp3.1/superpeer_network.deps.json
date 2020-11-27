@@ -8,11 +8,20 @@
     ".NETCoreApp,Version=v3.1": {
       "superpeer_network/1.0.0": {
         "dependencies": {
+          "CliWrap": "3.2.3",
           "Newtonsoft.Json": "12.0.3",
           "System.Security.Cryptography.OpenSsl": "4.7.0"
         },
         "runtime": {
           "superpeer_network.dll": {}
+        }
+      },
+      "CliWrap/3.2.3": {
+        "runtime": {
+          "lib/netcoreapp3.0/CliWrap.dll": {
+            "assemblyVersion": "3.2.3.0",
+            "fileVersion": "3.2.3.0"
+          }
         }
       },
       "Newtonsoft.Json/12.0.3": {
@@ -46,6 +55,13 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "CliWrap/3.2.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-2hSw2nIuo0N6urxg0JR3kM/sd4dObKiWAbB9fXkEFgvKS+LEL3W3L8quuob8CSGKoJuCLvonwtzGlran4/yZNg==",
+      "path": "cliwrap/3.2.3",
+      "hashPath": "cliwrap.3.2.3.nupkg.sha512"
     },
     "Newtonsoft.Json/12.0.3": {
       "type": "package",

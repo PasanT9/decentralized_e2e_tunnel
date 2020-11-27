@@ -1,11 +1,14 @@
 {
   "version": 2,
-  "dgSpecHash": "IXHUP5nQDC4jPprlzTeRXaWNdTch9NMhBxfox+f8VkUhZcuh37e42FcngNxMw3miRK6w4IyGhubEqKkK4agDxw==",
+  "dgSpecHash": "OtluDxoqLGjyVfWG8MoICaz6zOov1DA0iKM8lEPoRUmuqCWP1h+9fuJDiivj3JziytxILSHvSi0Fedi8F3CBIQ==",
   "success": true,
   "projectFilePath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/superpeer_network.csproj",
   "expectedPackageFiles": [
+    "/home/pasan/.nuget/packages/cliwrap/3.2.3/cliwrap.3.2.3.nupkg.sha512",
     "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512",
-    "/home/pasan/.nuget/packages/system.security.cryptography.openssl/4.7.0/system.security.cryptography.openssl.4.7.0.nupkg.sha512"
+    "/home/pasan/.nuget/packages/system.security.cryptography.openssl/4.7.0/system.security.cryptography.openssl.4.7.0.nupkg.sha512",
+    "/home/pasan/.nuget/packages/microsoft.aspnetcore.app.ref/3.1.8/microsoft.aspnetcore.app.ref.3.1.8.nupkg.sha512",
+    "/home/pasan/.nuget/packages/microsoft.netcore.app.host.linux-x64/3.1.9/microsoft.netcore.app.host.linux-x64.3.1.9.nupkg.sha512"
   ],
   "logs": []
 }
