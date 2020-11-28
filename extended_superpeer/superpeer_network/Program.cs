@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System.Net.Security;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Cryptography;
 using Newtonsoft.Json;
 
 using System.Diagnostics;
@@ -50,6 +52,8 @@ namespace superpeer_network
 
         static List<IPEndPoint> exit_neighbours;
         static List<IPEndPoint> change_neighbours;
+        static List<string> local_trust;
+        static List<string> dht_buffer;
 
         static int hop_count = 2;
         static int flood_phases = 2;
@@ -518,6 +522,98 @@ namespace superpeer_network
             Console.WriteLine("Exit hello_neighbour thread");
         }
 
+        static string hash1(string str)
+        {
+            var crypt = new SHA256Managed();
+            string hash = String.Empty;
+            byte[] crypto = crypt.ComputeHash(Encoding.ASCII.GetBytes(str));
+            foreach (byte theByte in crypto)
+            {
+                hash += (theByte*9967).ToString("x2");
+            }
+            hash = hash.Substring(0, Math.Min(str.Length, 32));
+            return hash;
+        }
+
+        static string hash2(string str)
+        {
+
+            var crypt = new SHA256Managed();
+            string hash = String.Empty;
+            byte[] crypto = crypt.ComputeHash(Encoding.ASCII.GetBytes(str));
+            foreach (byte theByte in crypto)
+            {
+                hash += (theByte*9949).ToString("x2");
+            }
+            hash = hash.Substring(0, Math.Min(str.Length, 32));
+            return hash;
+        }
+
+        static string hash3(string str)
+        {
+
+            var crypt = new SHA256Managed();
+            string hash = String.Empty;
+            byte[] crypto = crypt.ComputeHash(Encoding.ASCII.GetBytes(str));
+            foreach (byte theByte in crypto)
+            {
+                hash += (theByte*9973).ToString("x2");
+            }
+            hash = hash.Substring(0, Math.Min(str.Length, 32));
+            return hash;
+        }
+
+                static void start_dht()
+        {
+            Process greeterProcess = new Process();
+            greeterProcess.StartInfo.FileName = "./../../Chord-DHT-master/prog";
+            // Indicate that we want to read from standard output
+            // of process
+            greeterProcess.StartInfo.RedirectStandardInput = true;
+            // Indicate that we want to write to standard input of
+            // process
+            greeterProcess.StartInfo.RedirectStandardOutput = true;
+            greeterProcess.StartInfo.UseShellExecute = false;
+            greeterProcess.Start();
+            // Get a StreamWriter to write to the standard input of
+            // Greeter.exe
+            StreamWriter writer = greeterProcess.StandardInput;
+            // Get a StreamReader to read from standard output of
+            // Greeter.exe
+            StreamReader reader = greeterProcess.StandardOutput;
+            // Get the question from greeter
+            Console.WriteLine(reader.ReadLine());
+            // Answer Greeter with Robot
+            
+            Console.WriteLine(reader.ReadLine());
+            writer.WriteLine($"port {local_port+5}");
+            Console.WriteLine(reader.ReadLine());
+
+            while(true)
+            {
+                if(dht_buffer.Count > 0)
+                {
+                    writer.WriteLine(dht_buffer[0]);
+                    string[] temp_split = dht_buffer[0].Split(' ');
+                    string command = temp_split[0];
+                    
+                    if(command == "port" || command == "get" || command == "join" || command == "print")
+                    {
+                        string line = reader.ReadLine();
+                        Console.WriteLine(line);
+                    }
+                    else if(command == "put")
+                    {
+                        Console.WriteLine(reader.ReadLine());
+                        Console.WriteLine(reader.ReadLine());
+                    }
+                    dht_buffer.Remove(dht_buffer[0]);
+                }
+            }
+            greeterProcess.WaitForExit();
+        }
+
+
         static void Main(string[] args)
         {
             //To handle on exit function to distribute peers upon exit
@@ -544,6 +640,8 @@ namespace superpeer_network
 
             exit_neighbours = new List<IPEndPoint>();
             change_neighbours = new List<IPEndPoint>();
+            local_trust = new List<string>();
+            dht_buffer = new List<string>();
 
             client_keys = new Dictionary<IPEndPoint, PublicKeyCoordinates>();
 
@@ -562,9 +660,6 @@ namespace superpeer_network
             local_port = random.Next(20000, 40000);
 
             init_connection(server_ip, server_port);
-            ProcessStartInfo startInfo = new ProcessStartInfo() { FileName = $"python2", Arguments = $"../../dht/mydhtserver.py -p {local_port+1}  -s localhost:{server_port+1}", }; 
-            Process proc = new Process() { StartInfo = startInfo, };
-            proc.Start();
 
             if(neighbour_ip != null)
             {
@@ -574,8 +669,33 @@ namespace superpeer_network
             new Thread(() => handle_neighbour(1)).Start();
             new Thread(() => hello_neighbour()).Start();
 
+            new Thread(() => start_dht()).Start();
+            dht_buffer.Add($"join {server_ip} {server_port+5}");
+
             server = new TcpListener(local_ip, local_port);
             server.Start();
+            local_trust.Add($"{local_ip}:{local_port}|localhost:27005|0.2");
+            local_trust.Add($"{local_ip}:{local_port}|localhost:28005|0.8");
+ 
+
+                string h1 = hash1("localhost:27005");
+                string h2 = hash2("localhost:27005");
+
+                dht_buffer.Add($"put {h1} {local_trust[0]}");
+                dht_buffer.Add($"put {h2} {local_trust[0]}");
+
+                //string h3 = hash3("localhost:28005");
+
+
+                h1 = hash1("localhost:28005");
+                h2 = hash2("localhost:28005");
+
+                dht_buffer.Add($"put {h1} {local_trust[1]}");
+                dht_buffer.Add($"put {h2} {local_trust[1]}");
+
+                Thread.Sleep(5000);
+                dht_buffer.Add($"print");
+                //string h3 = hash3("localhost:28005");
 
             //Listen to requests
             handle_connections();
