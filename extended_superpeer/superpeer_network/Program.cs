@@ -54,6 +54,7 @@ namespace superpeer_network
         static List<IPEndPoint> change_neighbours;
         static List<string> local_trust;
         static List<string> dht_buffer;
+        static Dictionary<Tuple<string,string>, float> Cd;
 
         static int hop_count = 2;
         static int flood_phases = 2;
@@ -593,19 +594,46 @@ namespace superpeer_network
             {
                 if(dht_buffer.Count > 0)
                 {
+                    Console.WriteLine(dht_buffer[0]);
                     writer.WriteLine(dht_buffer[0]);
                     string[] temp_split = dht_buffer[0].Split(' ');
                     string command = temp_split[0];
                     
-                    if(command == "port" || command == "get" || command == "join" || command == "print")
+                    if(command == "port" || command == "get" || command == "join")
                     {
-                        string line = reader.ReadLine();
-                        Console.WriteLine(line);
+                        Console.WriteLine(reader.ReadLine());
                     }
                     else if(command == "put")
                     {
                         Console.WriteLine(reader.ReadLine());
                         Console.WriteLine(reader.ReadLine());
+                    }
+                    else if(command == "print")
+                    {
+                        int c = reader.Read();
+                        c = reader.Read();
+                        string line = reader.ReadLine();
+                        Console.WriteLine(": " + line);
+                        string[] split = line.Split('/');
+                        for(int i=0;i<split.Length-1; ++i)
+                        {
+                            string[] temp0 = split[i].Split(' ');
+                            if(temp0.Length > 1)
+                            {
+                                temp0 = temp0[1].Split('|');
+                                var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                Cd[t] = float.Parse(temp0[2]);
+                                Console.WriteLine($"{t}: {Cd[t]}");
+                            }
+                            else
+                            {
+                                temp0 = temp0[0].Split('|');
+                                var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                Cd[t] = float.Parse(temp0[2]);
+                                Console.WriteLine($"{t}: {Cd[t]}");
+                            }
+                        }
+
                     }
                     dht_buffer.Remove(dht_buffer[0]);
                 }
@@ -642,6 +670,7 @@ namespace superpeer_network
             change_neighbours = new List<IPEndPoint>();
             local_trust = new List<string>();
             dht_buffer = new List<string>();
+            Cd = new Dictionary<Tuple<string, string>, float>();
 
             client_keys = new Dictionary<IPEndPoint, PublicKeyCoordinates>();
 
@@ -674,12 +703,26 @@ namespace superpeer_network
 
             server = new TcpListener(local_ip, local_port);
             server.Start();
-            local_trust.Add($"{local_ip}:{local_port}|localhost:27005|0.2");
-            local_trust.Add($"{local_ip}:{local_port}|localhost:28005|0.8");
+
+            new Thread(() => print_trust_values()).Start();
+                //string h3 = hash3("localhost:28005");
+
+            //Listen to requests
+
+            new Thread(() => add_trust()).Start();
+            handle_connections();
+        }
+
+        static void add_trust()
+        {
+            Thread.Sleep(5000);
+            Console.WriteLine("Adding trust");
+            local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:27005|0.2");
+            local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:28005|0.8");
  
 
-                string h1 = hash1("localhost:27005");
-                string h2 = hash2("localhost:27005");
+                string h1 = hash1("127.0.0.1:27005");
+                string h2 = hash2("127.0.0.1:27005");
 
                 dht_buffer.Add($"put {h1} {local_trust[0]}");
                 dht_buffer.Add($"put {h2} {local_trust[0]}");
@@ -687,20 +730,28 @@ namespace superpeer_network
                 //string h3 = hash3("localhost:28005");
 
 
-                h1 = hash1("localhost:28005");
-                h2 = hash2("localhost:28005");
+                h1 = hash1("127.0.0.1:28005");
+                h2 = hash2("127.0.0.1:28005");
 
                 dht_buffer.Add($"put {h1} {local_trust[1]}");
                 dht_buffer.Add($"put {h2} {local_trust[1]}");
 
-                Thread.Sleep(5000);
+                h1 = hash1($"{local_ip}:{local_port}");
+                h2 = hash2($"{local_ip}:{local_port}");
+
+                dht_buffer.Add($"put {h1} *{local_trust[0]}");
+                dht_buffer.Add($"put {h2} *{local_trust[0]}");
+                dht_buffer.Add($"put {h1} *{local_trust[1]}");
+                dht_buffer.Add($"put {h2} *{local_trust[1]}");
+        }
+
+        static void print_trust_values()
+        {
+            while(true)
+            {
+                Thread.Sleep(10000);
                 dht_buffer.Add($"print");
-                //string h3 = hash3("localhost:28005");
-
-            //Listen to requests
-            handle_connections();
-
-
+            }
         }
 
         public static void transfer_peers(SslStream sslStream, int divident)
@@ -748,6 +799,8 @@ namespace superpeer_network
             }
 
         }
+
+
 
         static void wait_reply(SslStream sslStream, string receiver_key, string sender_key)
         {

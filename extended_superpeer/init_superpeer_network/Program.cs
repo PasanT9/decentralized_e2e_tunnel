@@ -66,6 +66,9 @@ namespace superpeer_network
         static int flood_phases = 2;
 
         static List<string> local_trust;
+        static Dictionary<Tuple<string,string>, float> Ad;
+        static Dictionary<Tuple<string,string>, float> Bd;
+        static List<Tuple<string,string>> D;
 
         //Create random strings to imitate public keys
         public static string random_string()
@@ -586,15 +589,80 @@ namespace superpeer_network
                     string[] temp_split = dht_buffer[0].Split(' ');
                     string command = temp_split[0];
                     
-                    if(command == "port" || command == "get" || command == "join" || command == "print")
+                    if(command == "port" || command == "get" || command == "join")
                     {
-                        string line = reader.ReadLine();
-                        Console.WriteLine(line);
+                        Console.WriteLine(reader.ReadLine());
                     }
                     else if(command == "put")
                     {
                         Console.WriteLine(reader.ReadLine());
                         Console.WriteLine(reader.ReadLine());
+                    }
+                    else if(command == "print")
+                    {
+                        int c = reader.Read();
+                        c = reader.Read();
+                        string line = reader.ReadLine();
+                        Console.WriteLine(line);
+                        string[] split = line.Split('/');
+                        for(int i=0;i<split.Length-1; ++i)
+                        {
+                            string[] temp0 = split[i].Split(' ');
+                            if(temp0.Length > 1)
+                            {
+                                temp0 = temp0[1].Split('|');
+                                if(temp0[0][0]!='*')
+                                {
+                                    var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    Bd[t] = float.Parse(temp0[2]);
+                                    Console.WriteLine($"Bd => {t}: {Bd[t]}");
+                                }
+                                else
+                                {
+                                    temp0[0] = temp0[0].Substring(1, temp0[0].Length-1);
+                                    var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    Ad[t] = float.Parse(temp0[2]);
+                                    Console.WriteLine($"Ad => {t}: {Ad[t]}");
+                                }
+                            }
+                            else
+                            {
+                                temp0 = temp0[0].Split('|');
+                                if(temp0[0][0]!='*')
+                                {
+                                    var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    Bd[t] = float.Parse(temp0[2]);
+                                    Console.WriteLine($"Bd => {t}: {Bd[t]}");
+                                }
+                                else
+                                {
+                                    temp0[0] = temp0[0].Substring(1, temp0[0].Length-1);
+                                    var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    Ad[t] = float.Parse(temp0[2]);
+                                    Console.WriteLine($"Ad => {t}: {Ad[t]}");
+                                }
+                            }
+                        }/*
+                        if(Bd.Count > 0)
+                        {
+                            foreach(var t in Bd)
+                            {
+                               Console.WriteLine(t.Key+": "+t.Value); 
+                               if(!(D.Contains(t.Key)))
+                               {
+                                    string d = t.Key.Item1;
+                                
+                                    string h1 = hash1(d);
+                                    string h2 = hash2(d);
+
+                                    dht_buffer.Add($"put {h1} *{d}|{t.Key.Item2}|{t.Value}");
+                                    dht_buffer.Add($"put {h1} *{d}|{t.Key.Item2}|{t.Value}");
+
+                                    D.Add(t.Key);
+                               }
+                            }
+                        }*/
+
                     }
                     dht_buffer.Remove(dht_buffer[0]);
                 }
@@ -609,6 +677,9 @@ namespace superpeer_network
             exit_neighbours = new List<IPEndPoint>();
             change_neighbours = new List<IPEndPoint>();
             local_trust = new List<string>();
+            Ad = new Dictionary<Tuple<string, string>, float>();
+            Bd = new Dictionary<Tuple<string, string>, float>();
+            D = new List<Tuple<string,string>>();
 
             message_buffer = new Dictionary<string, IPEndPoint>();
             message_tunnel = new Dictionary<IPEndPoint, IPEndPoint>();
@@ -643,7 +714,7 @@ namespace superpeer_network
                 new Thread(() => start_dht()).Start();
                 dht_buffer.Add("create");
 
-                local_trust.Add($"{local_ip}:{local_port}|localhost:28005|0.7");
+                local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:28005|0.7");
 
                 server = new TcpListener(local_ip, local_port);
                 server.Start();
@@ -671,19 +742,32 @@ namespace superpeer_network
                     new Thread(() => hello_neighbour()).Start();
                 }
 
-                string h1 = hash1("localhost:28005");
-                string h2 = hash2("localhost:28005");
+                string h1 = hash1($"{local_ip}:{local_port}");
+                string h2 = hash2($"{local_ip}:{local_port}");
 
-                Console.WriteLine(h1);
-                Console.WriteLine(h2);
                 //string h3 = hash3("localhost:28005");
 
                 dht_buffer.Add($"put {h1} {local_trust[0]}");
                 dht_buffer.Add($"put {h2} {local_trust[0]}");
 
-                Thread.Sleep(5000);
-                dht_buffer.Add("print");
+                string[] temp_split = local_trust[0].Split('|');
 
+
+
+                h1 = hash1(temp_split[1]);
+                h2 = hash2(temp_split[1]);
+
+
+                dht_buffer.Add($"put {h1} *{local_trust[0]}");
+                dht_buffer.Add($"put {h2} *{local_trust[0]}");
+
+                /*h1 = hash1($"{local_ip}:{local_port}");
+                h2 = hash2($"{local_ip}:{local_port}");
+
+                dht_buffer.Add($"put {h1} *{local_trust[0]}");
+                dht_buffer.Add($"put {h2} *{local_trust[0]}");*/
+
+                new Thread(() => print_trust_values()).Start();
 
                 handle_connections();
             }
@@ -692,7 +776,7 @@ namespace superpeer_network
                 new Thread(() => start_dht()).Start();
                 dht_buffer.Add("join 127.0.0.1 27010");
 
-                local_trust.Add($"{local_ip}:{local_port}|localhost:27005|0.3");
+                local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:27005|0.3");
 
                 IPEndPoint ipLocalEndPoint = new IPEndPoint(local_ip, 28005);
 
@@ -720,8 +804,8 @@ namespace superpeer_network
                 server = new TcpListener(local_ip, local_port);
                 server.Start();
 
-                string h1 = hash1("localhost:27005");
-                string h2 = hash2("localhost:27005");
+                string h1 = hash1($"{local_ip}:{local_port}");
+                string h2 = hash2($"{local_ip}:{local_port}");
 
                 Console.WriteLine(h1);
                 Console.WriteLine(h2);
@@ -729,8 +813,24 @@ namespace superpeer_network
                 dht_buffer.Add($"put {h1} {local_trust[0]}");
                 dht_buffer.Add($"put {h2} {local_trust[0]}");
 
-                Thread.Sleep(5000);
-                dht_buffer.Add($"print");
+                string[] temp_split = local_trust[0].Split('|');
+
+
+
+                h1 = hash1(temp_split[1]);
+                h2 = hash2(temp_split[1]);
+
+
+                dht_buffer.Add($"put {h1} *{local_trust[0]}");
+                dht_buffer.Add($"put {h2} *{local_trust[0]}");
+
+                /*h1 = hash1($"{local_ip}:{local_port}");
+                h2 = hash2($"{local_ip}:{local_port}");
+
+                dht_buffer.Add($"put {h1} *{local_trust[0]}");
+                dht_buffer.Add($"put {h2} *{local_trust[0]}");*/
+
+                new Thread(() => print_trust_values()).Start();
 
                 handle_connections();
             }
@@ -740,6 +840,15 @@ namespace superpeer_network
 
 
             //Handle requests from other super peers
+        }
+
+        static void print_trust_values()
+        {
+            while(true)
+            {
+                Thread.Sleep(10000);
+                dht_buffer.Add($"print");
+            }
         }
 
         public static void transfer_peers(SslStream sslStream, int divident)

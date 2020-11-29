@@ -50,7 +50,7 @@ void NodeInformation::setFingerTable(string ip,int port,lli hash){
 void NodeInformation::storeKey(lli key,string val){
 	if(dictionary.count(key) > 0){
 		string prev_key = dictionary[key];
-		string result = prev_key.append(",").append(val);
+		string result = prev_key.append("/").append(val);
 		dictionary[key] = result;
 	}
 	else{
