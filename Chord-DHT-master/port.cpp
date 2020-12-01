@@ -8,7 +8,7 @@
 /* generate a port number to run on */
 void SocketAndPort::specifyPortServer(){
 
-	const char* google_dns_server = "8.8.8.8";
+/*	const char* google_dns_server = "8.8.8.8";
     int dns_port = 53;
 
     struct sockaddr_in serv;
@@ -48,7 +48,7 @@ void SocketAndPort::specifyPortServer(){
             << ". Error message: " << strerror(errno) << std::endl;
     }
 
-    close(sock);
+    close(sock);*/
 
 	/* generating a port number between 1024 and 65535 */
 	srand(time(0));
@@ -61,8 +61,8 @@ void SocketAndPort::specifyPortServer(){
 	sock = socket(AF_INET,SOCK_DGRAM,0);
 	current.sin_family = AF_INET;
 	current.sin_port = htons(portNoServer);
-	current.sin_addr.s_addr = inet_addr("127.0.0.1");
-	//current.sin_addr.s_addr = inet_addr(buffer);
+	//current.sin_addr.s_addr = inet_addr("127.0.0.1");
+	current.sin_addr.s_addr = inet_addr("0.0.0.0");
 	
 
 

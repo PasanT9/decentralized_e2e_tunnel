@@ -75,6 +75,13 @@ namespace superpeer_network
 
         static List<Tuple<string,string>> D;
 
+        public class MemoryMetrics
+{
+    public double Total;
+    public double Used;
+    public double Free;
+}
+
         //Create random strings to imitate public keys
         public static string random_string()
         {
@@ -694,6 +701,9 @@ namespace superpeer_network
 
         static void Main(string[] args)
         {
+
+
+
             superpeer_neighbours = new Dictionary<IPEndPoint, SslStream>();
             peers = new Dictionary<string, IPEndPoint>();
             exit_neighbours = new List<IPEndPoint>();
@@ -793,12 +803,6 @@ namespace superpeer_network
                 dht_buffer.Add($"put {h1} *{local_trust[0]}");
                 dht_buffer.Add($"put {h2} *{local_trust[0]}");
 
-                /*h1 = hash1($"{local_ip}:{local_port}");
-                h2 = hash2($"{local_ip}:{local_port}");
-
-                dht_buffer.Add($"put {h1} *{local_trust[0]}");
-                dht_buffer.Add($"put {h2} *{local_trust[0]}");*/
-
                 new Thread(() => print_trust_values()).Start();
 
                 handle_connections();
@@ -856,11 +860,6 @@ namespace superpeer_network
                 dht_buffer.Add($"put {h1} *{local_trust[0]}");
                 dht_buffer.Add($"put {h2} *{local_trust[0]}");
 
-                /*h1 = hash1($"{local_ip}:{local_port}");
-                h2 = hash2($"{local_ip}:{local_port}");
-
-                dht_buffer.Add($"put {h1} *{local_trust[0]}");
-                dht_buffer.Add($"put {h2} *{local_trust[0]}");*/
 
                 new Thread(() => print_trust_values()).Start();
 
