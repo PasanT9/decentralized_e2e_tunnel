@@ -61,8 +61,8 @@ void SocketAndPort::specifyPortServer(){
 	sock = socket(AF_INET,SOCK_DGRAM,0);
 	current.sin_family = AF_INET;
 	current.sin_port = htons(portNoServer);
-	//current.sin_addr.s_addr = inet_addr("127.0.0.1");
-	current.sin_addr.s_addr = inet_addr(buffer);
+	current.sin_addr.s_addr = inet_addr("127.0.0.1");
+	//current.sin_addr.s_addr = inet_addr(buffer);
 	
 
 
