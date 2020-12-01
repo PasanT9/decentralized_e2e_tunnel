@@ -8,6 +8,48 @@
 /* generate a port number to run on */
 void SocketAndPort::specifyPortServer(){
 
+	const char* google_dns_server = "8.8.8.8";
+    int dns_port = 53;
+
+    struct sockaddr_in serv;
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+    //Socket could not be created
+    if(sock < 0)
+    {
+        std::cout << "Socket error" << std::endl;
+    }
+
+    memset(&serv, 0, sizeof(serv));
+    serv.sin_family = AF_INET;
+    serv.sin_addr.s_addr = inet_addr(google_dns_server);
+    serv.sin_port = htons(dns_port);
+
+    int err = connect(sock, (const struct sockaddr*)&serv, sizeof(serv));
+    if (err < 0)
+    {
+        std::cout << "Error number: " << errno
+            << ". Error message: " << strerror(errno) << std::endl;
+    }
+
+    struct sockaddr_in name;
+    socklen_t namelen = sizeof(name);
+    err = getsockname(sock, (struct sockaddr*)&name, &namelen);
+
+    char buffer[80];
+    const char* p = inet_ntop(AF_INET, &name.sin_addr, buffer, 80);
+    if(p != NULL)
+    {
+        std::cout << "Local IP address is: " << buffer << std::endl;
+    }
+    else
+    {
+        std::cout << "Error number: " << errno
+            << ". Error message: " << strerror(errno) << std::endl;
+    }
+
+    close(sock);
+
 	/* generating a port number between 1024 and 65535 */
 	srand(time(0));
 	portNoServer = rand() % 65536;
@@ -19,7 +61,10 @@ void SocketAndPort::specifyPortServer(){
 	sock = socket(AF_INET,SOCK_DGRAM,0);
 	current.sin_family = AF_INET;
 	current.sin_port = htons(portNoServer);
-	current.sin_addr.s_addr = inet_addr("127.0.0.1");
+	//current.sin_addr.s_addr = inet_addr("127.0.0.1");
+	current.sin_addr.s_addr = inet_addr(buffer);
+	
+
 
 	if( bind(sock,(struct sockaddr *)&current,len) < 0){
 		perror("error");
@@ -94,3 +139,4 @@ int SocketAndPort::getSocketFd(){
 void SocketAndPort::closeSocket(){
 	close(sock);
 }
+
