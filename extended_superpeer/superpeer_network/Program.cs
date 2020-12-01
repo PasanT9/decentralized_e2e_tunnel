@@ -53,6 +53,14 @@ namespace superpeer_network
         static List<IPEndPoint> exit_neighbours;
         static List<IPEndPoint> change_neighbours;
         static List<string> local_trust;
+
+        static Dictionary<Tuple<string,string>, float> Ad;
+        static Dictionary<Tuple<string,string>, float> Bd;
+        static Dictionary<string, float> Pd;
+        static Dictionary<string, float> prev_Td;
+        static Dictionary<string, float> curr_Td;
+        static List<string> daughters;
+
         static List<string> dht_buffer;
         static Dictionary<Tuple<string,string>, float> Cd;
 
@@ -613,7 +621,7 @@ namespace superpeer_network
                         int c = reader.Read();
                         c = reader.Read();
                         string line = reader.ReadLine();
-                        Console.WriteLine(": " + line);
+                        Console.WriteLine(line);
                         string[] split = line.Split('/');
                         for(int i=0;i<split.Length-1; ++i)
                         {
@@ -621,17 +629,71 @@ namespace superpeer_network
                             if(temp0.Length > 1)
                             {
                                 temp0 = temp0[1].Split('|');
-                                var t = new Tuple<string, string>(temp0[0], temp0[1]);
-                                Cd[t] = float.Parse(temp0[2]);
-                                Console.WriteLine($"{t}: {Cd[t]}");
+                                if(temp0[0][0]!='*')
+                                {
+                                    var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    daughters.Add(temp0[0]);
+                                    Bd[t] = float.Parse(temp0[2]);
+                                    Console.WriteLine($"Bd => {t}: {Bd[t]}");
+                                }
+                                else
+                                {
+                                    temp0[0] = temp0[0].Substring(1, temp0[0].Length-1);
+                                    var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    Ad[t] = float.Parse(temp0[2]);
+                                    Console.WriteLine($"Ad => {t}: {Ad[t]}");
+                                }
                             }
                             else
                             {
                                 temp0 = temp0[0].Split('|');
-                                var t = new Tuple<string, string>(temp0[0], temp0[1]);
-                                Cd[t] = float.Parse(temp0[2]);
-                                Console.WriteLine($"{t}: {Cd[t]}");
+                                if(temp0[0][0]!='*')
+                                {
+                                    var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    daughters.Add(temp0[0]);
+                                    Bd[t] = float.Parse(temp0[2]);
+                                    Console.WriteLine($"Bd => {t}: {Bd[t]}");
+                                }
+                                else
+                                {
+                                    temp0[0] = temp0[0].Substring(1, temp0[0].Length-1);
+                                    var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    Ad[t] = float.Parse(temp0[2]);
+                                    Console.WriteLine($"Ad => {t}: {Ad[t]}");
+                                }
                             }
+                        }
+                        if(Bd.Count > 0 && Ad.Count > 0)
+                        {
+                            foreach(string d in daughters)
+                            {
+                                Console.WriteLine("-> " +d);
+                                float p = 0;
+                                foreach(var cp in Ad)
+                                {
+                                    if(d == cp.Key.Item2)
+                                    {
+                                        p += Pd[cp.Key.Item1] * cp.Value;
+                                    }
+                                    
+                                }
+                                Console.WriteLine("p: " + p);
+                                float t = 0;
+                                foreach(var cp in Ad)
+                                {
+                                    if(d == cp.Key.Item2)
+                                    {
+                                        t += prev_Td[d] * cp.Value;
+                                    }
+                                }
+                                Console.WriteLine("t: " + t);
+
+                                curr_Td[d] = (float)(1-0.67)*t + (float)(0.67)*p;
+                                Console.WriteLine("Previous Td: " + prev_Td[d]);
+                                Console.WriteLine("Current Td: " + curr_Td[d]);
+                                prev_Td[d] = curr_Td[d];
+                            }
+
                         }
 
                     }
@@ -669,8 +731,22 @@ namespace superpeer_network
             exit_neighbours = new List<IPEndPoint>();
             change_neighbours = new List<IPEndPoint>();
             local_trust = new List<string>();
+
+            Ad = new Dictionary<Tuple<string, string>, float>();
+            Bd = new Dictionary<Tuple<string, string>, float>();
+            Pd = new Dictionary<string, float>();
+            prev_Td = new Dictionary<string, float>();
+            curr_Td = new Dictionary<string, float>();
+            daughters = new List<string>();
+
             dht_buffer = new List<string>();
             Cd = new Dictionary<Tuple<string, string>, float>();
+
+            Pd["127.0.0.1:27005"] = (float)0.4;
+            Pd["127.0.0.1:28005"] = (float)0.8;
+
+            prev_Td["127.0.0.1:27005"] = (float)0.4;
+            prev_Td["127.0.0.1:28005"] = (float)0.8;
 
             client_keys = new Dictionary<IPEndPoint, PublicKeyCoordinates>();
 

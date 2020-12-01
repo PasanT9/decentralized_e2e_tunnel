@@ -68,6 +68,11 @@ namespace superpeer_network
         static List<string> local_trust;
         static Dictionary<Tuple<string,string>, float> Ad;
         static Dictionary<Tuple<string,string>, float> Bd;
+        static Dictionary<string, float> Pd;
+        static Dictionary<string, float> prev_Td;
+        static Dictionary<string, float> curr_Td;
+        static List<string> daughters;
+
         static List<Tuple<string,string>> D;
 
         //Create random strings to imitate public keys
@@ -614,6 +619,7 @@ namespace superpeer_network
                                 if(temp0[0][0]!='*')
                                 {
                                     var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    daughters.Add(temp0[0]);
                                     Bd[t] = float.Parse(temp0[2]);
                                     Console.WriteLine($"Bd => {t}: {Bd[t]}");
                                 }
@@ -631,6 +637,7 @@ namespace superpeer_network
                                 if(temp0[0][0]!='*')
                                 {
                                     var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    daughters.Add(temp0[0]);
                                     Bd[t] = float.Parse(temp0[2]);
                                     Console.WriteLine($"Bd => {t}: {Bd[t]}");
                                 }
@@ -642,26 +649,41 @@ namespace superpeer_network
                                     Console.WriteLine($"Ad => {t}: {Ad[t]}");
                                 }
                             }
-                        }/*
-                        if(Bd.Count > 0)
+                        }
+                        if(Bd.Count > 0 && Ad.Count > 0)
                         {
-                            foreach(var t in Bd)
+                            foreach(string d in daughters)
                             {
-                               Console.WriteLine(t.Key+": "+t.Value); 
-                               if(!(D.Contains(t.Key)))
-                               {
-                                    string d = t.Key.Item1;
-                                
-                                    string h1 = hash1(d);
-                                    string h2 = hash2(d);
+                                Console.WriteLine("-> " +d);
+                                float p = 0;
+                                foreach(var cp in Ad)
+                                {
+                                    if(d == cp.Key.Item2)
+                                    {
+                                        if(Pd.ContainsKey(cp.Key.Item1)){
+                                            p += Pd[cp.Key.Item1] * cp.Value;
+                                        }
+                                    }
+                                    
+                                }
+                                Console.WriteLine("p: " + p);
+                                float t = 0;
+                                foreach(var cp in Ad)
+                                {
+                                    if(d == cp.Key.Item2)
+                                    {
+                                        t += prev_Td[d] * cp.Value;
+                                    }
+                                }
+                                Console.WriteLine("t: " + t);
 
-                                    dht_buffer.Add($"put {h1} *{d}|{t.Key.Item2}|{t.Value}");
-                                    dht_buffer.Add($"put {h1} *{d}|{t.Key.Item2}|{t.Value}");
-
-                                    D.Add(t.Key);
-                               }
+                                curr_Td[d] = (float)(1-0.67)*t + (float)(0.67)*p;
+                                //Console.WriteLine("Previous Td: " + prev_Td[d]);
+                                Console.WriteLine("Current Td: " + curr_Td[d]);
+                                prev_Td[d] = curr_Td[d];
                             }
-                        }*/
+
+                        }
 
                     }
                     dht_buffer.Remove(dht_buffer[0]);
@@ -679,6 +701,11 @@ namespace superpeer_network
             local_trust = new List<string>();
             Ad = new Dictionary<Tuple<string, string>, float>();
             Bd = new Dictionary<Tuple<string, string>, float>();
+            Pd = new Dictionary<string, float>();
+            prev_Td = new Dictionary<string, float>();
+            curr_Td = new Dictionary<string, float>();
+            daughters = new List<string>();
+
             D = new List<Tuple<string,string>>();
 
             message_buffer = new Dictionary<string, IPEndPoint>();
@@ -688,6 +715,12 @@ namespace superpeer_network
             client_keys = new Dictionary<IPEndPoint, PublicKeyCoordinates>();
 
             dht_buffer = new List<string>();
+
+            Pd["127.0.0.1:27005"] = (float)0.4;
+            Pd["127.0.0.1:28005"] = (float)0.8;
+
+            prev_Td["127.0.0.1:27005"] = (float)0.4;
+            prev_Td["127.0.0.1:28005"] = (float)0.8;
 
 
             insert_peers_random();
@@ -710,7 +743,6 @@ namespace superpeer_network
             if (local_port == 27005)
             {
 
-                
                 new Thread(() => start_dht()).Start();
                 dht_buffer.Add("create");
 
