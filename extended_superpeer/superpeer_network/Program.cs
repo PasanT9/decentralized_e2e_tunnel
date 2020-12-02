@@ -119,30 +119,17 @@ namespace superpeer_network
                 try
                 {
                     response = TCPCommunication.recieve_message_tcp(sslStream);
-                    Console.Write($"Receive({ip}): ");
+                    /*Console.Write($"Receive({ip}): ");
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(response);
-                    Console.ResetColor();
+                    Console.ResetColor();*/
                     if (String.Compare(response, "END") == 0)
                     {
                         TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
                         disconnect_neighbour(ip);
 
                         break;
-                        /*disconnect_neighbour = neighbour;
-                        break;*/
                     }
-
-                    /*else if (String.Compare(response, "ACCEPT") == 0)
-                    {
-                        // TCPCommunication.send_message_tcp(sslStream, "ACCEPT_END");
-
-                        disconnect_neighbour(ip);
-
-                        break;
-                        /*disconnect_neighbour = neighbour;
-                        break;*//*
-                    }*/
                     else if (String.Compare(response, "EXIT") == 0)
                     {
 
@@ -344,18 +331,18 @@ namespace superpeer_network
 
                                     if (data0 != "")
                                     {
-                                        Console.Write($"Sending({neighbour}): ");
+                                        /*Console.Write($"Sending({neighbour}): ");
                                         Console.ForegroundColor = ConsoleColor.Yellow;
                                         Console.WriteLine($"{message}: {data0}");
-                                        Console.ResetColor();
+                                        Console.ResetColor();*/
                                         TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message + ":" + data0 + ":" + data1 + ":"+hops);
                                     }
                                     else
                                     {
-                                        Console.Write($"Sending({neighbour}): ");
+                                        /*Console.Write($"Sending({neighbour}): ");
                                         Console.ForegroundColor = ConsoleColor.Yellow;
                                         Console.WriteLine($"{message}");
-                                        Console.ResetColor();
+                                        Console.ResetColor();*/
                                         TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message);
                                     }
                                     message_buffer.Remove(message_full);
@@ -421,18 +408,6 @@ namespace superpeer_network
             {
                 exit_neighbours.Add(neighbour);
             }
-
-
-            /*IPEndPoint neighbour;
-            var neighbour_itr = superpeer_neighbours.GetEnumerator();
-            neighbour_itr.MoveNext();
-            neighbour = neighbour_itr.Current.Key;
-            exit_neighbours.Add(neighbour);
-            //Thread.Sleep(1000);
-
-            neighbour_itr.MoveNext();
-            neighbour = neighbour_itr.Current.Key;
-            exit_neighbours.Add(neighbour);*/
 
             Thread.Sleep(4000);
 
@@ -572,27 +547,21 @@ namespace superpeer_network
             return hash;
         }
 
-                static void start_dht()
+        static void start_dht()
         {
-            Process greeterProcess = new Process();
-            greeterProcess.StartInfo.FileName = "./../../Chord-DHT-master/prog";
-            // Indicate that we want to read from standard output
-            // of process
-            greeterProcess.StartInfo.RedirectStandardInput = true;
-            // Indicate that we want to write to standard input of
-            // process
-            greeterProcess.StartInfo.RedirectStandardOutput = true;
-            greeterProcess.StartInfo.UseShellExecute = false;
-            greeterProcess.Start();
-            // Get a StreamWriter to write to the standard input of
-            // Greeter.exe
-            StreamWriter writer = greeterProcess.StandardInput;
-            // Get a StreamReader to read from standard output of
-            // Greeter.exe
-            StreamReader reader = greeterProcess.StandardOutput;
-            // Get the question from greeter
+            Process proc = new Process();
+            proc.StartInfo.FileName = "./../../Chord-DHT-master/prog";
+
+            proc.StartInfo.RedirectStandardInput = true;
+
+            proc.StartInfo.RedirectStandardOutput = true;
+            proc.StartInfo.UseShellExecute = false;
+            proc.Start();
+
+            StreamWriter writer = proc.StandardInput;
+            StreamReader reader = proc.StandardOutput;
+
             Console.WriteLine(reader.ReadLine());
-            // Answer Greeter with Robot
             
             Console.WriteLine(reader.ReadLine());
             writer.WriteLine($"port {local_port+5}");
@@ -602,7 +571,6 @@ namespace superpeer_network
             {
                 if(dht_buffer.Count > 0)
                 {
-                    Console.WriteLine(dht_buffer[0]);
                     writer.WriteLine(dht_buffer[0]);
                     string[] temp_split = dht_buffer[0].Split(' ');
                     string command = temp_split[0];
@@ -632,7 +600,14 @@ namespace superpeer_network
                                 if(temp0[0][0]!='*')
                                 {
                                     var t = new Tuple<string, string>(temp0[0], temp0[1]);
-                                    daughters.Add(temp0[0]);
+                                    if(!daughters.Contains(temp0[0]))
+                                    {
+                                        daughters.Add(temp0[0]);
+                                    }
+                                    if(Bd.ContainsKey(t))
+                                    {
+                                        Bd.Remove(t);
+                                    }
                                     Bd[t] = float.Parse(temp0[2]);
                                     Console.WriteLine($"Bd => {t}: {Bd[t]}");
                                 }
@@ -640,6 +615,10 @@ namespace superpeer_network
                                 {
                                     temp0[0] = temp0[0].Substring(1, temp0[0].Length-1);
                                     var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    if(Ad.ContainsKey(t))
+                                    {
+                                        Ad.Remove(t);
+                                    }
                                     Ad[t] = float.Parse(temp0[2]);
                                     Console.WriteLine($"Ad => {t}: {Ad[t]}");
                                 }
@@ -650,7 +629,14 @@ namespace superpeer_network
                                 if(temp0[0][0]!='*')
                                 {
                                     var t = new Tuple<string, string>(temp0[0], temp0[1]);
-                                    daughters.Add(temp0[0]);
+                                    if(!daughters.Contains(temp0[0]))
+                                    {
+                                        daughters.Add(temp0[0]);
+                                    }
+                                    if(Bd.ContainsKey(t))
+                                    {
+                                        Bd.Remove(t);
+                                    }
                                     Bd[t] = float.Parse(temp0[2]);
                                     Console.WriteLine($"Bd => {t}: {Bd[t]}");
                                 }
@@ -658,13 +644,18 @@ namespace superpeer_network
                                 {
                                     temp0[0] = temp0[0].Substring(1, temp0[0].Length-1);
                                     var t = new Tuple<string, string>(temp0[0], temp0[1]);
+                                    if(Ad.ContainsKey(t))
+                                    {
+                                        Ad.Remove(t);
+                                    }
                                     Ad[t] = float.Parse(temp0[2]);
                                     Console.WriteLine($"Ad => {t}: {Ad[t]}");
                                 }
                             }
                         }
-                        if(Bd.Count > 0 && Ad.Count > 0)
+                        if(Ad.Count > 0)
                         {
+                            Console.WriteLine("Ad: " + Ad.Count);
                             foreach(string d in daughters)
                             {
                                 Console.WriteLine("-> " +d);
@@ -673,23 +664,28 @@ namespace superpeer_network
                                 {
                                     if(d == cp.Key.Item2)
                                     {
-                                        p += Pd[cp.Key.Item1] * cp.Value;
+                                        if(Pd.ContainsKey(cp.Key.Item1)){
+                                            p += Pd[cp.Key.Item1] * cp.Value;
+                                        }
                                     }
                                     
                                 }
                                 Console.WriteLine("p: " + p);
                                 float t = 0;
-                                foreach(var cp in Ad)
+                                if(prev_Td.ContainsKey(d))
                                 {
-                                    if(d == cp.Key.Item2)
+                                    foreach(var cp in Ad)
                                     {
-                                        t += prev_Td[d] * cp.Value;
+                                        if(d == cp.Key.Item2)
+                                        {
+                                            t += prev_Td[d] * cp.Value;
+                                        }
                                     }
                                 }
                                 Console.WriteLine("t: " + t);
 
                                 curr_Td[d] = (float)(1-0.67)*t + (float)(0.67)*p;
-                                Console.WriteLine("Previous Td: " + prev_Td[d]);
+                                //Console.WriteLine("Previous Td: " + prev_Td[d]);
                                 Console.WriteLine("Current Td: " + curr_Td[d]);
                                 prev_Td[d] = curr_Td[d];
                             }
@@ -700,9 +696,43 @@ namespace superpeer_network
                     dht_buffer.Remove(dht_buffer[0]);
                 }
             }
-            greeterProcess.WaitForExit();
+            proc.WaitForExit();
         }
 
+        static void handle_input()
+        {
+
+            string local_h1 = hash1($"{local_ip}:{local_port}");
+            string local_h2 = hash2($"{local_ip}:{local_port}");
+
+            while(true)
+            {
+                Console.Write("> ");
+                string input = Console.ReadLine();
+                if(input != "")
+                {
+                    Console.WriteLine("Executing "+input);
+                    string[] input_arr = input.Split(' ');
+                    //string h3 = hash3("localhost:28005");
+                    //local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:28005|0.7");
+
+                    string cmd = input_arr[0];
+                    if(cmd == "put")
+                    {
+                        string value = $"{local_ip}:{local_port}|{input_arr[1]}|{input_arr[2]}";
+                        dht_buffer.Add($"put {local_h1} {value}");
+                        dht_buffer.Add($"put {local_h2} {value}");
+
+                        string h1 = hash1(input_arr[1]);
+                        string h2 = hash2(input_arr[1]);
+
+                        dht_buffer.Add($"put {h1} *{value}");
+                        dht_buffer.Add($"put {h2} *{value}");
+
+                    }                    
+                }
+            }
+        }
 
         static void Main(string[] args)
         {
@@ -777,6 +807,8 @@ namespace superpeer_network
             new Thread(() => start_dht()).Start();
             dht_buffer.Add($"join {server_ip} {server_port+5}");
 
+            new Thread(() => handle_input()).Start();
+
             server = new TcpListener(local_ip, local_port);
             server.Start();
 
@@ -785,40 +817,7 @@ namespace superpeer_network
 
             //Listen to requests
 
-            new Thread(() => add_trust()).Start();
             handle_connections();
-        }
-
-        static void add_trust()
-        {
-            Thread.Sleep(5000);
-            Console.WriteLine("Adding trust");
-            local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:27005|0.2");
-            local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:28005|0.8");
- 
-
-                string h1 = hash1("127.0.0.1:27005");
-                string h2 = hash2("127.0.0.1:27005");
-
-                dht_buffer.Add($"put {h1} {local_trust[0]}");
-                dht_buffer.Add($"put {h2} {local_trust[0]}");
-
-                //string h3 = hash3("localhost:28005");
-
-
-                h1 = hash1("127.0.0.1:28005");
-                h2 = hash2("127.0.0.1:28005");
-
-                dht_buffer.Add($"put {h1} {local_trust[1]}");
-                dht_buffer.Add($"put {h2} {local_trust[1]}");
-
-                h1 = hash1($"{local_ip}:{local_port}");
-                h2 = hash2($"{local_ip}:{local_port}");
-
-                dht_buffer.Add($"put {h1} *{local_trust[0]}");
-                dht_buffer.Add($"put {h2} *{local_trust[0]}");
-                dht_buffer.Add($"put {h1} *{local_trust[1]}");
-                dht_buffer.Add($"put {h2} *{local_trust[1]}");
         }
 
         static void print_trust_values()
