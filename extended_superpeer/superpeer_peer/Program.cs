@@ -226,6 +226,7 @@ namespace superpeer_peer
             authenticate_server(sslStream);
 
             TCPCommunication.send_message_tcp(sslStream, "INIT_P");
+            TCPCommunication.send_message_tcp(sslStream, GetLocalIPAddress());
             string response = TCPCommunication.recieve_message_tcp(sslStream);
             Console.WriteLine(response);
 

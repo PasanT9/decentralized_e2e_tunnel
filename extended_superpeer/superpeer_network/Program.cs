@@ -655,7 +655,8 @@ namespace superpeer_network
                         }
                         if(Ad.Count > 0)
                         {
-                            Console.WriteLine("Ad: " + Ad.Count);
+                            //Console.WriteLine("Daughters: "+ daughters.Count);
+                            //Console.WriteLine("Ad: " + Ad.Count);
                             foreach(string d in daughters)
                             {
                                 Console.WriteLine("-> " +d);
@@ -670,7 +671,7 @@ namespace superpeer_network
                                     }
                                     
                                 }
-                                Console.WriteLine("p: " + p);
+                                //Console.WriteLine("p: " + p);
                                 float t = 0;
                                 if(prev_Td.ContainsKey(d))
                                 {
@@ -682,7 +683,7 @@ namespace superpeer_network
                                         }
                                     }
                                 }
-                                Console.WriteLine("t: " + t);
+                                //Console.WriteLine("t: " + t);
 
                                 curr_Td[d] = (float)(1-0.67)*t + (float)(0.67)*p;
                                 //Console.WriteLine("Previous Td: " + prev_Td[d]);
@@ -729,7 +730,15 @@ namespace superpeer_network
                         dht_buffer.Add($"put {h1} *{value}");
                         dht_buffer.Add($"put {h2} *{value}");
 
-                    }                    
+                    }     
+                    else if(cmd == "get")
+                    {
+                        string h1 = hash1(input_arr[1]);
+                        string h2 = hash2(input_arr[1]);
+
+                        dht_buffer.Add($"get {h1}");
+                        dht_buffer.Add($"get {h2}");  
+                    }                
                 }
             }
         }

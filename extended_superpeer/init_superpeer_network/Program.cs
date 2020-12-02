@@ -75,12 +75,7 @@ namespace superpeer_network
 
         static List<Tuple<string,string>> D;
 
-        public class MemoryMetrics
-{
-    public double Total;
-    public double Used;
-    public double Free;
-}
+        static List<string> possible_peers;
 
         //Create random strings to imitate public keys
         public static string random_string()
@@ -657,7 +652,8 @@ namespace superpeer_network
                         }
                         if(Ad.Count > 0)
                         {
-                            Console.WriteLine("Ad: " + Ad.Count);
+                            //Console.WriteLine("Daughters: "+ daughters.Count);
+                            //Console.WriteLine("Ad: " + Ad.Count);
                             foreach(string d in daughters)
                             {
                                 Console.WriteLine("-> " +d);
@@ -672,7 +668,7 @@ namespace superpeer_network
                                     }
                                     
                                 }
-                                Console.WriteLine("p: " + p);
+                                //Console.WriteLine("p: " + p);
                                 float t = 0;
                                 if(prev_Td.ContainsKey(d))
                                 {
@@ -684,7 +680,7 @@ namespace superpeer_network
                                         }
                                     }
                                 }
-                                Console.WriteLine("t: " + t);
+                                //Console.WriteLine("t: " + t);
 
                                 curr_Td[d] = (float)(1-0.67)*t + (float)(0.67)*p;
                                 //Console.WriteLine("Previous Td: " + prev_Td[d]);
@@ -730,15 +726,34 @@ namespace superpeer_network
 
                         dht_buffer.Add($"put {h1} *{value}");
                         dht_buffer.Add($"put {h2} *{value}");
+                    }        
+                    else if(cmd == "get")
+                    {
+                        string h1 = hash1(input_arr[1]);
+                        string h2 = hash2(input_arr[1]);
 
-                    }                    
+                        dht_buffer.Add($"get {h1}");
+                        dht_buffer.Add($"get {h2}");  
+                    }            
                 }
             }
         }
 
+        public static string GetLocalIPAddress()
+        {
+            string localIP;
+            using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0))
+            {
+                socket.Connect("8.8.8.8", 65530);
+                IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
+                localIP = endPoint.Address.ToString();
+            }
+            return localIP;
+        }
+
         static void Main(string[] args)
         {
-
+            Console.WriteLine(GetLocalIPAddress());
             superpeer_neighbours = new Dictionary<IPEndPoint, SslStream>();
             peers = new Dictionary<string, IPEndPoint>();
             exit_neighbours = new List<IPEndPoint>();
@@ -750,6 +765,7 @@ namespace superpeer_network
             prev_Td = new Dictionary<string, float>();
             curr_Td = new Dictionary<string, float>();
             daughters = new List<string>();
+            possible_peers = new List<string>();
 
             D = new List<Tuple<string,string>>();
 
@@ -1085,10 +1101,20 @@ namespace superpeer_network
                 }
                 else if (String.Compare(response, "INIT_P") == 0)
                 {
-                    Console.WriteLine((IPEndPoint)client.Client.RemoteEndPoint + " peer is registering");
+                    string public_ip = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
+                    response = TCPCommunication.recieve_message_tcp(sslStream);
+                    string private_ip = response;
+                    
+
                     TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
                     response = TCPCommunication.recieve_message_tcp(sslStream);
                     string hash = HashString.GetHashString(response);
+
+                    if(String.Compare(private_ip,public_ip) == 0)
+                    {
+                        Console.WriteLine("Added to possible peers");
+                        possible_peers.Add(hash);
+                    }
 
                     peers[hash] = (IPEndPoint)client.Client.RemoteEndPoint;
 
