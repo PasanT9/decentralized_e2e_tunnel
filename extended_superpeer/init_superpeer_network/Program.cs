@@ -1101,20 +1101,10 @@ namespace superpeer_network
                 }
                 else if (String.Compare(response, "INIT_P") == 0)
                 {
-                    string public_ip = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
-                    response = TCPCommunication.recieve_message_tcp(sslStream);
-                    string private_ip = response;
-                    
 
                     TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
                     response = TCPCommunication.recieve_message_tcp(sslStream);
                     string hash = HashString.GetHashString(response);
-
-                    if(String.Compare(private_ip,public_ip) == 0)
-                    {
-                        Console.WriteLine("Added to possible peers");
-                        possible_peers.Add(hash);
-                    }
 
                     peers[hash] = (IPEndPoint)client.Client.RemoteEndPoint;
 
@@ -1272,7 +1262,6 @@ namespace superpeer_network
                     string sender_key = TCPCommunication.recieve_message_tcp(sslStream);
                     if (peers.ContainsKey(sender_key))
                     {
-                        //response = TCPCommunication.recieve_message_tcp(sslStream);
                         Console.WriteLine($"Listen request received for {response}");
 
                         Random random = new Random();
@@ -1283,16 +1272,6 @@ namespace superpeer_network
                         pending_requests[listen_ip] = dtls_port;
                         
                         new Thread(() => handle_relay(dtls_port, listen_ip, sslStream)).Start();
-                        //Thread.Sleep(1000);
-
-                        //TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
-                        
-                        //TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
-
-                        //pending_requests.Add(listen_ip);
-
-                        /*sslStream.Close();
-                        client.Close();*/
                     }
                     else
                     {
@@ -1303,6 +1282,38 @@ namespace superpeer_network
 
 
                     //new Thread(() => handle_relay(relay_ip)).Start();
+                }
+                else if(String.Compare(response, "PROMOTE_P") == 0)
+                {
+                    string sender_key = TCPCommunication.recieve_message_tcp(sslStream);
+                    if (peers.ContainsKey(sender_key))
+                    {
+                        TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
+
+                        string public_ip = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
+                        response = TCPCommunication.recieve_message_tcp(sslStream);
+                        string private_ip = response;
+
+                        if(String.Compare(private_ip,public_ip) == 0)
+                        {
+                            Console.WriteLine("Added to possible peers");
+                            possible_peers.Add(sender_key);
+                            TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
+                        }
+                        else
+                        {
+                            TCPCommunication.send_message_tcp(sslStream, "REJECT");
+                        }
+                        sslStream.Close();
+                        client.Close();
+
+                    }
+                    else
+                    {
+                        TCPCommunication.send_message_tcp(sslStream, "REJECT");
+                        sslStream.Close();
+                        client.Close();
+                    }
                 }
                 else
                 {

@@ -14,6 +14,7 @@ using System.Numerics;
 using System.Buffers;
 #endif
 using System.Runtime.InteropServices;
+using System.Diagnostics;
 
 using TCP;
 using dtls_server;
@@ -117,18 +118,19 @@ namespace superpeer_peer
 
             sslStream.Close();
             client.Close();
-            Console.Write("init connection: ");
-            string input = Console.ReadLine();
+            //Console.Write("init connection: ");
+            //string input = Console.ReadLine();
             //locate_peer();
             //anonym_peer();
-            if (input == "y")
+            promote_peer();
+            /*if (input == "y")
             {
                 find_superpeer();
             }
             else
             {
                 listen_superpeer();
-            }
+            }*/
 
 
         }
@@ -226,7 +228,7 @@ namespace superpeer_peer
             authenticate_server(sslStream);
 
             TCPCommunication.send_message_tcp(sslStream, "INIT_P");
-            TCPCommunication.send_message_tcp(sslStream, GetLocalIPAddress());
+            //TCPCommunication.send_message_tcp(sslStream, GetLocalIPAddress());
             string response = TCPCommunication.recieve_message_tcp(sslStream);
             Console.WriteLine(response);
 
@@ -241,6 +243,55 @@ namespace superpeer_peer
 
             TCPCommunication.send_message_tcp(sslStream, pubKey.ToString());
 
+        }
+
+        static void promote_peer()
+        {
+            Console.Write("Press any key");
+            string dest_key = Console.ReadLine();
+            IPAddress ipAddress = IPAddress.Parse(local_ip);
+            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+
+            //Connect to server
+            TcpClient client = new TcpClient(ipLocalEndPoint);
+            client.Connect(server_ip, server_port);
+            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+            authenticate_server(sslStream);
+
+
+            TCPCommunication.send_message_tcp(sslStream, "PROMOTE_P");
+            TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
+
+            string response = TCPCommunication.recieve_message_tcp(sslStream);
+            if(String.Compare(response,"ACCEPT") == 0)
+            {
+                TCPCommunication.send_message_tcp(sslStream, GetLocalIPAddress());
+                response = TCPCommunication.recieve_message_tcp(sslStream);
+                if(String.Compare(response,"SUCCESS") == 0)
+                {
+                    Console.WriteLine("Promoting...");
+                    Process proc = new Process();
+                    proc.StartInfo.WorkingDirectory = "../superpeer_network";
+                    proc.StartInfo.FileName = "dotnet";
+                    proc.StartInfo.Arguments = "run";
+
+                    proc.StartInfo.UseShellExecute = false;
+                    proc.Start();
+                    proc.WaitForExit();
+                    //System.Environment.Exit(1);
+                }
+                else if(String.Compare(response,"REJECT") == 0)
+                {
+                    Console.WriteLine("Request rejected");
+                    sslStream.Close();
+                }
+
+            }
+            else if(String.Compare(response,"REJECT") == 0)
+            {
+                Console.WriteLine("Request rejected");
+                sslStream.Close();
+            }
         }
 
         static void find_superpeer()
