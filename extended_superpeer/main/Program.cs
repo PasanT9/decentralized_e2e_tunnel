@@ -7,7 +7,7 @@ namespace main
     {
         static void Main(string[] args)
         {
-var output = "";
+        var output = "";
  
         var info = new ProcessStartInfo("free");
         info.FileName = "/bin/bash";
@@ -25,7 +25,6 @@ var output = "";
     
         Console.WriteLine("Available: " + memory[6]);
 
-        
         }
 
 

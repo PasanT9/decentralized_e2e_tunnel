@@ -234,10 +234,10 @@ namespace superpeer_network
                 try
                 {
                     response = TCPCommunication.recieve_message_tcp(sslStream);
-                    Console.Write($"Receive({ip}): ");
+                    /*Console.Write($"Receive({ip}): ");
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(response);
-                    Console.ResetColor();
+                    Console.ResetColor();*/
 
 
                     if (String.Compare(response, "END") == 0)
@@ -249,17 +249,6 @@ namespace superpeer_network
                         /*disconnect_neighbour = neighbour;
                         break;*/
                     }
-
-                    /*else if (String.Compare(response, "ACCEPT_END") == 0)
-                    {
-                        //TCPCommunication.send_message_tcp(sslStream, "ACCEPT_END");
-
-                        disconnect_neighbour(ip);
-
-                        break;
-                        /*disconnect_neighbour = neighbour;
-                        break;*//*
-                    }*/
                     else if (String.Compare(response, "EXIT") == 0)
                     {
 
@@ -279,19 +268,14 @@ namespace superpeer_network
                         if (String.Compare(condition, "N") == 0)
                         {
                             //Thread.Sleep(2000);
-                            Console.WriteLine("Here");
                             connect_neighbour(new IPEndPoint(IPAddress.Parse(neighbour_ip), neighbour_port));
-
-                            //connect_neighbour = new IPEndPoint(IPAddress.Parse(neighbour_ip), neighbour_port);
                         }
                         disconnect_neighbour(ip);
-                        //disconnect_neighbour = neighbour;
                         break;
                     }
                     else if (String.Compare(response, "ACCEPT") == 0)
                     {
                         disconnect_neighbour(ip);
-                        //disconnect_neighbour = neighbour;
                         break;
                     }
                     else
@@ -307,7 +291,6 @@ namespace superpeer_network
                         if (String.Compare(op_code, "SEARCH") == 0)
                         {
                             Console.WriteLine("search request recieved for: " + data0);
-                            Console.WriteLine("Hop count: "+data2);
                             if (peers.ContainsKey(data0))
                             {
                                 Console.WriteLine("Key is found");
@@ -318,7 +301,6 @@ namespace superpeer_network
                                     Console.WriteLine("add peer " + data1);
                                 }
                                 TCPCommunication.send_message_tcp(sslStream, "FOUND:" + data0 + ":" + local_ip.ToString() + ":" + local_port);
-                                Console.WriteLine("Sent");
                             }
                             else
                             {
@@ -444,18 +426,18 @@ namespace superpeer_network
                                         
 
                                         
-                                        Console.Write($"Sending({neighbour}): ");
+                                        /*Console.Write($"Sending({neighbour}): ");
                                         Console.ForegroundColor = ConsoleColor.Yellow;
                                         Console.WriteLine($"{message}: {data0}");
-                                        Console.ResetColor();
+                                        Console.ResetColor();*/
                                         TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message + ":" + data0 + ":" + data1 + ":"+hops);
                                     }
                                     else
                                     {
-                                        Console.Write($"Sending({neighbour}): ");
+                                        /*Console.Write($"Sending({neighbour}): ");
                                         Console.ForegroundColor = ConsoleColor.Yellow;
                                         Console.WriteLine($"{message}");
-                                        Console.ResetColor();
+                                        Console.ResetColor();*/
                                         TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message);
                                     }
                                     message_buffer.Remove(message_full);
@@ -569,25 +551,19 @@ namespace superpeer_network
 
         static void start_dht()
         {
-            Process greeterProcess = new Process();
-            greeterProcess.StartInfo.FileName = "./../../Chord-DHT-master/prog";
-            // Indicate that we want to read from standard output
-            // of process
-            greeterProcess.StartInfo.RedirectStandardInput = true;
-            // Indicate that we want to write to standard input of
-            // process
-            greeterProcess.StartInfo.RedirectStandardOutput = true;
-            greeterProcess.StartInfo.UseShellExecute = false;
-            greeterProcess.Start();
-            // Get a StreamWriter to write to the standard input of
-            // Greeter.exe
-            StreamWriter writer = greeterProcess.StandardInput;
-            // Get a StreamReader to read from standard output of
-            // Greeter.exe
-            StreamReader reader = greeterProcess.StandardOutput;
-            // Get the question from greeter
+            Process proc = new Process();
+            proc.StartInfo.FileName = "./../../Chord-DHT-master/prog";
+
+            proc.StartInfo.RedirectStandardInput = true;
+
+            proc.StartInfo.RedirectStandardOutput = true;
+            proc.StartInfo.UseShellExecute = false;
+            proc.Start();
+
+            StreamWriter writer = proc.StandardInput;
+            StreamReader reader = proc.StandardOutput;
+
             Console.WriteLine(reader.ReadLine());
-            // Answer Greeter with Robot
             
             Console.WriteLine(reader.ReadLine());
             writer.WriteLine($"port {local_port+5}");
@@ -659,6 +635,7 @@ namespace superpeer_network
                         }
                         if(Bd.Count > 0 && Ad.Count > 0)
                         {
+                            Console.WriteLine("Daughters: " + daughters.Count);
                             foreach(string d in daughters)
                             {
                                 Console.WriteLine("-> " +d);
@@ -673,7 +650,7 @@ namespace superpeer_network
                                     }
                                     
                                 }
-                                Console.WriteLine("p: " + p);
+                                //Console.WriteLine("p: " + p);
                                 float t = 0;
                                 foreach(var cp in Ad)
                                 {
@@ -682,7 +659,7 @@ namespace superpeer_network
                                         t += prev_Td[d] * cp.Value;
                                     }
                                 }
-                                Console.WriteLine("t: " + t);
+                                //Console.WriteLine("t: " + t);
 
                                 curr_Td[d] = (float)(1-0.67)*t + (float)(0.67)*p;
                                 //Console.WriteLine("Previous Td: " + prev_Td[d]);
@@ -696,13 +673,46 @@ namespace superpeer_network
                     dht_buffer.Remove(dht_buffer[0]);
                 }
             }
-            greeterProcess.WaitForExit();
+            proc.WaitForExit();
+        }
+
+        static void handle_input()
+        {
+
+            string local_h1 = hash1($"{local_ip}:{local_port}");
+            string local_h2 = hash2($"{local_ip}:{local_port}");
+
+            while(true)
+            {
+                Console.Write("> ");
+                string input = Console.ReadLine();
+                if(input != "")
+                {
+                    Console.WriteLine("Executing "+input);
+                    string[] input_arr = input.Split(' ');
+                    //string h3 = hash3("localhost:28005");
+                    //local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:28005|0.7");
+
+                    string cmd = input_arr[0];
+                    if(cmd == "put")
+                    {
+                        string value = $"{local_ip}:{local_port}|{input_arr[1]}|{input_arr[2]}";
+                        dht_buffer.Add($"put {local_h1} {value}");
+                        dht_buffer.Add($"put {local_h2} {value}");
+
+                        string h1 = hash1(input_arr[1]);
+                        string h2 = hash2(input_arr[1]);
+
+                        dht_buffer.Add($"put {h1} *{value}");
+                        dht_buffer.Add($"put {h2} *{value}");
+
+                    }                    
+                }
+            }
         }
 
         static void Main(string[] args)
         {
-
-
 
             superpeer_neighbours = new Dictionary<IPEndPoint, SslStream>();
             peers = new Dictionary<string, IPEndPoint>();
@@ -732,7 +742,6 @@ namespace superpeer_network
             prev_Td["127.0.0.1:27005"] = (float)0.4;
             prev_Td["127.0.0.1:28005"] = (float)0.8;
 
-
             insert_peers_random();
 
             //Add certificate to the certificate store
@@ -746,7 +755,7 @@ namespace superpeer_network
 
             //Initiate first and seconds servers of the super peer network
             // TcpListener server;
-
+            new Thread(() => handle_input()).Start();
             Console.Write("Local port: "); //Use 27005 and 28005
             local_port = Convert.ToInt32(Console.ReadLine());
 
@@ -756,7 +765,7 @@ namespace superpeer_network
                 new Thread(() => start_dht()).Start();
                 dht_buffer.Add("create");
 
-                local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:28005|0.7");
+                //local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:28005|0.7");
 
                 server = new TcpListener(local_ip, local_port);
                 server.Start();
@@ -784,7 +793,7 @@ namespace superpeer_network
                     new Thread(() => hello_neighbour()).Start();
                 }
 
-                string h1 = hash1($"{local_ip}:{local_port}");
+                /*string h1 = hash1($"{local_ip}:{local_port}");
                 string h2 = hash2($"{local_ip}:{local_port}");
 
                 //string h3 = hash3("localhost:28005");
@@ -794,14 +803,11 @@ namespace superpeer_network
 
                 string[] temp_split = local_trust[0].Split('|');
 
-
-
                 h1 = hash1(temp_split[1]);
                 h2 = hash2(temp_split[1]);
 
-
                 dht_buffer.Add($"put {h1} *{local_trust[0]}");
-                dht_buffer.Add($"put {h2} *{local_trust[0]}");
+                dht_buffer.Add($"put {h2} *{local_trust[0]}");*/
 
                 new Thread(() => print_trust_values()).Start();
 
@@ -812,7 +818,7 @@ namespace superpeer_network
                 new Thread(() => start_dht()).Start();
                 dht_buffer.Add("join 127.0.0.1 27010");
 
-                local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:27005|0.3");
+                //local_trust.Add($"{local_ip}:{local_port}|127.0.0.1:27005|0.3");
 
                 IPEndPoint ipLocalEndPoint = new IPEndPoint(local_ip, 28005);
 
@@ -821,8 +827,6 @@ namespace superpeer_network
                 client.Connect("127.0.0.1", 27005);
                 SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(SSLValidation.ValidateServerCertificate), null);
                 SSLValidation.authenticate_client(sslStream);
-
-
 
                 superpeer_neighbours[new IPEndPoint(IPAddress.Parse("127.0.0.1"), 27005)] = sslStream;
 
@@ -840,7 +844,7 @@ namespace superpeer_network
                 server = new TcpListener(local_ip, local_port);
                 server.Start();
 
-                string h1 = hash1($"{local_ip}:{local_port}");
+                /*string h1 = hash1($"{local_ip}:{local_port}");
                 string h2 = hash2($"{local_ip}:{local_port}");
 
                 Console.WriteLine(h1);
@@ -851,22 +855,16 @@ namespace superpeer_network
 
                 string[] temp_split = local_trust[0].Split('|');
 
-
-
                 h1 = hash1(temp_split[1]);
                 h2 = hash2(temp_split[1]);
 
-
                 dht_buffer.Add($"put {h1} *{local_trust[0]}");
-                dht_buffer.Add($"put {h2} *{local_trust[0]}");
-
+                dht_buffer.Add($"put {h2} *{local_trust[0]}");*/
 
                 new Thread(() => print_trust_values()).Start();
 
                 handle_connections();
             }
-
-
             //Connecet to neighbour
 
 
@@ -877,7 +875,7 @@ namespace superpeer_network
         {
             while(true)
             {
-                Thread.Sleep(10000);
+                Thread.Sleep(20000);
                 dht_buffer.Add($"print");
             }
         }
