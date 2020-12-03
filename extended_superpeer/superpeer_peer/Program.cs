@@ -173,7 +173,6 @@ namespace superpeer_peer
                 sslStream.Close();
                 client.Close();
             }
-
         }
 
 
@@ -245,10 +244,52 @@ namespace superpeer_peer
 
         }
 
+        static void send_trust(string peer, float value)
+        {
+            Console.WriteLine("Press any key");
+            Console.ReadLine();
+
+            IPAddress ipAddress = IPAddress.Parse(local_ip);
+            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+
+            //Connect to server
+            TcpClient client = new TcpClient(ipLocalEndPoint);
+            client.Connect(server_ip, server_port);
+            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+            authenticate_server(sslStream);
+
+            TCPCommunication.send_message_tcp(sslStream, "TRUST_P");
+            TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
+
+            string response = TCPCommunication.recieve_message_tcp(sslStream);
+            if(String.Compare(response,"ACCEPT") == 0)
+            {
+                string trust = $"{local_ip}:{local_port}|{peer}|{value}"
+                TCPCommunication.send_message_tcp(trust);
+                response = TCPCommunication.recieve_message_tcp(sslStream);
+                if(String.Compare(response,"SUCCESS") == 0)
+                {
+                    Console.WriteLine("Trust value updated");
+                }
+                else if(String.Compare(response,"REJECT") == 0)
+                {
+                    Console.WriteLine("Request rejected");
+                    sslStream.Close();
+                }
+
+            }
+            else if(String.Compare(response,"REJECT") == 0)
+            {
+                Console.WriteLine("Request rejected");
+                sslStream.Close();
+            }
+
+        }
+
         static void promote_peer()
         {
             Console.Write("Press any key");
-            string dest_key = Console.ReadLine();
+            Console.ReadLine();
             IPAddress ipAddress = IPAddress.Parse(local_ip);
             IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
 

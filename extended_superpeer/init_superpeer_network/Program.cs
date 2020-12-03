@@ -1292,7 +1292,44 @@ namespace superpeer_network
 
                         string public_ip = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
                         response = TCPCommunication.recieve_message_tcp(sslStream);
-                        string private_ip = response;
+                        string trust = response;
+
+                        string[] temp_split = trust.Split('|');
+
+                        string local_h1 = hash1(temp_split[0]);
+                        string local_h2 = hash2(temp_split[0]);
+
+                        dht_buffer.Add($"put {local_h1} {trust}");
+                        dht_buffer.Add($"put {local_h2} {trust}");
+
+                        string h1 = hash1(temp_split[1]);
+                        string h2 = hash2(temp_split[1]);
+
+                        dht_buffer.Add($"put {h1} *{trust}");
+                        dht_buffer.Add($"put {h2} *{trust}");
+
+                        TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
+                        sslStream.Close();
+                        client.Close();
+
+                    }
+                    else
+                    {
+                        TCPCommunication.send_message_tcp(sslStream, "REJECT");
+                        sslStream.Close();
+                        client.Close();
+                    }
+                }
+                else if(String.Compare(response, "TRUST_P") == 0)
+                {
+                    string sender_key = TCPCommunication.recieve_message_tcp(sslStream);
+                    if (peers.ContainsKey(sender_key))
+                    {
+                        TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
+                        response = TCPCommunication.recieve_message_tcp(sslStream);
+                        string trust = response;
+
+                        dht_buffer.Add(trust);
 
                         if(String.Compare(private_ip,public_ip) == 0)
                         {
