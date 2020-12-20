@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -11,30 +10,6 @@ namespace main_server
 {
     class Program
     {
-        static long gcd(long n1, long n2)
-        {
-            if (n2 == 0)
-            {
-                return n1;
-            }
-            else
-            {
-                return gcd(n2, n1 % n2);
-            }
-        }
-
-        static List<long> multiGroup(long n)
-        {
-            List<long> group = new List<long>();
-            for(int i=0;i<n;++i)
-            {
-                if(gcd(n,i) == 1)
-                {
-                    group.Add(i);
-                }
-            }
-            return group;
-        }
 
         static void Main(string[] args)
         {
@@ -55,15 +30,91 @@ namespace main_server
             Byte[] bytes = new Byte[256];
             String data = null;
 
+            TcpClient client = server.AcceptTcpClient();
+            Console.WriteLine("Connected!");
+            int length = 20;
+
+            // Get a stream object for reading and writing
+            NetworkStream stream = client.GetStream();
+
+            stream.Read(bytes, 0, bytes.Length);
+            data = System.Text.Encoding.ASCII.GetString(bytes, 0, bytes.Length);
+            Console.WriteLine("Received: {0}", data);
+            Console.WriteLine();
+
+            string[] temp_split = data.Split('|');
+            double[] V = new double[length]; 
+            for(int i=0;i<length;++i)
+            {
+                V[i] = Int32.Parse(temp_split[i]);
+            }
+            double X = Int32.Parse(temp_split[length]);
+            double N = Int32.Parse(temp_split[length+1]);
+
+            Console.WriteLine();
+
+
+            int[] B = new int[length];
+            var random = new Random();
+            Console.Write("B: ");
+            for(int i=0;i<length;++i)
+            {
+                B[i] = random.Next(0, 2);
+                Console.Write(B[i]+" ");
+            }
+            Console.WriteLine();
+            Console.WriteLine();
+
+            string msg = "";
+            for(int i=0;i<length-1;++i)
+            {
+                msg += B[i] + "|";   
+            }
+            msg += B[19];
+
+            bytes = System.Text.Encoding.ASCII.GetBytes(msg);
+
+            stream.Write(bytes, 0, bytes.Length);
+
+            bytes = new Byte[256];
+            stream.Read(bytes, 0, bytes.Length);
+            data = System.Text.Encoding.ASCII.GetString(bytes, 0, bytes.Length);
+            Console.WriteLine("Received: {0}", data);
+            Console.WriteLine();
+
+            double Y1 = Int32.Parse(data);
+
+            double X1=1;
+            for(int i=0;i<length;++i)
+            {
+                X1 = X1%N;
+                X1 *= Math.Pow(V[i],B[i])%N;
+                //X2 *= Math.Pow(V[i], (1-B[i]));
+            }
+            //X1 = Y1*Y1*X1%N;
+            X1 = (X*X1)%N;
+            Y1 = (Y1*Y1)%N;
+            if(X1 == Y1)
+            {
+                bytes = System.Text.Encoding.ASCII.GetBytes("ACCEPT");
+                stream.Write(bytes, 0, bytes.Length);
+            }
+            else
+            {
+                bytes = System.Text.Encoding.ASCII.GetBytes("REJECT");
+                stream.Write(bytes, 0, bytes.Length);
+            }
+
+
+
+
+
+
 
             //Send to Client
-            SHA1 sha = new SHA1CryptoServiceProvider();
+            /*SHA1 sha = new SHA1CryptoServiceProvider();
             string id = "pasan96tennakoon@gmail.com";
 
-            int P = 149;
-            int Q = 257;
-            int N = P*Q;
-            List<long> group = new List<long>(multiGroup(N));
 
             byte[] seed_bytes = System.Text.Encoding.UTF8.GetBytes(P+Q+id);
             byte [] seed = sha.ComputeHash(seed_bytes);
@@ -88,85 +139,9 @@ namespace main_server
             Console.WriteLine("PI:\t" + PIC[0]);
             Console.WriteLine("N:\t" + PIC[1]);
             Console.WriteLine("Seed:\t" + PIC[2]);
-            Console.WriteLine();
-
-
-            //Client
-            int length = 20;
-            double[] S = new double[length];
-            double[] V = new double[length];
-            var random = new Random();
-            Console.Write("S: ");
-            for(int i=0;i<length;++i)
-            {
-                int index = random.Next(group.Count);
-                S[i] = group[index];
-                Console.Write(S[i]+" ");
-            }
-            Console.WriteLine();
-
-            //double[] S = {84, 85, 86, 87, 89, 90, 91, 92, 94, 95, 96, 97, 98, 100, 101};
-            //double[] V = {1, 4, 4, 1, 4};
-            //double[] V = new double[S.Length];
-            Console.Write("V: ");
-            for(int i=0;i<length;++i)
-            {
-                V[i] = Math.Pow(S[i], 2)%N;
-                Console.Write(V[i]+" ");
-            }
-            Console.WriteLine();
-
-            int a = 4;
-            int Ga = a%P;
-
-            double r =group[random.Next(group.Count)];
-            double X = (r*r)%N;
-            Console.WriteLine("X: "+X);
-
-            //Server
-            //int[] B = {0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0};
-            int[] B = new int[length];
-            Console.Write("B: ");
-            for(int i=0;i<length;++i)
-            {
-                B[i] = random.Next(0, 2);
-                Console.Write(B[i]+" ");
-            }
-            Console.WriteLine();
-
-            //Client
-            double Y1=1;
-            //double Y2=1;
-            for(int i=0;i<S.Length;++i)
-            {
-                Y1 = Y1 % N;
-                Y1 *= (Math.Pow(S[i], (B[i]))%N);
-                //Y2 *= Math.Pow(S[i], (1-B[i]))%N;
-            }
-            Y1 = (r*Y1)%N;
-            //Y2 = (r*Y2);
-            Console.WriteLine();
-
-
-            //Server
-            double X1=1;
-            //double X2=1;
-            for(int i=0;i<S.Length;++i)
-            {
-                X1 = X1%N;
-                X1 *= Math.Pow(V[i],B[i])%N;
-                //X2 *= Math.Pow(V[i], (1-B[i]));
-            }
-            //X1 = Y1*Y1*X1%N;
-            X1 = (X*X1)%N;
-            Y1 = (Y1*Y1)%N;
-            //X2 = Y2*Y2*X2;
-            Console.WriteLine("X1: " + X1 /*+ "\nX2: " + X2*/);
-            Console.WriteLine("Y1: " + Y1);
-
-
+            Console.WriteLine();*/
             
-
+            
             // Enter the listening loop.
             /*while(true)
             {*/
@@ -174,13 +149,7 @@ namespace main_server
 
                 // Perform a blocking call to accept requests.
                 // You could also use server.AcceptSocket() here.
-                TcpClient client = server.AcceptTcpClient();
-                Console.WriteLine("Connected!");
 
-                data = null;
-
-                // Get a stream object for reading and writing
-                NetworkStream stream = client.GetStream();
 
                 int i;
 
