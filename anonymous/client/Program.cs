@@ -5,28 +5,31 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Numerics;
 
 
 namespace client
 {
     class Program
     {
-                static long gcd(long n1, long n2)
+        //public static System.Numerics.BigInteger;
+
+        static BigInteger gcd(BigInteger n1, BigInteger n2)
         {
-            if (n2 == 0)
+            if (n2.Equals(0))
             {
                 return n1;
             }
             else
             {
-                return gcd(n2, n1 % n2);
+                return gcd(n2, BigInteger.Remainder(n1,n2));
             }
         }
 
-        static List<long> multiGroup(long n)
+        static List<BigInteger> multiGroup(BigInteger n)
         {
-            List<long> group = new List<long>();
-            for(int i=0;i<n;++i)
+            List<BigInteger> group = new List<BigInteger>();
+            for(BigInteger i=0;i<n;++i)
             {
                 if(gcd(n,i) == 1)
                 {
@@ -40,62 +43,75 @@ namespace client
         {
             try
             {
-                // Create a TcpClient.
-                // Note, for this client to work you need to have a TcpServer
-                // connected to the same address as specified by the server, port
-                // combination.
                 string server = "127.0.0.1";
                 string message = "Hello!!!";
                 Int32 port = 13000;
                 TcpClient client = new TcpClient(server, port);
 
-                
-
-                int P = 149;
+                BigInteger P = BigInteger.Parse("149");
+                BigInteger Q = BigInteger.Parse("257");
+                BigInteger N = BigInteger.Multiply(P,Q);
+                Console.WriteLine(N);
+                /*int P = 149;
                 int Q = 257;
-                int N = P*Q;
-                List<long> group = new List<long>(multiGroup(N));
+                int N = P*Q;*/
+                List<BigInteger> group = new List<BigInteger>(multiGroup(N));
+                Console.WriteLine(group[10]);
 
                 SHA1 sha = new SHA1CryptoServiceProvider();
-            string id = "pasan96tennakoon@gmail.com";
+                string id = "pasan96tennakoon@gmail.com";
 
 
-            byte[] seed_bytes = System.Text.Encoding.UTF8.GetBytes(P+Q+id);
-            byte [] seed = sha.ComputeHash(seed_bytes);
+                byte[] seed_bytes = System.Text.Encoding.UTF8.GetBytes(P.ToString() + Q.ToString() + id);
+                byte [] seed = sha.ComputeHash(seed_bytes);
 
-            StringBuilder sb = new StringBuilder();
-            foreach (byte b in seed)
-                sb.Append(b.ToString("X2"));
+                StringBuilder sb = new StringBuilder();
+                foreach (byte b in seed)
+                    sb.Append(b.ToString("X2"));
 
-            string seed_string = sb.ToString();
+                string seed_string = sb.ToString();
 
-            byte[] PI_bytes = System.Text.Encoding.UTF8.GetBytes(seed_string+N);
-            byte [] PI = sha.ComputeHash(PI_bytes);
+                byte[] PI_bytes = System.Text.Encoding.UTF8.GetBytes(seed_string+N.ToString());
+                byte [] PI = sha.ComputeHash(PI_bytes);
 
-            sb = new StringBuilder();
-            foreach (byte b in PI)
-                sb.Append(b.ToString("X2"));
+                sb = new StringBuilder();
+                foreach (byte b in PI)
+                    sb.Append(b.ToString("X2"));
 
-            string PI_string = sb.ToString();
+                string PI_string = sb.ToString();
 
-            string[] PIC = {PI_string, N.ToString(), seed_string};
 
-            Console.WriteLine("PI:\t" + PIC[0]);
-            Console.WriteLine("N:\t" + PIC[1]);
-            Console.WriteLine("Seed:\t" + PIC[2]);
-            Console.WriteLine();
+                byte[] MAC_bytes = System.Text.Encoding.UTF8.GetBytes(PI_string+N.ToString()+seed_string);
+                byte [] MAC = sha.ComputeHash(MAC_bytes);
+
+                sb = new StringBuilder();
+                foreach (byte b in PI)
+                    sb.Append(b.ToString("X2"));
+
+                string MAC_string = sb.ToString();
+
+
+
+                string[] PIC = {PI_string, N.ToString(), seed_string, MAC_string};
+
+                Console.WriteLine("PI:\t" + PIC[0]);
+                Console.WriteLine("N:\t" + PIC[1]);
+                Console.WriteLine("Seed:\t" + PIC[2]);
+                Console.WriteLine("MAC:\t" + PIC[3]);
+                Console.WriteLine();
 
                 int length = 20;
-                double[] S = new double[length];
-                double[] V = new double[length];
-                double[] J = new double[length];
+                BigInteger[] S = new BigInteger[length];
+                BigInteger[] V = new BigInteger[length];
+                BigInteger[] J = new BigInteger[length];
+
                 var random = new Random();
                 Console.Write("S: ");
                 
                 for(int i=0;i<length;++i)
                 {
                     J[i] = random.Next(group.Count);
-                    byte[] temp_bytes = System.Text.Encoding.UTF8.GetBytes(PIC[0] + J[i]);
+                    byte[] temp_bytes = System.Text.Encoding.UTF8.GetBytes(PIC[0] + J[i].ToString());
                     byte [] temp_h = sha.ComputeHash(temp_bytes);
                     int index = 1;
                     foreach(byte b in temp_h)
@@ -111,7 +127,7 @@ namespace client
                 Console.Write("V: ");
                 for(int i=0;i<length;++i)
                 {
-                    V[i] = Math.Pow(S[i], 2)%N;
+                    V[i] = BigInteger.Remainder(BigInteger.Pow(S[i], 2),N);
                     Console.Write(V[i]+" ");
                 }
                 Console.WriteLine();
@@ -122,16 +138,17 @@ namespace client
                     msg += V[i] + "|";
                 }
 
-                int a = 4;
-                int Ga = a%P;
+                BigInteger a = 4;
+                BigInteger Ga = BigInteger.Remainder(a,N);
 
-                double r =group[random.Next(group.Count)];
-                double X = (r*r)%N;
+                BigInteger r =group[random.Next(group.Count)];
+                BigInteger X = BigInteger.Remainder(BigInteger.Multiply(r,r),N);
                 Console.WriteLine("X: "+X);
                 Console.WriteLine();
                 
                 msg += X + "|";
                 msg += N;
+                Console.WriteLine(msg);
 
                 // Translate the passed message into ASCII and store it as a Byte array.
                 Byte[] data = System.Text.Encoding.ASCII.GetBytes(msg);
@@ -154,14 +171,16 @@ namespace client
                     B[i] = Int32.Parse(temp_split[i]);
                 }
                 
-                double Y1=1;
+                BigInteger Y1=1;
                 for(int i=0;i<S.Length;++i)
                 {
-                    Y1 = Y1 % N;
-                    Y1 *= (Math.Pow(S[i], (B[i]))%N);
+                    Y1 = BigInteger.Remainder(Y1, N);
+                    Y1 = BigInteger.Multiply(Y1, BigInteger.Remainder(BigInteger.Pow(S[i], B[i]),N));
+                    //Y1 *= (Math.Pow(S[i], (B[i]))%N);
                     //Y2 *= Math.Pow(S[i], (1-B[i]))%N;
                 }
-                Y1 = (r*Y1)%N;
+                Y1 = BigInteger.Remainder(BigInteger.Multiply(r,Y1),N);
+                //Y1 = (r*Y1)%N;
                 msg = Y1.ToString();
                 //Y2 = (r*Y2);
                 data = System.Text.Encoding.ASCII.GetBytes(msg);

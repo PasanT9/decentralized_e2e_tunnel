@@ -43,13 +43,13 @@ namespace main_server
             Console.WriteLine();
 
             string[] temp_split = data.Split('|');
-            double[] V = new double[length]; 
+            BigInteger[] V = new BigInteger[length]; 
             for(int i=0;i<length;++i)
             {
-                V[i] = Int32.Parse(temp_split[i]);
+                V[i] = BigInteger.Parse(temp_split[i]);
             }
-            double X = Int32.Parse(temp_split[length]);
-            double N = Int32.Parse(temp_split[length+1]);
+            BigInteger X = BigInteger.Parse(temp_split[length]);
+            BigInteger N = BigInteger.Parse(temp_split[length+1]);
 
             Console.WriteLine();
 
@@ -82,19 +82,22 @@ namespace main_server
             Console.WriteLine("Received: {0}", data);
             Console.WriteLine();
 
-            double Y1 = Int32.Parse(data);
+            BigInteger Y1 = BigInteger.Parse(data);
 
-            double X1=1;
+            BigInteger X1=1;
             for(int i=0;i<length;++i)
             {
-                X1 = X1%N;
-                X1 *= Math.Pow(V[i],B[i])%N;
+                X1 = BigInteger.Remainder(X1, N);
+                X1 = BigInteger.Multiply(BigInteger.Remainder(BigInteger.Pow(V[i], B[i]),N), X1);
+                //X1 *= Math.Pow(V[i],B[i])%N;
                 //X2 *= Math.Pow(V[i], (1-B[i]));
             }
             //X1 = Y1*Y1*X1%N;
-            X1 = (X*X1)%N;
-            Y1 = (Y1*Y1)%N;
-            if(X1 == Y1)
+            X1 = BigInteger.Remainder(BigInteger.Multiply(X,X1),N);
+            //X1 = (X*X1)%N;
+            Y1 = BigInteger.Remainder(BigInteger.Multiply(Y1,Y1), N);
+            //Y1 = (Y1*Y1)%N;
+            if(X1.Equals(Y1))
             {
                 bytes = System.Text.Encoding.ASCII.GetBytes("ACCEPT");
                 stream.Write(bytes, 0, bytes.Length);
