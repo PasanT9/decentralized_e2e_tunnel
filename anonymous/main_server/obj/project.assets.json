@@ -8,28 +8,31 @@
     ".NETCoreApp,Version=v3.1": []
   },
   "packageFolders": {
-    "/home/pasan/.nuget/packages/": {}
+    "C:\\Users\\Pasan\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/anonymous/main_server/main_server.csproj",
+      "projectUniqueName": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\main_server\\main_server.csproj",
       "projectName": "main_server",
-      "projectPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/anonymous/main_server/main_server.csproj",
-      "packagesPath": "/home/pasan/.nuget/packages/",
-      "outputPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/anonymous/main_server/obj/",
+      "projectPath": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\main_server\\main_server.csproj",
+      "packagesPath": "C:\\Users\\Pasan\\.nuget\\packages\\",
+      "outputPath": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\main_server\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/pasan/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\Pasan\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
       "originalTargetFrameworks": [
         "netcoreapp3.1"
       ],
       "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
         "netcoreapp3.1": {
+          "targetAlias": "netcoreapp3.1",
           "projectReferences": {}
         }
       },
@@ -41,6 +44,7 @@
     },
     "frameworks": {
       "netcoreapp3.1": {
+        "targetAlias": "netcoreapp3.1",
         "imports": [
           "net461",
           "net462",
@@ -56,7 +60,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.404/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.101\\RuntimeIdentifierGraph.json"
       }
     }
   }

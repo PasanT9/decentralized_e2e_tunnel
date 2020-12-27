@@ -11,3 +11,9 @@
 /home/pasan/Desktop/projects/decentralized_e2e_tunnel/anonymous/main_server/obj/Debug/netcoreapp3.1/main_server.dll
 /home/pasan/Desktop/projects/decentralized_e2e_tunnel/anonymous/main_server/obj/Debug/netcoreapp3.1/main_server.pdb
 /home/pasan/Desktop/projects/decentralized_e2e_tunnel/anonymous/main_server/obj/Debug/netcoreapp3.1/main_server.genruntimeconfig.cache
+C:\Projects\decentralized_e2e_tunnel\anonymous\main_server\obj\Debug\netcoreapp3.1\main_server.csprojAssemblyReference.cache
+C:\Projects\decentralized_e2e_tunnel\anonymous\main_server\obj\Debug\netcoreapp3.1\main_server.AssemblyInfoInputs.cache
+C:\Projects\decentralized_e2e_tunnel\anonymous\main_server\obj\Debug\netcoreapp3.1\main_server.AssemblyInfo.cs
+C:\Projects\decentralized_e2e_tunnel\anonymous\main_server\obj\Debug\netcoreapp3.1\main_server.csproj.CoreCompileInputs.cache
+C:\Projects\decentralized_e2e_tunnel\anonymous\main_server\obj\Debug\netcoreapp3.1\main_server.dll
+C:\Projects\decentralized_e2e_tunnel\anonymous\main_server\obj\Debug\netcoreapp3.1\main_server.pdb
