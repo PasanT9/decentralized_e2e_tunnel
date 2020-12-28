@@ -33,7 +33,6 @@ namespace LSAGTest
 
       var cache = new MultiExponentiation(liu2005.GroupParameters.Prime, publicKeys);
 
-
       bool res = liu2005.VerifySignature(messageBytes, signature, cache);
       if(res){
         Console.WriteLine("SUCCESS");      

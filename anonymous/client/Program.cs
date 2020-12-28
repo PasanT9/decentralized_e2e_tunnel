@@ -52,8 +52,8 @@ namespace client
                 string server = "127.0.0.1";
                 string message = "Hello!!!";
                 Int32 port = 13000;
-                //TcpClient client = new TcpClient(server, port);
-                TcpClient client = null;
+                TcpClient client = new TcpClient(server, port);
+                //TcpClient client = null;
 
                 BigInteger P = BigInteger.Parse("149");
                 BigInteger Q = BigInteger.Parse("257");
@@ -169,12 +169,11 @@ namespace client
                 var publicKeys = keys.Select(k => k[1]).ToArray();
 
                 var signature = liu2005.GenerateSignature(messageBytes, publicKeys, keys[0][0], 0);
-                string signature_json = JsonConvert.SerializeObject(signature);
                 string pub_keys_string = JsonConvert.SerializeObject(publicKeys);
+                string liu2005_string = JsonConvert.SerializeObject(liu2005);
+                string signature_string = JsonConvert.SerializeObject(signature);
 
-                var signature_gen = JsonConvert.DeserializeObject<ILinkableSignature>(signature_json);
-
-                msg = msg + "/" + pub_keys_string + "/" + signature_json; 
+                msg = msg + "/" + pub_keys_string + "/" + liu2005_string + "/" + signature_string; 
 
                 Console.WriteLine(msg);
 

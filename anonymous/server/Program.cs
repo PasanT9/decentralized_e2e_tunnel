@@ -32,7 +32,7 @@ namespace server
             server.Start();
 
             // Buffer for reading data
-            Byte[] bytes = new Byte[4086];
+            Byte[] bytes = new Byte[10000];
             String data = null;
 
             TcpClient client = server.AcceptTcpClient();
@@ -60,12 +60,21 @@ namespace server
 
             temp_split = data.Split('/');
             string message = temp_split[0];
+            var messageBytes = Encoding.UTF8.GetBytes(message);
+
             var pub_keys = JsonConvert.DeserializeObject<BigInteger[]>(temp_split[1]);
-            var signature = JsonConvert.DeserializeObject<ILinkableSignature>(temp_split[2]);
+            var liu2005 = JsonConvert.DeserializeObject<Liu2005>(temp_split[2]);
+            var signature = JsonConvert.DeserializeObject<LSAG.Liu2005.Signature>(temp_split[3]);
 
-            Console.WriteLine(signature);
+            var cache = new MultiExponentiation(liu2005.GroupParameters.Prime, pub_keys);
 
-
+            bool res = liu2005.VerifySignature(messageBytes, signature, cache);
+            if(res){
+                Console.WriteLine("SUCCESS");      
+            }
+            else{
+                Console.WriteLine("FAILURE");      
+            }
 
 
             int[] B = new int[length];
