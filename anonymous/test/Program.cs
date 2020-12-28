@@ -5,7 +5,7 @@ using System.Security;
 using System.Security.Cryptography;
 using System.Text;
 using System.Numerics;
-
+ 
 using LSAG;
 
 
@@ -17,7 +17,7 @@ namespace LSAGTest
     {
       
       var liu2005 = new Liu2005();
-      int participants = 100;
+      int participants = 10;
 
       Console.WriteLine("Benchmark for {0} participants", participants);
       liu2005.GroupParameters = KnownGroupParameters.RFC5114_2_1_160;

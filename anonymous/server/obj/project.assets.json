@@ -57,11 +57,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\client\\client.csproj",
-      "projectName": "client",
-      "projectPath": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\client\\client.csproj",
+      "projectUniqueName": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\server\\server.csproj",
+      "projectName": "server",
+      "projectPath": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\server\\server.csproj",
       "packagesPath": "C:\\Users\\Pasan\\.nuget\\packages\\",
-      "outputPath": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\client\\obj\\",
+      "outputPath": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\server\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Pasan\\AppData\\Roaming\\NuGet\\NuGet.Config"

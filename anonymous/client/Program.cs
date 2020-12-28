@@ -1,11 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security;
 using System.Security.Cryptography;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Numerics;
+using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Linq;
+
+using LSAG;
 
 
 namespace client
@@ -46,7 +52,8 @@ namespace client
                 string server = "127.0.0.1";
                 string message = "Hello!!!";
                 Int32 port = 13000;
-                TcpClient client = new TcpClient(server, port);
+                //TcpClient client = new TcpClient(server, port);
+                TcpClient client = null;
 
                 BigInteger P = BigInteger.Parse("149");
                 BigInteger Q = BigInteger.Parse("257");
@@ -148,6 +155,27 @@ namespace client
                 
                 msg += X + "|";
                 msg += N;
+
+
+                var liu2005 = new Liu2005();
+                int participants = 10;
+
+                Console.WriteLine("{0} participants", participants);
+                liu2005.GroupParameters = KnownGroupParameters.RFC5114_2_1_160;
+
+                var messageBytes = Encoding.UTF8.GetBytes(msg);
+
+                var keys = Enumerable.Range(0, participants).Select(i => liu2005.GenerateKeyPair()).ToArray();
+                var publicKeys = keys.Select(k => k[1]).ToArray();
+
+                var signature = liu2005.GenerateSignature(messageBytes, publicKeys, keys[0][0], 0);
+                string signature_json = JsonConvert.SerializeObject(signature);
+                string pub_keys_string = JsonConvert.SerializeObject(publicKeys);
+
+                var signature_gen = JsonConvert.DeserializeObject<ILinkableSignature>(signature_json);
+
+                msg = msg + "/" + pub_keys_string + "/" + signature_json; 
+
                 Console.WriteLine(msg);
 
                 // Translate the passed message into ASCII and store it as a Byte array.
