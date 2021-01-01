@@ -26,8 +26,8 @@ for i in range(4):
     h[i] = random.randint(1, q)
     Sk[i] = r[i] + h[i]*s
 
-    #print(C.mult(P, Sk[i]))
-    #print(C.add(C.mult(Pub, h[i]), K[i]))
+    # print(C.mult(P, Sk[i]))
+    # print(C.add(C.mult(Pub, h[i]), K[i]))
 
     x[i] = random.randint(1, q)
     Pk[i] = C.mult(P, x[i])
@@ -97,6 +97,25 @@ for i in range(4):
     for j in range(len(t_1)):
         t_2 = t_2 + ord(t_1[i])
     t[i] = (t_2 % (q-1))+1
-    print(t[i])
 
 rs = 4
+R[Signer] = C.mult(C.add(C.add(Pk[Signer], K[Signer]),
+                         C.mult(Pub, h[Signer])), rs)
+
+sub = C.add(C.mult(C.add(C.add(C.mult(Pub, h[0]), K[0]), Pk[0]), t[0]), R[0])
+
+for i in range(1, 4):
+    if i != Signer:
+        temp = C.add(
+            C.mult(C.add(C.add(C.mult(Pub, h[i]), K[i]), Pk[i]), t[i]), R[i])
+        sub = C.add(sub, temp)
+
+R[Signer] = C.add(R[Signer], C.mult(sub, -1))
+print(R[Signer])
+
+t_0 = C.add(C.add(C.add(K[Signer], Pk[Signer]), R[Signer]), R0)
+t_1 = str(t_0) + m
+t_2 = 0
+for j in range(len(t_1)):
+    t_2 = t_2 + ord(t_1[i])
+t[Signer] = (t_2 % (q-1))+1
