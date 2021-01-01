@@ -30,7 +30,7 @@ for i in range(4):
     #print(C.add(C.mult(Pub, h[i]), K[i]))
 
     x[i] = random.randint(1, q)
-    Pk[i] = x[i]
+    Pk[i] = C.mult(P, x[i])
 
 
 def addZeros(strr, n):
@@ -76,9 +76,27 @@ m_bin = ' '.join(format(ord(x), 'b') for x in m)
 
 print("Signing")
 R0 = C.mult(P, rand)
-R = rand*Pk[Receiver]
+R = C.mult(Pk[Receiver], rand)
 l = R
-l_bin = "{0:b}".format(l)
+l_bin = str(l)
 
-#print('{0:b}'.format(int(l_bin, 2) ^ int(m_bin, 2)))
 C1 = getXOR(m_bin, l_bin)
+print(C1)
+
+R = [Point]*4
+R[0] = Point(0, 1)
+R[1] = Point(1, 5)
+R[2] = Point(6, 3)
+R[3] = Point(6, 4)
+t = [None]*4
+
+for i in range(4):
+    t_0 = C.add(C.add(C.add(K[i], Pk[i]), R[i]), R0)
+    t_1 = str(t_0) + m
+    t_2 = 0
+    for j in range(len(t_1)):
+        t_2 = t_2 + ord(t_1[i])
+    t[i] = (t_2 % (q-1))+1
+    print(t[i])
+
+rs = 4
