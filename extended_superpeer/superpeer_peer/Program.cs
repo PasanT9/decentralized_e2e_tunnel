@@ -552,15 +552,15 @@ namespace superpeer_peer
                 DTLSClient dtls = new DTLSClient(server_ip, server_port.ToString(), new byte[] {0xBA,0xA0});
                 
 		    	if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                dtls.Unbuffer = "winpty.exe";
-                dtls.Unbuffer_Args = "-Xplain -Xallow-non-tty";
-            }
-            else
-            {
-                dtls.Unbuffer = "stdbuf";
-                dtls.Unbuffer_Args = "-i0 -o0";
-            }
+                {
+                    dtls.Unbuffer = "winpty.exe";
+                    dtls.Unbuffer_Args = "-Xplain -Xallow-non-tty";
+                }
+                else
+                {
+                    dtls.Unbuffer = "stdbuf";
+                    dtls.Unbuffer_Args = "-i0 -o0";
+                }
             dtls.Start();
 
             byte[] bytes;

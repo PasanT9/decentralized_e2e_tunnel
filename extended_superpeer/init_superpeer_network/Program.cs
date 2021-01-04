@@ -118,7 +118,7 @@ namespace superpeer_network
             Console.WriteLine("My peers");
             foreach (var pair in peers)
             {
-                Console.WriteLine(pair.Key);
+                Console.WriteLine(pair.Key); 
             }
         }
 
@@ -1319,7 +1319,7 @@ namespace superpeer_network
                         sslStream.Close();
                         client.Close();
                     }
-                }
+                }/*
                 else if(String.Compare(response, "TRUST_P") == 0)
                 {
                     string sender_key = TCPCommunication.recieve_message_tcp(sslStream);
@@ -1351,7 +1351,7 @@ namespace superpeer_network
                         sslStream.Close();
                         client.Close();
                     }
-                }
+                }*/
                 else
                 {
                     Console.WriteLine("unrecognized command");

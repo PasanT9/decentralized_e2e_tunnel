@@ -1,0 +1,78 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v5.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v5.0": {
+      "init/1.0.0": {
+        "dependencies": {
+          "CliWrap": "3.3.0",
+          "Newtonsoft.Json": "12.0.3",
+          "System.Security.Cryptography.OpenSsl": "5.0.0"
+        },
+        "runtime": {
+          "init.dll": {}
+        }
+      },
+      "CliWrap/3.3.0": {
+        "runtime": {
+          "lib/netcoreapp3.0/CliWrap.dll": {
+            "assemblyVersion": "3.3.0.0",
+            "fileVersion": "3.3.0.0"
+          }
+        }
+      },
+      "Newtonsoft.Json/12.0.3": {
+        "runtime": {
+          "lib/netstandard2.0/Newtonsoft.Json.dll": {
+            "assemblyVersion": "12.0.0.0",
+            "fileVersion": "12.0.3.23909"
+          }
+        }
+      },
+      "System.Formats.Asn1/5.0.0": {},
+      "System.Security.Cryptography.OpenSsl/5.0.0": {
+        "dependencies": {
+          "System.Formats.Asn1": "5.0.0"
+        }
+      }
+    }
+  },
+  "libraries": {
+    "init/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "CliWrap/3.3.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-imhOhs2fLrIva3coUXCh4L5lUSN6XCGF4+20qmPW2ncDlqQphk8kKxKwkoC3FNNPd9wW+RnXjlxBMlN21dQiHg==",
+      "path": "cliwrap/3.3.0",
+      "hashPath": "cliwrap.3.3.0.nupkg.sha512"
+    },
+    "Newtonsoft.Json/12.0.3": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-6mgjfnRB4jKMlzHSl+VD+oUc1IebOZabkbyWj2RiTgWwYPPuaK1H97G1sHqGwPlS5npiF5Q0OrxN1wni2n5QWg==",
+      "path": "newtonsoft.json/12.0.3",
+      "hashPath": "newtonsoft.json.12.0.3.nupkg.sha512"
+    },
+    "System.Formats.Asn1/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-MTvUIktmemNB+El0Fgw9egyqT9AYSIk6DTJeoDSpc3GIHxHCMo8COqkWT1mptX5tZ1SlQ6HJZ0OsSvMth1c12w==",
+      "path": "system.formats.asn1/5.0.0",
+      "hashPath": "system.formats.asn1.5.0.0.nupkg.sha512"
+    },
+    "System.Security.Cryptography.OpenSsl/5.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-D3aDrPOPBORUl6V/WJ2AtN3Ae48aSH0W7yChBIecvu1lyoAhopPORmMpNTjv5/Kay7Z+h3KXpfbvteIm7x7miA==",
+      "path": "system.security.cryptography.openssl/5.0.0",
+      "hashPath": "system.security.cryptography.openssl.5.0.0.nupkg.sha512"
+    }
+  }
+}
