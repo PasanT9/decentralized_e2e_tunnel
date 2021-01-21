@@ -558,8 +558,6 @@ namespace init
                 SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(SSLValidation.ValidateServerCertificate), null);
                 SSLValidation.authenticate_client(sslStream);
 
-
-
                 superpeer_neighbours[new IPEndPoint(IPAddress.Parse("127.0.0.1"), 27005)] = sslStream;
 
                 TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
@@ -572,8 +570,8 @@ namespace init
 
                 new Thread(() => hello_neighbour()).Start();
 
-
                 server = new TcpListener(local_ip, local_port);
+                client.Client.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 server.Start();
                 handle_connections();
             }
