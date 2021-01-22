@@ -141,16 +141,24 @@ namespace ring
 
             byte[] v = ring_sign(P, m, Ks, X);
 
-            ring_verify(P, v, X, m);
+            Console.WriteLine("v: " + ByteArrayToString(v));
             Console.WriteLine();
 
-
-
+            ring_verify(P, v, X, m);
         }
 
         public static byte[] ring_sign(RsaKeyParameters[] P, string m, RsaKeyParameters Ks, byte[][] X)
         {
-            byte[] v = new byte[256];
+            Console.WriteLine("Ring signing");
+            byte[] k1 = Encoding.UTF8.GetBytes(m);
+
+            byte[] k = new byte[64];
+
+            for (int i = 0; i < k1.Length; ++i)
+            {
+                k[i] = (byte)(k[i] + k1[i]);
+            }
+
 
             byte[][] y = new byte[11][];
 
@@ -162,6 +170,14 @@ namespace ring
                 y[i] = cipher.ProcessBlock(X[i], 0, X[i].Length);
             }
 
+            byte[] ring = y[0];
+            for (int i = 1; i < 11; ++i)
+            {
+                ring = exclusiveOR(ring, k);
+                ring = exclusiveOR(ring, y[i]);
+            }
+
+            byte[] v = ring;
             return v;
         }
 
