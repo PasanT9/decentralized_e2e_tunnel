@@ -9,6 +9,14 @@ using Org.BouncyCastle.Crypto.Encodings;
 using Org.BouncyCastle.Crypto.Engines;
 using Org.BouncyCastle.OpenSsl;
 
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Digests;
+
+using Org.BouncyCastle.Bcpg;
+using Org.BouncyCastle.Bcpg.OpenPgp;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Utilities.IO;
 
 namespace ring
 {
@@ -18,44 +26,48 @@ namespace ring
 
         static void Main(string[] args)
         {
-            byte[][] y = new byte[10][];
-            int[] x = new int[10];
+            /*byte[][] y = new byte[10][];
+            byte[][] x = new byte[10][];
+
             string message = "Hello!!";
 
             Console.WriteLine("Ring signature generation");
 
             byte[] k1 = Encoding.UTF8.GetBytes(message);
 
-            byte[] k = new byte[256];
+            byte[] k = new byte[64];
 
             for (int i = 0; i < k1.Length; ++i)
             {
                 k[i] = (byte)(k[i] + k1[i]);
             }
 
-            Dictionary<int, Tuple<RSAParameters, RSAParameters>> keys = new Dictionary<int, Tuple<RSAParameters, RSAParameters>>();
+            Dictionary<int, Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair> keys = new Dictionary<int, Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair>();
 
             Random rnd = new Random();
 
-            RSAParameters[] P = new RSAParameters[11];
+            RsaKeyParameters[] P = new RsaKeyParameters[11];
 
             for (int i = 0; i < 10; ++i)
             {
-                x[i] = rnd.Next();
-                using (var rsa = new RSACryptoServiceProvider(2048))
-                {
-                    rsa.PersistKeyInCsp = false; //Don't store the keys in a key container
-                    RSAParameters publicKey = rsa.ExportParameters(false);
-                    RSAParameters privateKey = rsa.ExportParameters(true);
-                    Tuple<RSAParameters, RSAParameters> key = new Tuple<RSAParameters, RSAParameters>(publicKey, privateKey);
-                    keys[i] = key;
-                    P[i + 1] = publicKey;
-                }
+                UTF8Encoding utf8enc = new UTF8Encoding();
+                x[i] = utf8enc.GetBytes(rnd.Next().ToString());
 
-                y[i] = Encrypt(Encoding.ASCII.GetBytes(x[i].ToString()), keys[i].Item1);
+                RsaKeyPairGenerator rsaKeyPairGnr = new RsaKeyPairGenerator();
+                rsaKeyPairGnr.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(), 512));
+                Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair = rsaKeyPairGnr.GenerateKeyPair();
 
+                RsaKeyParameters publicKey = (RsaKeyParameters)keyPair.Public;
+                IAsymmetricBlockCipher cipher = new RsaEngine();
 
+                keys[i] = keyPair;
+                P[i + 1] = publicKey;
+
+                cipher.Init(true, publicKey);
+
+                y[i] = cipher.ProcessBlock(x[i], 0, x[i].Length);
             }
+
             byte[] ring = y[0];
             for (int i = 1; i < 10; ++i)
             {
@@ -63,54 +75,97 @@ namespace ring
                 ring = exclusiveOR(ring, y[i]);
             }
 
-            var rsa_s = new RSACryptoServiceProvider(2048);
 
-            rsa_s.PersistKeyInCsp = false;
+            RsaKeyPairGenerator rsaKeyPairGnr_s = new RsaKeyPairGenerator();
+            rsaKeyPairGnr_s.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(), 512));
+            Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair_s = rsaKeyPairGnr_s.GenerateKeyPair();
 
-            RSAParameters publicKey_s = rsa_s.ExportParameters(false);
-            RSAParameters privateKey_s = rsa_s.ExportParameters(true);
+            RsaKeyParameters Ps = (RsaKeyParameters)keyPair_s.Public;
+            RsaKeyParameters Ks = (RsaKeyParameters)keyPair_s.Private;
 
-            P[0] = publicKey_s;
+            IAsymmetricBlockCipher cipher_s = new RsaEngine();
 
-            int xs = rnd.Next();
-            byte[] ys = Encrypt(Encoding.ASCII.GetBytes(xs.ToString()), publicKey_s);
+            UTF8Encoding utf8enc_s = new UTF8Encoding();
+            byte[] xs = utf8enc_s.GetBytes(rnd.Next().ToString());
+
+            P[0] = Ps;
+
+            cipher_s.Init(true, Ps);
+
+            byte[] ys = cipher_s.ProcessBlock(xs, 0, xs.Length);
 
             ring = exclusiveOR(ring, k);
             byte[] v = exclusiveOR(ring, ys);
 
-            Console.WriteLine("xs: " + xs);
-
-            Console.WriteLine($"ys: {ByteArrayToString(ys)}");
-
-            for (int i = 0; i < 10; ++i)
-            {
-                Console.WriteLine($"y[{i}]: {ByteArrayToString(y[i])}");
-            }
-
-            Console.WriteLine("v: " + ByteArrayToString(v));
-
-            int[] X = new int[11];
+            byte[][] X = new byte[11][];
 
             X[0] = xs;
 
             for (int i = 1; i < 11; ++i)
             {
                 X[i] = x[i - 1];
-            }
+            }*/
 
-            if (P[0].Equals(publicKey_s) && X[0] == xs)
+            byte[][] X = new byte[11][];
+            Random rnd = new Random();
+
+            for (int i = 0; i < 11; ++i)
             {
-                Console.WriteLine("True");
+                UTF8Encoding utf8enc = new UTF8Encoding();
+                X[i] = utf8enc.GetBytes(rnd.Next().ToString());
             }
 
-            ring_verify(P, v, X, message);
+            RsaKeyParameters[] P = new RsaKeyParameters[11];
+
+            for (int i = 0; i < 10; ++i)
+            {
+
+                RsaKeyPairGenerator rsaKeyPairGnr = new RsaKeyPairGenerator();
+                rsaKeyPairGnr.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(), 512));
+                Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair = rsaKeyPairGnr.GenerateKeyPair();
+
+                RsaKeyParameters publicKey = (RsaKeyParameters)keyPair.Public;
+                IAsymmetricBlockCipher cipher = new RsaEngine();
+
+                P[i + 1] = publicKey;
+            }
+
+            RsaKeyPairGenerator rsaKeyPairGnr_s = new RsaKeyPairGenerator();
+            rsaKeyPairGnr_s.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(), 512));
+            Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair_s = rsaKeyPairGnr_s.GenerateKeyPair();
+
+            P[0] = (RsaKeyParameters)keyPair_s.Public;
+            RsaKeyParameters Ks = (RsaKeyParameters)keyPair_s.Private;
+
+            string m = "Hello!!";
+
+            byte[] v = ring_sign(P, m, Ks, X);
+
+            ring_verify(P, v, X, m);
             Console.WriteLine();
 
 
 
         }
 
-        public static void ring_verify(RSAParameters[] P, byte[] v, int[] X, string m)
+        public static byte[] ring_sign(RsaKeyParameters[] P, string m, RsaKeyParameters Ks, byte[][] X)
+        {
+            byte[] v = new byte[256];
+
+            byte[][] y = new byte[11][];
+
+            for (int i = 0; i < 11; ++i)
+            {
+                IAsymmetricBlockCipher cipher = new RsaEngine();
+                cipher.Init(true, P[i]);
+
+                y[i] = cipher.ProcessBlock(X[i], 0, X[i].Length);
+            }
+
+            return v;
+        }
+
+        public static void ring_verify(RsaKeyParameters[] P, byte[] v, byte[][] X, string m)
         {
             Console.WriteLine("Ring signature verification");
 
@@ -118,13 +173,15 @@ namespace ring
 
             for (int i = 0; i < 11; ++i)
             {
-                y[i] = Encrypt(Encoding.ASCII.GetBytes(X[i].ToString()), P[i]);
-                Console.WriteLine($"y[{i}]: {ByteArrayToString(y[i])}");
+                IAsymmetricBlockCipher cipher = new RsaEngine();
+                cipher.Init(true, P[i]);
+
+                y[i] = cipher.ProcessBlock(X[i], 0, X[i].Length);
             }
 
             byte[] k1 = Encoding.UTF8.GetBytes(m);
 
-            byte[] k = new byte[256];
+            byte[] k = new byte[64];
 
             for (int i = 0; i < k1.Length; ++i)
             {
@@ -140,11 +197,6 @@ namespace ring
             }
 
             Console.WriteLine("ring: " + ByteArrayToString(ring));
-
-
-
-
-
 
         }
 
