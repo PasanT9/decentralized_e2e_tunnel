@@ -4,6 +4,12 @@ using System.Security.Cryptography;
 using System.Collections;
 using System.Collections.Generic;
 
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Encodings;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.OpenSsl;
+
+
 namespace ring
 {
     class Program
@@ -16,11 +22,22 @@ namespace ring
             int[] x = new int[10];
             string message = "Hello!!";
 
-            byte[] msg = Encoding.ASCII.GetBytes(message);
+            Console.WriteLine("Ring signature generation");
+
+            byte[] k1 = Encoding.UTF8.GetBytes(message);
+
+            byte[] k = new byte[256];
+
+            for (int i = 0; i < k1.Length; ++i)
+            {
+                k[i] = (byte)(k[i] + k1[i]);
+            }
 
             Dictionary<int, Tuple<RSAParameters, RSAParameters>> keys = new Dictionary<int, Tuple<RSAParameters, RSAParameters>>();
 
             Random rnd = new Random();
+
+            RSAParameters[] P = new RSAParameters[11];
 
             for (int i = 0; i < 10; ++i)
             {
@@ -32,17 +49,17 @@ namespace ring
                     RSAParameters privateKey = rsa.ExportParameters(true);
                     Tuple<RSAParameters, RSAParameters> key = new Tuple<RSAParameters, RSAParameters>(publicKey, privateKey);
                     keys[i] = key;
+                    P[i + 1] = publicKey;
                 }
 
                 y[i] = Encrypt(Encoding.ASCII.GetBytes(x[i].ToString()), keys[i].Item1);
 
-                //Console.WriteLine("->" + x[i]);
-                //Console.WriteLine(Encoding.ASCII.GetString(Decrypt(y[i], keys[i].Item2)));
 
             }
             byte[] ring = y[0];
             for (int i = 1; i < 10; ++i)
             {
+                ring = exclusiveOR(ring, k);
                 ring = exclusiveOR(ring, y[i]);
             }
 
@@ -53,10 +70,81 @@ namespace ring
             RSAParameters publicKey_s = rsa_s.ExportParameters(false);
             RSAParameters privateKey_s = rsa_s.ExportParameters(true);
 
-            xs = rnd.Next();
-            ys = Encrypt(Encoding.ASCII.GetBytes(xs.ToString()), publicKey_s);
+            P[0] = publicKey_s;
 
+            int xs = rnd.Next();
+            byte[] ys = Encrypt(Encoding.ASCII.GetBytes(xs.ToString()), publicKey_s);
+
+            ring = exclusiveOR(ring, k);
             byte[] v = exclusiveOR(ring, ys);
+
+            Console.WriteLine("xs: " + xs);
+
+            Console.WriteLine($"ys: {ByteArrayToString(ys)}");
+
+            for (int i = 0; i < 10; ++i)
+            {
+                Console.WriteLine($"y[{i}]: {ByteArrayToString(y[i])}");
+            }
+
+            Console.WriteLine("v: " + ByteArrayToString(v));
+
+            int[] X = new int[11];
+
+            X[0] = xs;
+
+            for (int i = 1; i < 11; ++i)
+            {
+                X[i] = x[i - 1];
+            }
+
+            if (P[0].Equals(publicKey_s) && X[0] == xs)
+            {
+                Console.WriteLine("True");
+            }
+
+            ring_verify(P, v, X, message);
+            Console.WriteLine();
+
+
+
+        }
+
+        public static void ring_verify(RSAParameters[] P, byte[] v, int[] X, string m)
+        {
+            Console.WriteLine("Ring signature verification");
+
+            byte[][] y = new byte[11][];
+
+            for (int i = 0; i < 11; ++i)
+            {
+                y[i] = Encrypt(Encoding.ASCII.GetBytes(X[i].ToString()), P[i]);
+                Console.WriteLine($"y[{i}]: {ByteArrayToString(y[i])}");
+            }
+
+            byte[] k1 = Encoding.UTF8.GetBytes(m);
+
+            byte[] k = new byte[256];
+
+            for (int i = 0; i < k1.Length; ++i)
+            {
+                k[i] = (byte)(k[i] + k1[i]);
+            }
+
+
+            byte[] ring = y[0];
+            for (int i = 1; i < 11; ++i)
+            {
+                ring = exclusiveOR(ring, k);
+                ring = exclusiveOR(ring, y[i]);
+            }
+
+            Console.WriteLine("ring: " + ByteArrayToString(ring));
+
+
+
+
+
 
         }
 
@@ -93,7 +181,7 @@ namespace ring
                 //rsa.ImportParameters(StringToKey(File.ReadAllText(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\pubKey.xml")));
                 try
                 {
-                    encrypted = rsa.Encrypt(input, false);
+                    encrypted = rsa.Encrypt(input, true);
                     return encrypted;
                 }
                 catch (System.Exception e)
