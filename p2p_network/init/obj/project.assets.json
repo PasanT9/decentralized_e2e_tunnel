@@ -1,17 +1,8 @@
 {
   "version": 3,
   "targets": {
-    ".NETCoreApp,Version=v3.1": {
-      "BouncyCastle/1.8.9": {
-        "type": "package",
-        "compile": {
-          "lib/BouncyCastle.Crypto.dll": {}
-        },
-        "runtime": {
-          "lib/BouncyCastle.Crypto.dll": {}
-        }
-      },
-      "CliWrap/3.2.3": {
+    "net5.0": {
+      "CliWrap/3.3.0": {
         "type": "package",
         "compile": {
           "lib/netcoreapp3.0/CliWrap.dll": {}
@@ -29,8 +20,20 @@
           "lib/netstandard2.0/Newtonsoft.Json.dll": {}
         }
       },
-      "System.Security.Cryptography.OpenSsl/4.7.0": {
+      "System.Formats.Asn1/5.0.0": {
         "type": "package",
+        "compile": {
+          "lib/netstandard2.0/_._": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/System.Formats.Asn1.dll": {}
+        }
+      },
+      "System.Security.Cryptography.OpenSsl/5.0.0": {
+        "type": "package",
+        "dependencies": {
+          "System.Formats.Asn1": "5.0.0"
+        },
         "compile": {
           "ref/netcoreapp3.0/System.Security.Cryptography.OpenSsl.dll": {}
         },
@@ -47,27 +50,14 @@
     }
   },
   "libraries": {
-    "BouncyCastle/1.8.9": {
-      "sha512": "axnBgvdD5n+FnEG6efk/tfKuMFru7R/EoISH9zjh319yb3HD24TEHSAbNN/lTRT2ulOGRxDgOsCjkuk08iwWPg==",
+    "CliWrap/3.3.0": {
+      "sha512": "imhOhs2fLrIva3coUXCh4L5lUSN6XCGF4+20qmPW2ncDlqQphk8kKxKwkoC3FNNPd9wW+RnXjlxBMlN21dQiHg==",
       "type": "package",
-      "path": "bouncycastle/1.8.9",
+      "path": "cliwrap/3.3.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "README.md",
-        "bouncycastle.1.8.9.nupkg.sha512",
-        "bouncycastle.nuspec",
-        "lib/BouncyCastle.Crypto.dll"
-      ]
-    },
-    "CliWrap/3.2.3": {
-      "sha512": "2hSw2nIuo0N6urxg0JR3kM/sd4dObKiWAbB9fXkEFgvKS+LEL3W3L8quuob8CSGKoJuCLvonwtzGlran4/yZNg==",
-      "type": "package",
-      "path": "cliwrap/3.2.3",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "cliwrap.3.2.3.nupkg.sha512",
+        "cliwrap.3.3.0.nupkg.sha512",
         "cliwrap.nuspec",
         "favicon.png",
         "lib/net461/CliWrap.dll",
@@ -111,21 +101,46 @@
         "packageIcon.png"
       ]
     },
-    "System.Security.Cryptography.OpenSsl/4.7.0": {
-      "sha512": "SnyVFMSDyiXJuAdO6aDoqTN9r0htkh+ff2//4Hjnnynzfgw1mREDKcrUwwB3dlTK/QTSSxFFf+Kmwea2JSYgnA==",
+    "System.Formats.Asn1/5.0.0": {
+      "sha512": "MTvUIktmemNB+El0Fgw9egyqT9AYSIk6DTJeoDSpc3GIHxHCMo8COqkWT1mptX5tZ1SlQ6HJZ0OsSvMth1c12w==",
       "type": "package",
-      "path": "system.security.cryptography.openssl/4.7.0",
+      "path": "system.formats.asn1/5.0.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
+        "Icon.png",
         "LICENSE.TXT",
         "THIRD-PARTY-NOTICES.TXT",
+        "lib/net461/System.Formats.Asn1.dll",
+        "lib/net461/System.Formats.Asn1.xml",
+        "lib/netstandard2.0/System.Formats.Asn1.dll",
+        "lib/netstandard2.0/System.Formats.Asn1.xml",
+        "system.formats.asn1.5.0.0.nupkg.sha512",
+        "system.formats.asn1.nuspec",
+        "useSharedDesignerContext.txt",
+        "version.txt"
+      ]
+    },
+    "System.Security.Cryptography.OpenSsl/5.0.0": {
+      "sha512": "D3aDrPOPBORUl6V/WJ2AtN3Ae48aSH0W7yChBIecvu1lyoAhopPORmMpNTjv5/Kay7Z+h3KXpfbvteIm7x7miA==",
+      "type": "package",
+      "path": "system.security.cryptography.openssl/5.0.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "lib/net461/System.Security.Cryptography.OpenSsl.dll",
+        "lib/net461/System.Security.Cryptography.OpenSsl.xml",
         "lib/netcoreapp2.1/System.Security.Cryptography.OpenSsl.dll",
         "lib/netcoreapp3.0/System.Security.Cryptography.OpenSsl.dll",
         "lib/netcoreapp3.0/System.Security.Cryptography.OpenSsl.xml",
         "lib/netstandard1.6/System.Security.Cryptography.OpenSsl.dll",
         "lib/netstandard2.0/System.Security.Cryptography.OpenSsl.dll",
         "lib/netstandard2.0/System.Security.Cryptography.OpenSsl.xml",
+        "ref/net461/System.Security.Cryptography.OpenSsl.dll",
+        "ref/net461/System.Security.Cryptography.OpenSsl.xml",
         "ref/netcoreapp2.0/System.Security.Cryptography.OpenSsl.dll",
         "ref/netcoreapp2.0/System.Security.Cryptography.OpenSsl.xml",
         "ref/netcoreapp2.1/System.Security.Cryptography.OpenSsl.dll",
@@ -140,7 +155,7 @@
         "runtimes/unix/lib/netcoreapp3.0/System.Security.Cryptography.OpenSsl.dll",
         "runtimes/unix/lib/netcoreapp3.0/System.Security.Cryptography.OpenSsl.xml",
         "runtimes/unix/lib/netstandard1.6/System.Security.Cryptography.OpenSsl.dll",
-        "system.security.cryptography.openssl.4.7.0.nupkg.sha512",
+        "system.security.cryptography.openssl.5.0.0.nupkg.sha512",
         "system.security.cryptography.openssl.nuspec",
         "useSharedDesignerContext.txt",
         "version.txt"
@@ -148,45 +163,36 @@
     }
   },
   "projectFileDependencyGroups": {
-    ".NETCoreApp,Version=v3.1": [
-      "BouncyCastle >= 1.8.9",
-      "CliWrap >= 3.2.3",
+    "net5.0": [
+      "CliWrap >= 3.3.0",
       "Newtonsoft.Json >= 12.0.3",
-      "System.Security.Cryptography.OpenSSL >= 4.7.0"
+      "System.Security.Cryptography.OpenSSL >= 5.0.0"
     ]
   },
   "packageFolders": {
-    "/home/pasan/.nuget/packages/": {}
+    "C:\\Users\\Pasan\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-<<<<<<< HEAD
-      "projectUniqueName": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/superpeer_network.csproj",
-      "projectName": "superpeer_network",
-      "projectPath": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/superpeer_network.csproj",
-      "packagesPath": "/home/pasan/.nuget/packages/",
-      "outputPath": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/obj/",
-=======
-      "projectUniqueName": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\superpeer_network.csproj",
-      "projectName": "superpeer_network",
-      "projectPath": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\superpeer_network.csproj",
+      "projectUniqueName": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\p2p_network\\init\\init.csproj",
+      "projectName": "init",
+      "projectPath": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\p2p_network\\init\\init.csproj",
       "packagesPath": "C:\\Users\\Pasan\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\obj\\",
->>>>>>> e0a552a18fb318ab9b47872682a10d51dd03c559
+      "outputPath": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\p2p_network\\init\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "/home/pasan/.nuget/NuGet/NuGet.Config"
+        "C:\\Users\\Pasan\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
-        "netcoreapp3.1"
+        "net5.0"
       ],
       "sources": {
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
-        "netcoreapp3.1": {
-          "targetAlias": "netcoreapp3.1",
+        "net5.0": {
+          "targetAlias": "net5.0",
           "projectReferences": {}
         }
       },
@@ -197,16 +203,12 @@
       }
     },
     "frameworks": {
-      "netcoreapp3.1": {
-        "targetAlias": "netcoreapp3.1",
+      "net5.0": {
+        "targetAlias": "net5.0",
         "dependencies": {
-          "BouncyCastle": {
-            "target": "Package",
-            "version": "[1.8.9, )"
-          },
           "CliWrap": {
             "target": "Package",
-            "version": "[3.2.3, )"
+            "version": "[3.3.0, )"
           },
           "Newtonsoft.Json": {
             "target": "Package",
@@ -214,7 +216,7 @@
           },
           "System.Security.Cryptography.OpenSSL": {
             "target": "Package",
-            "version": "[4.7.0, )"
+            "version": "[5.0.0, )"
           }
         },
         "imports": [
@@ -232,20 +234,8 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/5.0.102/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.101\\RuntimeIdentifierGraph.json"
       }
     }
-  },
-  "logs": [
-    {
-      "code": "NU1701",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "Package 'BouncyCastle 1.8.9' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework '.NETCoreApp,Version=v3.1'. This package may not be fully compatible with your project.",
-      "libraryId": "BouncyCastle",
-      "targetGraphs": [
-        ".NETCoreApp,Version=v3.1"
-      ]
-    }
-  ]
+  }
 }
