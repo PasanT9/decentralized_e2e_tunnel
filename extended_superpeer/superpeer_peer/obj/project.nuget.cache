@@ -1,11 +1,23 @@
 {
   "version": 2,
-  "dgSpecHash": "11BELT0XCMpwDuZ/sAIRwYrr6M9WZW7rGPssT1KIk7tU3QcuTBXZfetaOufllXgivQMfaX8ZPMJYr+SMKLbEXw==",
+  "dgSpecHash": "Rc+16QOEmOEWO1ZMGz5Jot2NK5Kcn84fENJ2XshQywBJkemfCtW/shXJcP6L1EpwfT+jJQRmdxijf9XHWAIUPQ==",
   "success": true,
-  "projectFilePath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_peer/superpeer_peer.csproj",
+  "projectFilePath": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_peer/superpeer_peer.csproj",
   "expectedPackageFiles": [
+    "/home/pasan/.nuget/packages/bouncycastle/1.8.9/bouncycastle.1.8.9.nupkg.sha512",
     "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512",
     "/home/pasan/.nuget/packages/system.security.cryptography.openssl/4.7.0/system.security.cryptography.openssl.4.7.0.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'BouncyCastle 1.8.9' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework '.NETCoreApp,Version=v3.1'. This package may not be fully compatible with your project.",
+      "libraryId": "BouncyCastle",
+      "targetGraphs": [
+        ".NETCoreApp,Version=v3.1"
+      ]
+    }
+  ]
 }

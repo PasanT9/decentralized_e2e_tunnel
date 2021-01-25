@@ -2,6 +2,15 @@
   "version": 3,
   "targets": {
     ".NETCoreApp,Version=v3.1": {
+      "BouncyCastle/1.8.9": {
+        "type": "package",
+        "compile": {
+          "lib/BouncyCastle.Crypto.dll": {}
+        },
+        "runtime": {
+          "lib/BouncyCastle.Crypto.dll": {}
+        }
+      },
       "CliWrap/3.2.3": {
         "type": "package",
         "compile": {
@@ -38,6 +47,19 @@
     }
   },
   "libraries": {
+    "BouncyCastle/1.8.9": {
+      "sha512": "axnBgvdD5n+FnEG6efk/tfKuMFru7R/EoISH9zjh319yb3HD24TEHSAbNN/lTRT2ulOGRxDgOsCjkuk08iwWPg==",
+      "type": "package",
+      "path": "bouncycastle/1.8.9",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "bouncycastle.1.8.9.nupkg.sha512",
+        "bouncycastle.nuspec",
+        "lib/BouncyCastle.Crypto.dll"
+      ]
+    },
     "CliWrap/3.2.3": {
       "sha512": "2hSw2nIuo0N6urxg0JR3kM/sd4dObKiWAbB9fXkEFgvKS+LEL3W3L8quuob8CSGKoJuCLvonwtzGlran4/yZNg==",
       "type": "package",
@@ -127,25 +149,26 @@
   },
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v3.1": [
+      "BouncyCastle >= 1.8.9",
       "CliWrap >= 3.2.3",
       "Newtonsoft.Json >= 12.0.3",
       "System.Security.Cryptography.OpenSSL >= 4.7.0"
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Pasan\\.nuget\\packages\\": {}
+    "/home/pasan/.nuget/packages/": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\superpeer_network.csproj",
+      "projectUniqueName": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/superpeer_network.csproj",
       "projectName": "superpeer_network",
-      "projectPath": "C:\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\superpeer_network.csproj",
-      "packagesPath": "C:\\Users\\Pasan\\.nuget\\packages\\",
-      "outputPath": "C:\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\obj\\",
+      "projectPath": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/superpeer_network.csproj",
+      "packagesPath": "/home/pasan/.nuget/packages/",
+      "outputPath": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
-        "C:\\Users\\Pasan\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        "/home/pasan/.nuget/NuGet/NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "netcoreapp3.1"
@@ -169,6 +192,10 @@
       "netcoreapp3.1": {
         "targetAlias": "netcoreapp3.1",
         "dependencies": {
+          "BouncyCastle": {
+            "target": "Package",
+            "version": "[1.8.9, )"
+          },
           "CliWrap": {
             "target": "Package",
             "version": "[3.2.3, )"
@@ -192,31 +219,25 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "downloadDependencies": [
-          {
-            "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[3.1.10, 3.1.10]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Host.win-x64",
-            "version": "[3.1.10, 3.1.10]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Ref",
-            "version": "[3.1.0, 3.1.0]"
-          },
-          {
-            "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[3.1.0, 3.1.0]"
-          }
-        ],
         "frameworkReferences": {
           "Microsoft.NETCore.App": {
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.101\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/5.0.102/RuntimeIdentifierGraph.json"
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'BouncyCastle 1.8.9' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework '.NETCoreApp,Version=v3.1'. This package may not be fully compatible with your project.",
+      "libraryId": "BouncyCastle",
+      "targetGraphs": [
+        ".NETCoreApp,Version=v3.1"
+      ]
+    }
+  ]
 }

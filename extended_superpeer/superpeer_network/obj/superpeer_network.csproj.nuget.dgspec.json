@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/superpeer_network.csproj": {}
+    "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/superpeer_network.csproj": {}
   },
   "projects": {
-    "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/superpeer_network.csproj": {
+    "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/superpeer_network.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/superpeer_network.csproj",
+        "projectUniqueName": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/superpeer_network.csproj",
         "projectName": "superpeer_network",
-        "projectPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/superpeer_network.csproj",
+        "projectPath": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/superpeer_network.csproj",
         "packagesPath": "/home/pasan/.nuget/packages/",
-        "outputPath": "/home/pasan/Desktop/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/obj/",
+        "outputPath": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/superpeer_network/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/home/pasan/.nuget/NuGet/NuGet.Config"
@@ -24,6 +24,7 @@
         },
         "frameworks": {
           "netcoreapp3.1": {
+            "targetAlias": "netcoreapp3.1",
             "projectReferences": {}
           }
         },
@@ -35,6 +36,7 @@
       },
       "frameworks": {
         "netcoreapp3.1": {
+          "targetAlias": "netcoreapp3.1",
           "dependencies": {
             "Newtonsoft.Json": {
               "target": "Package",
@@ -56,7 +58,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/3.1.404/RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/5.0.102/RuntimeIdentifierGraph.json"
         }
       }
     }

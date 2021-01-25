@@ -8,11 +8,20 @@
     ".NETCoreApp,Version=v3.1": {
       "superpeer_peer/1.0.0": {
         "dependencies": {
+          "BouncyCastle": "1.8.9",
           "Newtonsoft.Json": "12.0.3",
           "System.Security.Cryptography.OpenSsl": "4.7.0"
         },
         "runtime": {
           "superpeer_peer.dll": {}
+        }
+      },
+      "BouncyCastle/1.8.9": {
+        "runtime": {
+          "lib/BouncyCastle.Crypto.dll": {
+            "assemblyVersion": "1.8.9.0",
+            "fileVersion": "1.8.20343.1"
+          }
         }
       },
       "Newtonsoft.Json/12.0.3": {
@@ -46,6 +55,13 @@
       "type": "project",
       "serviceable": false,
       "sha512": ""
+    },
+    "BouncyCastle/1.8.9": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-axnBgvdD5n+FnEG6efk/tfKuMFru7R/EoISH9zjh319yb3HD24TEHSAbNN/lTRT2ulOGRxDgOsCjkuk08iwWPg==",
+      "path": "bouncycastle/1.8.9",
+      "hashPath": "bouncycastle.1.8.9.nupkg.sha512"
     },
     "Newtonsoft.Json/12.0.3": {
       "type": "package",
