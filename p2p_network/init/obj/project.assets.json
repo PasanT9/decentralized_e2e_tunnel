@@ -175,11 +175,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Projects\\decentralized_e2e_tunnel\\p2p_network\\init\\init.csproj",
+      "projectUniqueName": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\p2p_network\\init\\init.csproj",
       "projectName": "init",
-      "projectPath": "C:\\Projects\\decentralized_e2e_tunnel\\p2p_network\\init\\init.csproj",
+      "projectPath": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\p2p_network\\init\\init.csproj",
       "packagesPath": "C:\\Users\\Pasan\\.nuget\\packages\\",
-      "outputPath": "C:\\Projects\\decentralized_e2e_tunnel\\p2p_network\\init\\obj\\",
+      "outputPath": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\p2p_network\\init\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Pasan\\AppData\\Roaming\\NuGet\\NuGet.Config"

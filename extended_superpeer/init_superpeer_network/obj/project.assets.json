@@ -138,11 +138,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\superpeer_network.csproj",
+      "projectUniqueName": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\superpeer_network.csproj",
       "projectName": "superpeer_network",
-      "projectPath": "C:\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\superpeer_network.csproj",
+      "projectPath": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\superpeer_network.csproj",
       "packagesPath": "C:\\Users\\Pasan\\.nuget\\packages\\",
-      "outputPath": "C:\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\obj\\",
+      "outputPath": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Pasan\\AppData\\Roaming\\NuGet\\NuGet.Config"
