@@ -1,4 +1,4 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
     using System.Security.Cryptography;
     using System;
@@ -7,11 +7,11 @@
     {
         private static byte[] IV = new byte[8] { 1, 2, 3, 4, 5, 6, 7, 8 };
 
-        public static string Encrypt(string text,  byte[] key)
+        public static string Encrypt(string text, byte[] key)
         {
             byte[] plaintextbytes = System.Text.Encoding.ASCII.GetBytes(text);
             AesCryptoServiceProvider aes = new AesCryptoServiceProvider();
-           // aes.BlockSize = 128;
+            // aes.BlockSize = 128;
             ////aes.KeySize = 256;
             aes.Key = key;
             //aes.IV = IV;
@@ -28,7 +28,7 @@
         {
             byte[] encryptedbytes = Convert.FromBase64String(encrypted);
             AesCryptoServiceProvider aes = new AesCryptoServiceProvider();
-           // aes.BlockSize = 128;
+            // aes.BlockSize = 128;
             aes.KeySize = 256;
             aes.Key = key;
             //aes.IV = IV;

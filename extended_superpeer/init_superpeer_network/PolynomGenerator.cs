@@ -1,7 +1,7 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
     using System;
-   
+
     class PolynomGenerator
     {
         public static uint lowerXBound = 1;

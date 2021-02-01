@@ -1,9 +1,9 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
     using System;
 
     public static class Extensions
-    { 
+    {
         public static T[] GetRow<T>(this T[,] matrix, int index)
         {
             int matrixWidth = matrix.GetLength(1);

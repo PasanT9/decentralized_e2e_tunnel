@@ -1,10 +1,10 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
-  
-	using System;
+
+    using System;
 
     class PolynomSolver
-    { 
+    {
 
         public static uint SolveWithFiniteField(ushort[] coefficients, ulong x)
         {
@@ -38,7 +38,7 @@
 
             for (int i = 0; i < count; i++)
             {
-                pointsArr[i, 0] =  PolynomGenerator.GetRandomX(PolynomGenerator.lowerXBound, PolynomGenerator.upperXBound);
+                pointsArr[i, 0] = PolynomGenerator.GetRandomX(PolynomGenerator.lowerXBound, PolynomGenerator.upperXBound);
                 pointsArr[i, 1] = SolveWithFiniteField(coefficients, pointsArr[i, 0]);
 
                 for (int j = 0; j < i; j++)

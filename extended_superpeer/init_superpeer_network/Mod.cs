@@ -1,6 +1,6 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
-	using System;
+    using System;
     public static class Mod
     {
         public const uint MOD = 2147483647;

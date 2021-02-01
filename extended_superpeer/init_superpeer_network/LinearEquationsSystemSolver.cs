@@ -1,7 +1,7 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
-  
-  
+
+
     using System;
 
     class LinearEquationsSystemSolver
@@ -34,7 +34,7 @@
 
                 // Make all rows below this one 0 in current column
                 for (int k = i + 1; k < n; k++)
-                { 
+                {
                     ulong factor = (matrix[k, i] * Mod.PowMod(matrix[i, i], Mod.MOD - 2, Mod.MOD)) % Mod.MOD;
 
                     for (int j = i; j < n + 1; j++)

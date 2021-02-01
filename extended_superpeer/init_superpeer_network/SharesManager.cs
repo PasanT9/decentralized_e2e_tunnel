@@ -1,7 +1,7 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
     using System;
-   
+
     public class SharesManager
     {
         public static string[] SplitKey(ushort[] key, int players, int required)

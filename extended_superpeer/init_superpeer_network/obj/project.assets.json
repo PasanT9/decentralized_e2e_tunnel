@@ -161,19 +161,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-<<<<<<< HEAD
       "projectUniqueName": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/superpeer_network.csproj",
       "projectName": "superpeer_network",
       "projectPath": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/superpeer_network.csproj",
       "packagesPath": "/home/pasan/.nuget/packages/",
       "outputPath": "/home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/obj/",
-=======
-      "projectUniqueName": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\superpeer_network.csproj",
-      "projectName": "superpeer_network",
-      "projectPath": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\superpeer_network.csproj",
-      "packagesPath": "C:\\Users\\Pasan\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Pasan\\Desktop\\Projects\\decentralized_e2e_tunnel\\extended_superpeer\\init_superpeer_network\\obj\\",
->>>>>>> e0a552a18fb318ab9b47872682a10d51dd03c559
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/pasan/.nuget/NuGet/NuGet.Config"
@@ -237,6 +229,12 @@
     }
   },
   "logs": [
+    {
+      "code": "Undefined",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Problem reading the cache file /home/pasan/projects/decentralized_e2e_tunnel/extended_superpeer/init_superpeer_network/obj/project.nuget.cache : Invalid property identifier character: <. Path 'version', line 3, position 0."
+    },
     {
       "code": "NU1701",
       "level": "Warning",

@@ -1,7 +1,7 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
     using System;
-    
+
 
     class KeyGenerator
     {
@@ -34,10 +34,10 @@
             ushort el1, el2;
             for (int i = 0; i < length / 2; i++)
             {
-                el1 = (ushort)(arr[2 * i]<<8);
+                el1 = (ushort)(arr[2 * i] << 8);
                 el2 = arr[2 * i + 1];
 
-                result[i] = (ushort)(el1+ el2);
+                result[i] = (ushort)(el1 + el2);
             }
 
             return result;

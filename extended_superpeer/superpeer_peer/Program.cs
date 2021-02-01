@@ -39,6 +39,8 @@ using Org.BouncyCastle.X509;
 
 using X509Certificate = System.Security.Cryptography.X509Certificates.X509Certificate;
 
+using SecretSaring;
+
 
 namespace superpeer_peer
 {
@@ -138,8 +140,10 @@ namespace superpeer_peer
             sslStream.Close();
             client.Close();
 
+            share_key();
 
-            Console.Write("init connection: ");
+
+            /*Console.Write("init connection: ");
             string input = Console.ReadLine();
             //locate_peer();
             //anonym_peer();
@@ -150,7 +154,7 @@ namespace superpeer_peer
             else
             {
                 listen_superpeer();
-            }
+            }*/
             //ring_authenticate();
 
 
@@ -324,6 +328,35 @@ namespace superpeer_peer
                 sslStream.Close();
                 client.Close();
             }
+
+        }
+
+        static void share_key()
+        {
+            Thread.Sleep(2000);
+            int polynomsCount = 3;
+
+            var byteKey = KeyGenerator.GenerateKey(polynomsCount * 16);
+            var key = KeyGenerator.GenerateDoubleBytesKey(byteKey);
+            var hexKey = KeyGenerator.GetHexKey(key);
+
+            Console.WriteLine("sending key: " + hexKey);
+
+            IPAddress ipAddress = IPAddress.Parse(local_ip);
+            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+
+            //Connect to server
+            TcpClient client = new TcpClient(ipLocalEndPoint);
+            client.Connect(server_ip, server_port);
+            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+            authenticate_server(sslStream);
+
+            TCPCommunication.send_message_tcp(sslStream, "REG_P");
+
+            sslStream.Write(byteKey);
+
+            sslStream.Flush();
+
 
         }
 

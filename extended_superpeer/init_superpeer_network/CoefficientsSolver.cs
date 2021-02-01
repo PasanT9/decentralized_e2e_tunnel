@@ -1,6 +1,6 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
-	using System;
+    using System;
     public class CoefficientsSolver
     {
         public static ushort[] GetCoefficients(uint[,,] points)

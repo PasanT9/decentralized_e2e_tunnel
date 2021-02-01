@@ -37,6 +37,8 @@ using Org.BouncyCastle.X509;
 
 using X509Certificate = System.Security.Cryptography.X509Certificates.X509Certificate;
 
+using SecretSaring;
+
 
 
 
@@ -923,6 +925,31 @@ namespace superpeer_network
                     {
                         Console.WriteLine(pair.Key);
                     }
+                }
+                else if (String.Compare(response, "REG_P") == 0)
+                {
+                    Console.WriteLine("Peer registering");
+                    Byte[] data = new Byte[8];
+                    sslStream.Read(data, 0, data.Length);
+
+                    int players = 3;
+                    int required = 2;
+
+                    var key = KeyGenerator.GenerateDoubleBytesKey(data);
+                    var hexKey = KeyGenerator.GetHexKey(key);
+
+                    Console.WriteLine("recieved key: " + hexKey);
+
+                    Console.WriteLine("Shares: ");
+                    var splitted = SharesManager.SplitKey(key, players, required);
+                    for (int i = 0; i < splitted.Length; i++)
+                    {
+                        Console.WriteLine(splitted[i]);
+                    }
+                    Console.WriteLine();
+
+
+
                 }
                 else if (String.Compare(response, "AUTH_P") == 0)
                 {

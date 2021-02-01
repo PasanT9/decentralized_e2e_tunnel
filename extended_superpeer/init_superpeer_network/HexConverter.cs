@@ -1,4 +1,4 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
     using System.Text;
     using System;

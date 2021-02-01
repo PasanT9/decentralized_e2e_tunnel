@@ -1,7 +1,7 @@
-﻿namespace Server
+﻿namespace SecretSaring
 {
-    
-	using System;
+
+    using System;
 
     class SystemGenerator
     {
