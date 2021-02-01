@@ -38,6 +38,8 @@ using Org.BouncyCastle.X509;
 using X509Certificate = System.Security.Cryptography.X509Certificates.X509Certificate;
 
 
+
+
 namespace superpeer_network
 {
     class Program
@@ -1223,18 +1225,18 @@ namespace superpeer_network
             dtls_server0.Start();
             dtls_server1.Start();*/
 
-/*            TCPCommunication.send_message_tcp(listen_stream, "ACCEPT");
+            /*            TCPCommunication.send_message_tcp(listen_stream, "ACCEPT");
 
-            byte[] data = new Byte[256];
-            listen_stream.Read(data, 0, data.Length);
-            string response = Encoding.UTF8.GetString(data);
+                        byte[] data = new Byte[256];
+                        listen_stream.Read(data, 0, data.Length);
+                        string response = Encoding.UTF8.GetString(data);
 
-            PublicKeyCoordinates listen_pub_key = JsonConvert.DeserializeObject<PublicKeyCoordinates>(response);
-            client_keys[listen_ip] = listen_pub_key;
+                        PublicKeyCoordinates listen_pub_key = JsonConvert.DeserializeObject<PublicKeyCoordinates>(response);
+                        client_keys[listen_ip] = listen_pub_key;
 
-            Console.WriteLine("listen pubKey: " + listen_pub_key);
+                        Console.WriteLine("listen pubKey: " + listen_pub_key);
 
-            while (client_keys[listen_ip] == listen_pub_key) ;*/
+                        while (client_keys[listen_ip] == listen_pub_key) ;*/
 
 
 
