@@ -71,7 +71,7 @@ namespace superpeer_network
         static TcpListener server;
         static Stopwatch sw;
 
-        static Dictionary<int, String> shared_keys;
+        static Dictionary<String, String> shared_keys;
 
 
         static List<IPEndPoint> change_neighbours;
@@ -368,6 +368,39 @@ namespace superpeer_network
                         }
                         else if (String.Compare(op_code, "REG") == 0)
                         {
+                            Console.WriteLine(response);
+                            string key = temp_split[1];
+                            if (shared_keys.ContainsKey(key))
+                            {
+                                foreach (var dest in superpeer_neighbours)
+                                {
+                                    if (!dest.Key.Equals(ip))
+                                    {
+                                        Console.WriteLine("Adding reg message to buffer for: " + dest.Key);
+                                        message_buffer[-1 + response] = dest.Key;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                shared_keys[key] = temp_split[2];
+                                string full_msg = temp_split[0] + ":" + temp_split[1];
+
+                                for (int i = 3; i < temp_split.Length; ++i)
+                                {
+                                    full_msg += ":" + temp_split[i];
+                                }
+
+                                foreach (var dest in superpeer_neighbours)
+                                {
+                                    if (!dest.Key.Equals(ip))
+                                    {
+                                        Console.WriteLine("Adding reg message to buffer for: " + dest.Key);
+                                        message_buffer[-1 + full_msg] = dest.Key;
+                                    }
+                                }
+
+                            }
 
                         }
                     }
@@ -436,23 +469,26 @@ namespace superpeer_network
                                 string message = (temp_split.Length >= 1) ? temp_split[1] : "";
                                 string data0 = "";
                                 string data1 = "";
-                                string data2 = "";
                                 int hops = -1;
 
                                 if (String.Compare(message, "REG") == 0)
                                 {
-                                    data0 = temp_split[2];
-                                    data1 = temp_split[3];
-                                    data2 = temp_split[4];
+
+                                    string full_msg = message + ":" + temp_split[2];
+
+                                    for (int i = 3; i < temp_split.Length; ++i)
+                                    {
+                                        full_msg += ":" + temp_split[i];
+                                    }
 
                                     IPEndPoint destination_ip = message_buffer[message_full];
 
                                     if (destination_ip == neighbour)
                                     {
-                                        Console.Write($"Sending({neighbour}): keys");
+                                        Console.WriteLine($"Sending({neighbour}): keys");
                                         Console.ForegroundColor = ConsoleColor.Yellow;
                                         Console.ResetColor();
-                                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message + ":" + data0 + ":" + data1 + ":" + data2);
+                                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], full_msg);
 
                                         message_buffer.Remove(message_full);
                                         //new Thread(() => remove_tunnel(neighbour)).Start();
@@ -565,15 +601,13 @@ namespace superpeer_network
             exit_neighbours = new List<IPEndPoint>();
             change_neighbours = new List<IPEndPoint>();
 
-
-
             message_buffer = new Dictionary<string, IPEndPoint>();
             message_tunnel = new Dictionary<IPEndPoint, IPEndPoint>();
             reply_buffer = new Dictionary<string, string>();
             pending_requests = new Dictionary<IPEndPoint, bool>();
             req_stream = new Dictionary<IPEndPoint, SslStream>();
             client_keys = new Dictionary<IPEndPoint, PublicKeyCoordinates>();
-            shared_keys = new Dictionary<int, string>();
+            shared_keys = new Dictionary<String, String>();
 
             insert_peers_random();
 
@@ -769,6 +803,46 @@ namespace superpeer_network
             }
 
             //sslStream.Close();
+        }
+
+        static void wait_keys(SslStream stream, int port)
+        {
+
+            TcpListener key_server = new TcpListener(local_ip, port);
+            key_server.Start();
+            Console.WriteLine("Waiting for keys");
+
+            Byte[] bytes = new Byte[256];
+            string response;
+            while (true)
+            {
+                TcpClient client = null;
+
+                try
+                {
+                    client = key_server.AcceptTcpClient();
+
+                }
+                catch
+                {
+                    Console.WriteLine("Exception");
+                    break;
+                }
+                SslStream sslStream = new SslStream(client.GetStream(), false);
+                sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
+                sslStream.ReadTimeout = 40000;
+                sslStream.WriteTimeout = 40000;
+                // Read a message from the client.
+                response = TCPCommunication.recieve_message_tcp(sslStream);
+
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine(response);
+                Console.ResetColor();
+                Console.WriteLine(response);
+
+            }
+
+
         }
 
         static public RsaKeyParameters[] restructure_P(string P_str)
@@ -982,17 +1056,40 @@ namespace superpeer_network
                     }
                     Console.WriteLine();
 
-                    shared_keys[key_count] = splitted[0];
+                    string key_id = HashString.GetHashString(hexKey);
+
+                    shared_keys[key_id] = splitted[0];
 
                     List<IPEndPoint> superpeer_neighbours_list = new List<IPEndPoint>(superpeer_neighbours.Keys);
                     int count = 0;
                     foreach (var neighbour in superpeer_neighbours_list)
                     {
                         message_tunnel[neighbour] = null;
-                        message_buffer[(count++) + ":REG:" + (key_count++) + ": " + splitted[1] + ":" + splitted[2]] = neighbour;
+                        message_buffer[(count++) + ":REG:" + (key_id) + ":" + splitted[1] + ":" + splitted[2]] = neighbour;
                     }
 
                 }
+
+                else if (String.Compare(response, "REQ_P") == 0)
+                {
+                    Console.WriteLine("Requesting public keys");
+
+                    List<IPEndPoint> superpeer_neighbours_list = new List<IPEndPoint>(superpeer_neighbours.Keys);
+                    int count = 0;
+                    Random rand = new Random();
+                    int port = rand.Next(2000, 4000);
+                    new Thread(() => wait_keys(sslStream, port)).Start();
+                    Thread.Sleep(500);
+
+                    foreach (var key in shared_keys)
+                    {
+                        foreach (var neighbour in superpeer_neighbours_list)
+                        {
+                            message_buffer[(count++) + ":REQ_P:" + key.Key + ":" + local_ip + ":" + port] = neighbour;
+                        }
+                    }
+                }
+
                 else if (String.Compare(response, "AUTH_P") == 0)
                 {
                     Console.WriteLine("Authentication request");

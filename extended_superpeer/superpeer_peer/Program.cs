@@ -109,15 +109,56 @@ namespace superpeer_peer
             }
         }
 
+        static void test()
+        {
+            RsaKeyPairGenerator rsaKeyPairGnr_s = new RsaKeyPairGenerator();
+            rsaKeyPairGnr_s.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(), 32));
+            Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair_s = rsaKeyPairGnr_s.GenerateKeyPair();
+
+            RsaKeyParameters pubKey = (RsaKeyParameters)keyPair_s.Public;
+            RsaKeyParameters prKey = (RsaKeyParameters)keyPair_s.Private;
+
+            IAsymmetricBlockCipher cipher = new RsaEngine();
+            cipher.Init(true, prKey);
+            byte[] plain_byte = BitConverter.GetBytes(10);
+
+            byte[] enc = cipher.ProcessBlock(plain_byte, 0, plain_byte.Length);
+
+            Org.BouncyCastle.Math.BigInteger test = new Org.BouncyCastle.Math.BigInteger(enc);
+            Console.WriteLine(test);
+
+            test = test.Multiply(new Org.BouncyCastle.Math.BigInteger(BitConverter.GetBytes(2)));
+
+            test = test.Mod(prKey.Modulus);
+
+            Console.WriteLine(test);
+
+            byte[] new_enc = test.ToByteArray();
+
+            cipher.Init(false, pubKey);
+
+            byte[] dec = cipher.ProcessBlock(new_enc, 0, new_enc.Length);
+
+            Console.WriteLine(BitConverter.ToInt32(dec));
+
+
+
+
+
+        }
+
         static void Main(string[] args)
         {
+            // test();
+            //share_key();
 
             //Get user input for server port
             //local_ip = GetLocalIPAddress();
             //Console.WriteLine(local_ip);
 
-            Console.Write("Server ip: ");
-            server_ip = Console.ReadLine();
+            //Console.Write("Server ip: ");
+            //server_ip = Console.ReadLine();
+            server_ip = "127.0.0.1";
             Console.Write("Server port: ");
             server_port = Int32.Parse(Console.ReadLine());
 
@@ -140,7 +181,9 @@ namespace superpeer_peer
             sslStream.Close();
             client.Close();
 
-            share_key();
+            //share_key();
+
+            request_keys();
 
 
             /*Console.Write("init connection: ");
@@ -331,9 +374,30 @@ namespace superpeer_peer
 
         }
 
+        static void request_keys()
+        {
+            Thread.Sleep(4000);
+
+            Console.WriteLine("Requesting public keys");
+
+            IPAddress ipAddress = IPAddress.Parse(local_ip);
+            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+
+            //Connect to server
+            TcpClient client = new TcpClient(ipLocalEndPoint);
+            client.Connect(server_ip, server_port);
+            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+            authenticate_server(sslStream);
+
+            TCPCommunication.send_message_tcp(sslStream, "REQ_P");
+
+
+
+        }
+
         static void share_key()
         {
-            Thread.Sleep(2000);
+            Thread.Sleep(4000);
             int polynomsCount = 3;
 
             var byteKey = KeyGenerator.GenerateKey(polynomsCount * 16);

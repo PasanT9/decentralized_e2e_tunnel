@@ -20,6 +20,8 @@ using dtls_client;
 using PairStream;
 using dtls_server;
 
+using SecretSaring;
+
 
 namespace superpeer_network
 {
@@ -50,6 +52,8 @@ namespace superpeer_network
 
         static List<IPEndPoint> exit_neighbours;
         static List<IPEndPoint> change_neighbours;
+
+        static Dictionary<String, String> shared_keys;
 
         static int hop_count = 2;
         static int flood_phases = 2;
@@ -224,6 +228,48 @@ namespace superpeer_network
                             }
 
                         }
+                        else if (String.Compare(op_code, "REG") == 0)
+                        {
+                            Console.WriteLine(response);
+                            string key = temp_split[1];
+                            if (shared_keys.ContainsKey(key))
+                            {
+                                Console.WriteLine("Key already exists");
+                                foreach (var dest in superpeer_neighbours)
+                                {
+                                    if (!dest.Key.Equals(ip))
+                                    {
+                                        Console.WriteLine("Adding reg message to buffer for: " + dest.Key);
+                                        message_buffer[-1 + response] = dest.Key;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                shared_keys[key] = temp_split[2];
+                                Console.WriteLine($"key for {key} stored: " + temp_split[2]);
+                                if (temp_split.Length > 2)
+                                {
+                                    string full_msg = temp_split[0] + ":" + temp_split[1];
+
+                                    for (int i = 3; i < temp_split.Length; ++i)
+                                    {
+                                        full_msg += ":" + temp_split[i];
+                                    }
+
+                                    foreach (var dest in superpeer_neighbours)
+                                    {
+                                        if (!dest.Key.Equals(ip))
+                                        {
+                                            Console.WriteLine("Adding reg message to buffer for: " + dest.Key);
+                                            message_buffer[-1 + ":" + full_msg] = dest.Key;
+                                        }
+                                    }
+                                }
+
+                            }
+
+                        }
                     }
                 }
                 catch (System.InvalidOperationException e)
@@ -315,38 +361,68 @@ namespace superpeer_network
                                 string[] temp_split = message_full.Split(':');
 
                                 string message = (temp_split.Length >= 1) ? temp_split[1] : "";
-                                //string message = message_full.Split(':')[1];
-                                string data0 = (temp_split.Length > 2) ? temp_split[2] : "";
-                                string data1 = (temp_split.Length > 2) ? temp_split[3] : "";
-                                int hops = (Int32.Parse((temp_split.Length > 2) ? temp_split[4] : "0")) - 1;
+                                string data0 = "";
+                                string data1 = "";
+                                int hops = -1;
 
-                                //Get corresponding destination of the message
-                                IPEndPoint destination_ip = message_buffer[message_full];
-
-                                if (destination_ip == neighbour)
+                                if (String.Compare(message, "REG") == 0)
                                 {
 
-                                    //message_tunnel[neighbour] = restrict_ip;
-                                    //TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], "SEARCH:" + message);
+                                    string full_msg = message + ":" + temp_split[2];
 
-                                    if (data0 != "")
+                                    for (int i = 3; i < temp_split.Length; ++i)
                                     {
-                                        Console.Write($"Sending({neighbour}): ");
-                                        Console.ForegroundColor = ConsoleColor.Yellow;
-                                        Console.WriteLine($"{message}: {data0}");
-                                        Console.ResetColor();
-                                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message + ":" + data0 + ":" + data1 + ":" + hops);
+                                        full_msg += ":" + temp_split[i];
                                     }
-                                    else
+
+                                    IPEndPoint destination_ip = message_buffer[message_full];
+
+                                    if (destination_ip == neighbour)
                                     {
-                                        Console.Write($"Sending({neighbour}): ");
+                                        Console.WriteLine($"Sending({neighbour}): keys");
                                         Console.ForegroundColor = ConsoleColor.Yellow;
-                                        Console.WriteLine($"{message}");
                                         Console.ResetColor();
-                                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message);
+                                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], full_msg);
+
+                                        message_buffer.Remove(message_full);
+                                        //new Thread(() => remove_tunnel(neighbour)).Start();
                                     }
-                                    message_buffer.Remove(message_full);
-                                    //new Thread(() => remove_tunnel(neighbour)).Start();
+                                }
+                                else
+                                {
+                                    data0 = (temp_split.Length > 2) ? temp_split[2] : "";
+                                    data1 = (temp_split.Length > 2) ? temp_split[3] : "";
+                                    hops = (Int32.Parse((temp_split.Length > 2) ? temp_split[4] : "0")) - 1;
+
+                                    //string message = message_full.Split(':')[1];
+
+                                    //Get corresponding destination of the message
+                                    IPEndPoint destination_ip = message_buffer[message_full];
+
+                                    if (destination_ip == neighbour)
+                                    {
+
+                                        //message_tunnel[neighbour] = restrict_ip;
+                                        //TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], "SEARCH:" + message);
+                                        if (data0 != "")
+                                        {
+                                            Console.Write($"Sending({neighbour}): ");
+                                            Console.ForegroundColor = ConsoleColor.Yellow;
+                                            Console.WriteLine($"{message}: {data0}");
+                                            Console.ResetColor();
+                                            TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message + ":" + data0 + ":" + data1 + ":" + hops);
+                                        }
+                                        else
+                                        {
+                                            Console.Write($"Sending({neighbour}): ");
+                                            Console.ForegroundColor = ConsoleColor.Yellow;
+                                            Console.WriteLine($"{message}");
+                                            Console.ResetColor();
+                                            TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message);
+                                        }
+                                        message_buffer.Remove(message_full);
+                                        //new Thread(() => remove_tunnel(neighbour)).Start();
+                                    }
                                 }
 
                                 /*else
@@ -544,6 +620,7 @@ namespace superpeer_network
 
             exit_neighbours = new List<IPEndPoint>();
             change_neighbours = new List<IPEndPoint>();
+            shared_keys = new Dictionary<String, String>();
 
             client_keys = new Dictionary<IPEndPoint, PublicKeyCoordinates>();
 
@@ -779,6 +856,41 @@ namespace superpeer_network
                     {
                         Console.WriteLine(pair.Key);
                     }
+                }
+                else if (String.Compare(response, "REG_P") == 0)
+                {
+                    Console.WriteLine("Peer registering");
+                    Byte[] data = new Byte[8];
+                    sslStream.Read(data, 0, data.Length);
+
+                    int players = 3;
+                    int required = 2;
+
+                    var key = KeyGenerator.GenerateDoubleBytesKey(data);
+                    var hexKey = KeyGenerator.GetHexKey(key);
+
+                    Console.WriteLine("recieved key: " + hexKey);
+
+                    Console.WriteLine("Shares: ");
+                    var splitted = SharesManager.SplitKey(key, players, required);
+                    for (int i = 0; i < splitted.Length; i++)
+                    {
+                        Console.WriteLine(splitted[i]);
+                    }
+                    Console.WriteLine();
+
+                    string key_id = HashString.GetHashString(hexKey);
+
+                    shared_keys[key_id] = splitted[0];
+
+                    List<IPEndPoint> superpeer_neighbours_list = new List<IPEndPoint>(superpeer_neighbours.Keys);
+                    int count = 0;
+                    foreach (var neighbour in superpeer_neighbours_list)
+                    {
+                        message_tunnel[neighbour] = null;
+                        message_buffer[(count++) + ":REG:" + (key_id) + ":" + splitted[1] + ":" + splitted[2]] = neighbour;
+                    }
+
                 }
                 else if (String.Compare(response, "INIT_P") == 0)
                 {
