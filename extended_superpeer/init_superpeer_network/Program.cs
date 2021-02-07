@@ -403,6 +403,43 @@ namespace superpeer_network
                             }
 
                         }
+                        else if (String.Compare(op_code, "REQ") == 0)
+                        {
+                            if (shared_keys.ContainsKey(data0))
+                            {
+                                IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+                                IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+
+                                //Connect to server
+                                TcpClient client = new TcpClient(ipLocalEndPoint);
+                                try
+                                {
+                                    client.Connect(data1, Int32.Parse(data2));
+
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.WriteLine("try again!!!");
+                                    Thread.Sleep(1000);
+                                    client.Connect(data1, Int32.Parse(data2));
+
+                                }
+                                SslStream stream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+                                authenticate_server(stream);
+
+                                TCPCommunication.send_message_tcp(stream, shared_keys[data0]);
+                            }
+                            foreach (var dest in superpeer_neighbours)
+                            {
+                                if (!dest.Key.Equals(ip))
+                                {
+                                    Console.WriteLine("Adding req message to buffer for: " + dest.Key);
+                                    message_buffer[-1 + response] = dest.Key;
+                                }
+                            }
+
+
+                        }
                     }
                 }
                 catch (System.InvalidOperationException e)
@@ -417,6 +454,36 @@ namespace superpeer_network
                 }
             }
             Console.WriteLine("Listen thread exit");
+        }
+
+        public static bool ValidateServerCertificate(object sender, X509Certificate certificate, X509Chain chain, SslPolicyErrors sslPolicyErrors)
+        {
+            if (sslPolicyErrors == SslPolicyErrors.None || sslPolicyErrors == SslPolicyErrors.RemoteCertificateChainErrors)
+                return true;
+
+            Console.WriteLine("Certificate error: {0}", sslPolicyErrors);
+
+            // Do not allow this client to communicate with unauthenticated servers.
+            return false;
+        }
+
+        static void authenticate_server(SslStream sslStream)
+        {
+            try
+            {
+                sslStream.AuthenticateAsClient("test", null, SslProtocols.Tls13, true);
+            }
+            catch (AuthenticationException e)
+            {
+                Console.WriteLine("Exception: {0}", e.Message);
+                if (e.InnerException != null)
+                {
+                    Console.WriteLine("Inner exception: {0}", e.InnerException.Message);
+                }
+                Console.WriteLine("Authentication failed - closing the connection.");
+                sslStream.Close();
+                return;
+            }
         }
 
         static void handle_neighbour(int index)
@@ -469,6 +536,7 @@ namespace superpeer_network
                                 string message = (temp_split.Length >= 1) ? temp_split[1] : "";
                                 string data0 = "";
                                 string data1 = "";
+                                string data2 = "";
                                 int hops = -1;
 
                                 if (String.Compare(message, "REG") == 0)
@@ -492,6 +560,23 @@ namespace superpeer_network
 
                                         message_buffer.Remove(message_full);
                                         //new Thread(() => remove_tunnel(neighbour)).Start();
+                                    }
+                                }
+                                else if (String.Compare(message, "REQ") == 0)
+                                {
+                                    data0 = temp_split[2];
+                                    data1 = temp_split[3];
+                                    data2 = temp_split[4];
+                                    string full_msg = message + ":" + data0 + ":" + data1 + ":" + data2;
+                                    IPEndPoint destination_ip = message_buffer[message_full];
+                                    if (destination_ip == neighbour)
+                                    {
+                                        Console.Write($"Sending({neighbour}): ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine($"{message}");
+                                        Console.ResetColor();
+                                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], full_msg);
+                                        message_buffer.Remove(message_full);
                                     }
                                 }
                                 else
@@ -813,32 +898,35 @@ namespace superpeer_network
             Console.WriteLine("Waiting for keys");
 
             Byte[] bytes = new Byte[256];
-            string response;
+            string response = "";
             while (true)
             {
                 TcpClient client = null;
-
                 try
                 {
                     client = key_server.AcceptTcpClient();
+                    SslStream sslStream = new SslStream(client.GetStream(), false);
+                    sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
+                    sslStream.ReadTimeout = 40000;
+                    sslStream.WriteTimeout = 40000;
+                    // Read a message from the client.
+                    response = TCPCommunication.recieve_message_tcp(sslStream);
 
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine(response);
+                    Console.ResetColor();
+
+                }
+                catch (TimeoutException e)
+                {
+                    Console.WriteLine("Time ran out");
+                    break;
                 }
                 catch
                 {
                     Console.WriteLine("Exception");
                     break;
                 }
-                SslStream sslStream = new SslStream(client.GetStream(), false);
-                sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
-                sslStream.ReadTimeout = 40000;
-                sslStream.WriteTimeout = 40000;
-                // Read a message from the client.
-                response = TCPCommunication.recieve_message_tcp(sslStream);
-
-                Console.ForegroundColor = ConsoleColor.Red;
-                Console.WriteLine(response);
-                Console.ResetColor();
-                Console.WriteLine(response);
 
             }
 
@@ -1085,7 +1173,7 @@ namespace superpeer_network
                     {
                         foreach (var neighbour in superpeer_neighbours_list)
                         {
-                            message_buffer[(count++) + ":REQ_P:" + key.Key + ":" + local_ip + ":" + port] = neighbour;
+                            message_buffer[(count++) + ":REQ:" + key.Key + ":" + local_ip + ":" + port] = neighbour;
                         }
                     }
                 }

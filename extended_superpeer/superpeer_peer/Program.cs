@@ -181,7 +181,8 @@ namespace superpeer_peer
             sslStream.Close();
             client.Close();
 
-            //share_key();
+            share_key();
+            share_key();
 
             request_keys();
 
@@ -385,7 +386,17 @@ namespace superpeer_peer
 
             //Connect to server
             TcpClient client = new TcpClient(ipLocalEndPoint);
-            client.Connect(server_ip, server_port);
+            try
+            {
+
+                client.Connect(server_ip, server_port);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("try again!!!");
+                Thread.Sleep(1000);
+                client.Connect(server_ip, server_port);
+            }
             SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
             authenticate_server(sslStream);
 
@@ -411,7 +422,17 @@ namespace superpeer_peer
 
             //Connect to server
             TcpClient client = new TcpClient(ipLocalEndPoint);
-            client.Connect(server_ip, server_port);
+            try
+            {
+                client.Connect(server_ip, server_port);
+
+            }
+            catch
+            {
+                Console.WriteLine("try again!!!");
+                Thread.Sleep(1000);
+                client.Connect(server_ip, server_port);
+            }
             SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
             authenticate_server(sslStream);
 
