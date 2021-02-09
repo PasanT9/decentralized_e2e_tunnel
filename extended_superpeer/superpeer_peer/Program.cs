@@ -158,6 +158,8 @@ namespace superpeer_peer
 
             //Console.Write("Server ip: ");
             //server_ip = Console.ReadLine();
+
+
             server_ip = "127.0.0.1";
             Console.Write("Server port: ");
             server_port = Int32.Parse(Console.ReadLine());
@@ -182,7 +184,7 @@ namespace superpeer_peer
             client.Close();
 
             share_key();
-            share_key();
+            //share_key();
 
             request_keys();
 

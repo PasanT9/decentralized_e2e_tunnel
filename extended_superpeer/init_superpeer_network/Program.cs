@@ -75,6 +75,7 @@ namespace superpeer_network
 
 
         static List<IPEndPoint> change_neighbours;
+        static List<String> rec_keys;
 
         static string server_ip;
         static int server_port;
@@ -427,7 +428,7 @@ namespace superpeer_network
                                 SslStream stream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
                                 authenticate_server(stream);
 
-                                TCPCommunication.send_message_tcp(stream, shared_keys[data0]);
+                                TCPCommunication.send_message_tcp(stream, data0 + ":" + shared_keys[data0]);
                             }
                             foreach (var dest in superpeer_neighbours)
                             {
@@ -531,6 +532,7 @@ namespace superpeer_network
 
                                 //message_itr.MoveNext();
                                 string message_full = message_buffer_list[0];
+                                Console.WriteLine(message_full);
                                 string[] temp_split = message_full.Split(':');
 
                                 string message = (temp_split.Length >= 1) ? temp_split[1] : "";
@@ -685,6 +687,7 @@ namespace superpeer_network
             peers = new Dictionary<string, IPEndPoint>();
             exit_neighbours = new List<IPEndPoint>();
             change_neighbours = new List<IPEndPoint>();
+            rec_keys = new List<String>();
 
             message_buffer = new Dictionary<string, IPEndPoint>();
             message_tunnel = new Dictionary<IPEndPoint, IPEndPoint>();
@@ -890,10 +893,10 @@ namespace superpeer_network
             //sslStream.Close();
         }
 
-        static void wait_keys(SslStream stream, int port)
+        static void listen_keys(SslStream stream, int port)
         {
-
             TcpListener key_server = new TcpListener(local_ip, port);
+
             key_server.Start();
             Console.WriteLine("Waiting for keys");
 
@@ -907,13 +910,11 @@ namespace superpeer_network
                     client = key_server.AcceptTcpClient();
                     SslStream sslStream = new SslStream(client.GetStream(), false);
                     sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
-                    sslStream.ReadTimeout = 40000;
-                    sslStream.WriteTimeout = 40000;
                     // Read a message from the client.
                     response = TCPCommunication.recieve_message_tcp(sslStream);
 
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(response);
+                    rec_keys.Add(response);
                     Console.ResetColor();
 
                 }
@@ -929,8 +930,61 @@ namespace superpeer_network
                 }
 
             }
+            Console.WriteLine("Stop listening to keys");
+        }
 
+        static void wait_keys(SslStream stream, int port)
+        {
 
+            Thread listen = new Thread(() => listen_keys(stream, port));
+            listen.Start();
+            Thread.Sleep(8000);
+            try
+            {
+                listen.Abort();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            finally
+            {
+                Dictionary<String, HashSet<String>> keys = new Dictionary<String, HashSet<String>>();
+                foreach (var key in shared_keys)
+                {
+                    HashSet<String> temp = new HashSet<String>();
+                    keys[key.Key] = temp;
+                    temp.Add(key.Value);
+                }
+
+                foreach (String key in rec_keys)
+                {
+                    string[] temp_split = key.Split(":");
+                    keys[temp_split[0]].Add(temp_split[1]);
+                }
+
+                foreach (var key in keys)
+                {
+                    Console.WriteLine(key.Key + "->");
+                    string[] shares = new string[2];
+                    int i = 0;
+                    foreach (string part in key.Value)
+                    {
+                        shares[i++] = part;
+                        Console.WriteLine(shares[i - 1]);
+                        if (i == 2)
+                            break;
+                    }
+                    Console.WriteLine();
+
+                    var generatedKey = SharesManager.CombineKey(shares);
+                    var hexKey = KeyGenerator.GetHexKey(generatedKey);
+
+                    Console.WriteLine(hexKey);
+
+                    Console.WriteLine();
+                }
+            }
         }
 
         static public RsaKeyParameters[] restructure_P(string P_str)

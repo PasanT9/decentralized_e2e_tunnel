@@ -294,14 +294,14 @@ namespace superpeer_network
                                 SslStream stream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
                                 authenticate_server(stream);
 
-                                TCPCommunication.send_message_tcp(stream, shared_keys[data0]);
+                                TCPCommunication.send_message_tcp(stream, data0 + ":" + shared_keys[data0]);
                             }
                             foreach (var dest in superpeer_neighbours)
                             {
                                 if (!dest.Key.Equals(ip))
                                 {
                                     Console.WriteLine("Adding req message to buffer for: " + dest.Key);
-                                    message_buffer[-1 + response] = dest.Key;
+                                    message_buffer[-1 + ":" + response] = dest.Key;
                                 }
                             }
 
@@ -404,12 +404,14 @@ namespace superpeer_network
                     }
                     catch (System.ArgumentException e)
                     {
+                        Console.WriteLine(e);
                         Console.WriteLine("neighbours have changed");
                         Thread.Sleep(100);
                         continue;
                     }
-                    catch (System.IndexOutOfRangeException)
+                    catch (System.IndexOutOfRangeException e)
                     {
+                        Console.WriteLine(e);
                         Console.WriteLine("neighbours have changed");
                         Thread.Sleep(100);
                         continue;
@@ -425,6 +427,7 @@ namespace superpeer_network
 
                                 //message_itr.MoveNext();
                                 string message_full = message_buffer_list[0];
+                                Console.WriteLine(message_full);
                                 string[] temp_split = message_full.Split(':');
 
                                 string message = (temp_split.Length >= 1) ? temp_split[1] : "";
@@ -516,14 +519,16 @@ namespace superpeer_network
                                     TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], "HELLO(" + count++ + ")");
                                 }*/
                             }
-                            catch (System.InvalidOperationException)
+                            catch (System.InvalidOperationException e)
                             {
+                                Console.WriteLine(e);
                                 Console.WriteLine("neighbours have changed");
                                 Thread.Sleep(100);
                                 break;
                             }
-                            catch (Exception)
+                            catch (Exception e)
                             {
+                                Console.WriteLine(e);
                                 Console.WriteLine("neighbours have changed");
                                 Thread.Sleep(100);
                                 break;
@@ -825,10 +830,7 @@ namespace superpeer_network
                     Console.WriteLine("Exception");
                     break;
                 }
-
             }
-
-
         }
 
         static void wait_reply(SslStream sslStream, string receiver_key, string sender_key)
