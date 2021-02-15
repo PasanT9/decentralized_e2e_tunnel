@@ -58,6 +58,12 @@ namespace superpeer_peer
         static PublicKeyCoordinates pubKey;
         static ECDiffieHellmanOpenSsl node;
 
+        static RsaKeyParameters P;
+        static RsaKeyParameters S;
+        static byte[] key;
+
+        static int polynomsCount = 3;
+
         static Aes myAes;
 
         //static Aes myAes;
@@ -147,46 +153,36 @@ namespace superpeer_peer
 
         }
 
+        static void gen_keypair()
+        {
+
+            key = KeyGenerator.GenerateKey(polynomsCount * 16);
+            var byte_key = KeyGenerator.GenerateDoubleBytesKey(key);
+            var hexKey = KeyGenerator.GetHexKey(byte_key);
+
+            RsaKeyPairGenerator rsaKeyPairGnr = new RsaKeyPairGenerator();
+            rsaKeyPairGnr.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(key), 512));
+            Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair = rsaKeyPairGnr.GenerateKeyPair();
+
+            P = (RsaKeyParameters)keyPair.Public;
+            S = (RsaKeyParameters)keyPair.Private;
+
+
+            Console.WriteLine("My key: " + hexKey);
+
+        }
+
         static void Main(string[] args)
         {
-            // test();
+
+            gen_keypair();
+
+
+            init_connection();
+
             //share_key();
 
-            //Get user input for server port
-            //local_ip = GetLocalIPAddress();
-            //Console.WriteLine(local_ip);
-
-            //Console.Write("Server ip: ");
-            //server_ip = Console.ReadLine();
-
-
-            server_ip = "127.0.0.1";
-            Console.Write("Server port: ");
-            server_port = Int32.Parse(Console.ReadLine());
-
-            //Select a random port as local port
-            Random random = new Random();
-            local_port = random.Next(20000, 40000);
-
-            //Create local endpoint for connection
-            IPAddress ipAddress = IPAddress.Parse(local_ip);
-            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
-
-            //Connect to server
-            TcpClient client = new TcpClient(ipLocalEndPoint);
-            client.Connect(server_ip, server_port);
-            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
-
-
-            init_connection(sslStream);
-
-            sslStream.Close();
-            client.Close();
-
-            share_key();
-            //share_key();
-
-            request_keys();
+            // request_keys();
 
 
             /*Console.Write("init connection: ");
@@ -202,7 +198,6 @@ namespace superpeer_peer
                 listen_superpeer();
             }*/
             //ring_authenticate();
-
 
         }
 
@@ -408,45 +403,6 @@ namespace superpeer_peer
 
         }
 
-        static void share_key()
-        {
-            Thread.Sleep(4000);
-            int polynomsCount = 3;
-
-            var byteKey = KeyGenerator.GenerateKey(polynomsCount * 16);
-            var key = KeyGenerator.GenerateDoubleBytesKey(byteKey);
-            var hexKey = KeyGenerator.GetHexKey(key);
-
-            Console.WriteLine("sending key: " + hexKey);
-
-            IPAddress ipAddress = IPAddress.Parse(local_ip);
-            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
-
-            //Connect to server
-            TcpClient client = new TcpClient(ipLocalEndPoint);
-            try
-            {
-                client.Connect(server_ip, server_port);
-
-            }
-            catch
-            {
-                Console.WriteLine("try again!!!");
-                Thread.Sleep(1000);
-                client.Connect(server_ip, server_port);
-            }
-            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
-            authenticate_server(sslStream);
-
-            TCPCommunication.send_message_tcp(sslStream, "REG_P");
-
-            sslStream.Write(byteKey);
-
-            sslStream.Flush();
-
-
-        }
-
 
         static void locate_peer()
         {
@@ -492,28 +448,39 @@ namespace superpeer_peer
 
 
 
-        static void init_connection(SslStream sslStream)
+        static void init_connection()
         {
+
+            Console.WriteLine("Initializing the registration...");
+
+
+            server_ip = "127.0.0.1";
+            Console.Write("Server port: ");
+            server_port = Int32.Parse(Console.ReadLine());
+
+            //Select a random port as local port
+            Random random = new Random();
+            local_port = random.Next(20000, 40000);
+
+            //Create local endpoint for connection
+            IPAddress ipAddress = IPAddress.Parse(local_ip);
+            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+
+            //Connect to server
+            TcpClient client = new TcpClient(ipLocalEndPoint);
+            client.Connect(server_ip, server_port);
+            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
 
             //Authenticate certificate
             authenticate_server(sslStream);
 
-            TCPCommunication.send_message_tcp(sslStream, "INIT_P");
-            string response = TCPCommunication.recieve_message_tcp(sslStream);
-            Console.WriteLine(response);
+            TCPCommunication.send_message_tcp(sslStream, "REG_P");
+            sslStream.Write(key);
 
-            node = new ECDiffieHellmanOpenSsl();
-            ECParameters node_ep = node.ExportParameters(false);
+            sslStream.Flush();
 
-            pubKey = new PublicKeyCoordinates(node_ep.Q.X, node_ep.Q.Y);
-
-            Console.WriteLine("My hash key: " + HashString.GetHashString(pubKey.ToString()));
-
-            //Console.WriteLine(pubKey.ToString());
-
-            TCPCommunication.send_message_tcp(sslStream, pubKey.ToString());
-
-
+            sslStream.Close();
+            client.Close();
 
         }
 

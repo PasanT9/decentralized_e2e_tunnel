@@ -58,11 +58,13 @@ namespace superpeer_network
         static int hop_count = 2;
         static int flood_phases = 2;
 
+
         public static void insert_peers(string[] new_peers)
         {
             for (int i = 0; i < new_peers.Length - 1; ++i)
             {
-                peers[new_peers[i]] = null;
+                string[] temp_split = new_peers[i].Split(':');
+                shared_keys[temp_split[0]] = temp_split[1];
             }
         }
 
@@ -693,8 +695,9 @@ namespace superpeer_network
             neighbour_ip = null;
             neighbour_port = -1;
 
-            Console.Write("Server ip: ");
-            server_ip = Console.ReadLine();
+            /*Console.Write("Server ip: ");
+            server_ip = Console.ReadLine();*/
+            server_ip = "127.0.0.1";
 
             Console.Write("Server port: ");
             server_port = Convert.ToInt32(Console.ReadLine());
@@ -752,8 +755,8 @@ namespace superpeer_network
             string reply = "";
             int limit_count = 0;
             int count = 0;
-            int peers_count = peers.Count;
-            foreach (var pair in peers)
+            int peers_count = shared_keys.Count;
+            foreach (var pair in shared_keys)
             {
                 if (count >= peers_count / divident)
                 {
@@ -765,8 +768,8 @@ namespace superpeer_network
                     reply = "";
                     limit_count = 0;
                 }
-                reply += pair.Key + "/";
-                peers.Remove(pair.Key);
+                reply += pair.Key + ":" + pair.Value + "/";
+                shared_keys.Remove(pair.Key);
                 count++;
                 limit_count++;
             }
@@ -781,12 +784,13 @@ namespace superpeer_network
             while (delimiter == "Y")
             {
                 response = TCPCommunication.recieve_message_tcp(sslStream);
+                Console.WriteLine(response);
                 temp_split = response.Split('/');
                 insert_peers(temp_split);
                 delimiter = temp_split[temp_split.Length - 1];
             }
-            Console.WriteLine("My peers");
-            foreach (var pair in peers)
+            Console.WriteLine("Shared keys");
+            foreach (var pair in shared_keys)
             {
                 Console.WriteLine(pair.Key);
             }
@@ -1040,19 +1044,6 @@ namespace superpeer_network
                             message_buffer[(count++) + ":REQ:" + key.Key + ":" + local_ip + ":" + port] = neighbour;
                         }
                     }
-                }
-                else if (String.Compare(response, "INIT_P") == 0)
-                {
-                    Console.WriteLine((IPEndPoint)client.Client.RemoteEndPoint + " peer is registering");
-                    TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
-                    response = TCPCommunication.recieve_message_tcp(sslStream);
-                    string hash = HashString.GetHashString(response);
-
-                    peers[hash] = (IPEndPoint)client.Client.RemoteEndPoint;
-
-                    Console.WriteLine(hash + " is added to peers");
-                    sslStream.Close();
-                    client.Close();
                 }
                 else if (String.Compare(response, "LOCATE_P") == 0)
                 {

@@ -697,7 +697,7 @@ namespace superpeer_network
             client_keys = new Dictionary<IPEndPoint, PublicKeyCoordinates>();
             shared_keys = new Dictionary<String, String>();
 
-            insert_peers_random();
+            //insert_peers_random();
 
             //Add certificate to the certificate store
             server_cert = new X509Certificate2("../../FYP_certificates/ssl-certificate.pfx", "password", X509KeyStorageFlags.PersistKeySet);
@@ -785,8 +785,9 @@ namespace superpeer_network
             string reply = "";
             int limit_count = 0;
             int count = 0;
-            int peers_count = peers.Count;
-            foreach (var pair in peers)
+            int peers_count = shared_keys.Count;
+            Console.WriteLine("key count: " + peers_count);
+            foreach (var pair in shared_keys)
             {
                 if (count >= peers_count / divident)
                 {
@@ -798,8 +799,8 @@ namespace superpeer_network
                     reply = "";
                     limit_count = 0;
                 }
-                reply += pair.Key + "/";
-                peers.Remove(pair.Key);
+                reply += pair.Key + ":" + pair.Value + "/";
+                shared_keys.Remove(pair.Key);
                 count++;
                 limit_count++;
             }
@@ -818,8 +819,8 @@ namespace superpeer_network
                 insert_peers(temp_split);
                 delimiter = temp_split[temp_split.Length - 1];
             }
-            Console.WriteLine("My peers");
-            foreach (var pair in peers)
+            Console.WriteLine("Shared keys");
+            foreach (var pair in shared_keys)
             {
                 Console.WriteLine(pair.Key);
             }
@@ -839,7 +840,8 @@ namespace superpeer_network
         {
             for (int i = 0; i < new_peers.Length - 1; ++i)
             {
-                peers[new_peers[i]] = null;
+                string[] temp_split = new_peers[i].Split(':');
+                shared_keys[temp_split[0]] = temp_split[1];
             }
         }
 
@@ -1273,19 +1275,6 @@ namespace superpeer_network
                     {
                         Console.WriteLine("Authentication failure");
                     }
-                }
-                else if (String.Compare(response, "INIT_P") == 0)
-                {
-                    Console.WriteLine((IPEndPoint)client.Client.RemoteEndPoint + " peer is registering");
-                    TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
-                    response = TCPCommunication.recieve_message_tcp(sslStream);
-                    string hash = HashString.GetHashString(response);
-
-                    peers[hash] = (IPEndPoint)client.Client.RemoteEndPoint;
-
-                    Console.WriteLine(hash + " is added to peers");
-                    sslStream.Close();
-                    client.Close();
                 }
                 else if (String.Compare(response, "LOCATE_P") == 0)
                 {
