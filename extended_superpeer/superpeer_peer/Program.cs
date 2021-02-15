@@ -160,8 +160,10 @@ namespace superpeer_peer
             var byte_key = KeyGenerator.GenerateDoubleBytesKey(key);
             var hexKey = KeyGenerator.GetHexKey(byte_key);
 
+            var key_variable = Encoding.ASCII.GetBytes(hexKey);
+
             RsaKeyPairGenerator rsaKeyPairGnr = new RsaKeyPairGenerator();
-            rsaKeyPairGnr.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(key), 512));
+            rsaKeyPairGnr.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(key_variable), 512));
             Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair = rsaKeyPairGnr.GenerateKeyPair();
 
             P = (RsaKeyParameters)keyPair.Public;
@@ -182,7 +184,7 @@ namespace superpeer_peer
 
             //share_key();
 
-            // request_keys();
+            request_keys();
 
 
             /*Console.Write("init connection: ");
@@ -398,6 +400,12 @@ namespace superpeer_peer
             authenticate_server(sslStream);
 
             TCPCommunication.send_message_tcp(sslStream, "REQ_P");
+            string response = TCPCommunication.recieve_message_tcp(sslStream);
+
+            Console.WriteLine(response);
+
+            sslStream.Close();
+            client.Close();
 
 
 

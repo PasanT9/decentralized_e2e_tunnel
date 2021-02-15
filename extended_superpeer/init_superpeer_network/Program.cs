@@ -132,10 +132,27 @@ namespace superpeer_network
             }
         }
 
+        static void server_shutdown()
+        {
+            try
+            {
+
+                server.Server.Shutdown(SocketShutdown.Both);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+        }
+
         static void connect_neighbour(IPEndPoint neighbour)
         {
             Console.WriteLine("Connecting new neighbour");
-            server.Server.Shutdown(SocketShutdown.Both);
+            new Thread(() => server_shutdown()).Start();
+
+            //server.Server.
+            Console.WriteLine("server pause");
+            Thread.Sleep(500);
             server.Stop();
 
             server_ip = neighbour.Address.ToString();
@@ -157,12 +174,23 @@ namespace superpeer_network
 
         private static void init_connection(string ip, int port)
         {
+            Console.WriteLine("Initializing the connection");
             ipLocalEndPoint = new IPEndPoint(local_ip, local_port);
 
             //Initiate connection with neighbour (Get 1/3 of neighbours peers)
             TcpClient client = new TcpClient(ipLocalEndPoint);
 
-            client.Connect(ip, port);
+            try
+            {
+
+                client.Connect(ip, port);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("try again!!!");
+                Thread.Sleep(1000);
+                client.Connect(ip, port);
+            }
             SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(SSLValidation.ValidateServerCertificate), null);
             establish_connection(sslStream);
 
@@ -378,7 +406,7 @@ namespace superpeer_network
                                     if (!dest.Key.Equals(ip))
                                     {
                                         Console.WriteLine("Adding reg message to buffer for: " + dest.Key);
-                                        message_buffer[-1 + response] = dest.Key;
+                                        message_buffer[-1 + ":" + response] = dest.Key;
                                     }
                                 }
                             }
@@ -397,7 +425,7 @@ namespace superpeer_network
                                     if (!dest.Key.Equals(ip))
                                     {
                                         Console.WriteLine("Adding reg message to buffer for: " + dest.Key);
-                                        message_buffer[-1 + full_msg] = dest.Key;
+                                        message_buffer[-1 + ":" + full_msg] = dest.Key;
                                     }
                                 }
 
@@ -964,28 +992,28 @@ namespace superpeer_network
                     string[] temp_split = key.Split(":");
                     keys[temp_split[0]].Add(temp_split[1]);
                 }
-
+                string reply = "";
+                Console.WriteLine("Collected keys: ");
                 foreach (var key in keys)
                 {
-                    Console.WriteLine(key.Key + "->");
                     string[] shares = new string[2];
                     int i = 0;
                     foreach (string part in key.Value)
                     {
                         shares[i++] = part;
-                        Console.WriteLine(shares[i - 1]);
                         if (i == 2)
                             break;
                     }
-                    Console.WriteLine();
 
                     var generatedKey = SharesManager.CombineKey(shares);
                     var hexKey = KeyGenerator.GetHexKey(generatedKey);
 
                     Console.WriteLine(hexKey);
+                    reply += hexKey + "/";
 
-                    Console.WriteLine();
                 }
+                TCPCommunication.send_message_tcp(stream, reply);
+                stream.Close();
             }
         }
 
@@ -1088,7 +1116,7 @@ namespace superpeer_network
                 }
                 catch
                 {
-                    Console.WriteLine("Exception");
+                    Console.WriteLine("Exception in accepting");
                     break;
                 }
                 SslStream sslStream = new SslStream(client.GetStream(), false);
