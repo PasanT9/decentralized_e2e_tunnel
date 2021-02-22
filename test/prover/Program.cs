@@ -103,10 +103,12 @@ namespace prover
             byte[] data;
 
             data = new byte[2048];
+
             data = Encoding.UTF8.GetBytes(X);
             stream.Write(data);
 
             stream.Flush();
+
 
             data = new byte[2048];
             data = Encoding.UTF8.GetBytes(M);
@@ -114,7 +116,14 @@ namespace prover
 
             stream.Flush();
 
+            const int DefaultPrimeProbability = 30;
 
+            DHParametersGenerator generator = new DHParametersGenerator();
+            var key_variable = Encoding.ASCII.GetBytes("test_g");
+            generator.Init(512, DefaultPrimeProbability, new SecureRandom(key_variable));
+            DHParameters parameters = generator.GenerateParameters();
+
+            Org.BouncyCastle.Math.BigInteger g = parameters.G;
 
 
 

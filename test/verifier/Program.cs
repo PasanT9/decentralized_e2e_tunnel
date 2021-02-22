@@ -64,19 +64,23 @@ namespace verifier
             // Buffer for reading data
             Byte[] bytes;
 
+
             TcpClient client = server.AcceptTcpClient();
             NetworkStream stream = client.GetStream();
             Console.WriteLine("Connected!");
 
-
             bytes = new Byte[2048];
             stream.Read(bytes, 0, bytes.Length);
             string X_str = System.Text.Encoding.ASCII.GetString(bytes, 0, bytes.Length);
+            Console.WriteLine(X_str);
+            Console.WriteLine();
 
 
             bytes = new Byte[2048];
             stream.Read(bytes, 0, bytes.Length);
             string M_str = System.Text.Encoding.ASCII.GetString(bytes, 0, bytes.Length);
+            Console.WriteLine(M_str);
+            Console.WriteLine();
 
             string[] temp_split;
 
@@ -106,6 +110,34 @@ namespace verifier
             {
                 P[i] = new RsaKeyParameters(false, M[i], X[i]);
             }
+
+            const int DefaultPrimeProbability = 30;
+
+            DHParametersGenerator generator = new DHParametersGenerator();
+            var key_variable = Encoding.ASCII.GetBytes("test_g");
+            generator.Init(512, DefaultPrimeProbability, new SecureRandom(key_variable));
+            DHParameters parameters = generator.GenerateParameters();
+
+            Org.BouncyCastle.Math.BigInteger g = parameters.G;
+            Random random = new Random();
+            int x = random.Next();
+
+
+            Org.BouncyCastle.Math.BigInteger X0 = g.Pow(x);
+            byte[] X0_byte = X0.ToByteArray();
+            IAsymmetricBlockCipher cipher = new RsaEngine();
+
+            byte[][] y = new byte[n + 1][];
+
+            for (int i = 0; i < n + 1; ++i)
+            {
+                cipher.Init(true, P[i]);
+                y[i] = cipher.ProcessBlock(X0_byte, 0, X0_byte.Length);
+            }
+
+
+
+
 
 
 
