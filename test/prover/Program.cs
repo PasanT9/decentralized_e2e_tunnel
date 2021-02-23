@@ -151,6 +151,7 @@ namespace prover
 
             RsaKeyParameters Pv = req_ver_key();
 
+            //Time start
             string X = Pp.Exponent + "|";
             for (int i = 0; i < n; ++i)
             {
