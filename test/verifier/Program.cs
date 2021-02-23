@@ -47,9 +47,75 @@ namespace verifier
             Sv = (RsaKeyParameters)keyPair_s.Private;
         }
 
+        public static byte[] EncryptByteArray(byte[] key, byte[] secret)
+        {
+            using (MemoryStream ms = new MemoryStream())
+            {
+                using (AesManaged cryptor = new AesManaged())
+                {
+                    cryptor.Mode = CipherMode.CBC;
+                    cryptor.Padding = PaddingMode.Zeros;
+                    cryptor.KeySize = 128;
+                    cryptor.BlockSize = 128;
+                    key = key.Concat(key).ToArray();
+
+                    //We use the random generated iv created by AesManaged
+                    byte[] iv = cryptor.IV;
+
+                    using (CryptoStream cs = new CryptoStream(ms, cryptor.CreateEncryptor(key, iv), CryptoStreamMode.Write))
+                    {
+                        cs.Write(secret, 0, secret.Length);
+                    }
+                    byte[] encryptedContent = ms.ToArray();
+
+                    //Create new byte array that should contain both unencrypted iv and encrypted data
+                    byte[] result = new byte[iv.Length + encryptedContent.Length];
+
+                    //copy our 2 array into one
+                    System.Buffer.BlockCopy(iv, 0, result, 0, iv.Length);
+                    System.Buffer.BlockCopy(encryptedContent, 0, result, iv.Length, encryptedContent.Length);
+
+                    return result;
+                }
+            }
+        }
+
+        public static byte[] DecryptByteArray(byte[] key, byte[] secret)
+        {
+            byte[] iv = new byte[16]; //initial vector is 16 bytes
+            byte[] encryptedContent = new byte[secret.Length - 16]; //the rest should be encryptedcontent
+
+            //Copy data to byte array
+            System.Buffer.BlockCopy(secret, 0, iv, 0, iv.Length);
+            System.Buffer.BlockCopy(secret, iv.Length, encryptedContent, 0, encryptedContent.Length);
+
+            using (MemoryStream ms = new MemoryStream())
+            {
+                using (AesManaged cryptor = new AesManaged())
+                {
+                    cryptor.Mode = CipherMode.CBC;
+                    cryptor.Padding = PaddingMode.Zeros;
+                    cryptor.KeySize = 128;
+                    cryptor.BlockSize = 128;
+                    key = key.Concat(key).ToArray();
+
+                    using (CryptoStream cs = new CryptoStream(ms, cryptor.CreateDecryptor(key, iv), CryptoStreamMode.Write))
+                    {
+                        cs.Write(encryptedContent, 0, encryptedContent.Length);
+
+                    }
+                    return ms.ToArray();
+                }
+            }
+        }
+
+
+
+
         static void Main(string[] args)
         {
             int n = Int32.Parse(args[0]);
+            gen_keys();
 
             TcpListener server = null;
             Int32 port = 13000;
@@ -67,24 +133,14 @@ namespace verifier
 
             TcpClient client = server.AcceptTcpClient();
             NetworkStream stream = client.GetStream();
-            Console.WriteLine("Connected!");
 
-            bytes = new Byte[2048];
+            bytes = new Byte[204800];
             stream.Read(bytes, 0, bytes.Length);
-            string X_str = System.Text.Encoding.ASCII.GetString(bytes, 0, bytes.Length);
-            Console.WriteLine(X_str);
-            Console.WriteLine();
-
-
-            bytes = new Byte[2048];
-            stream.Read(bytes, 0, bytes.Length);
-            string M_str = System.Text.Encoding.ASCII.GetString(bytes, 0, bytes.Length);
-            Console.WriteLine(M_str);
-            Console.WriteLine();
+            string P_str = System.Text.Encoding.ASCII.GetString(bytes, 0, bytes.Length);
 
             string[] temp_split;
 
-            temp_split = X_str.Split("|");
+            temp_split = P_str.Split("|");
 
             Org.BouncyCastle.Math.BigInteger[] X = new Org.BouncyCastle.Math.BigInteger[n + 1];
 
@@ -93,38 +149,39 @@ namespace verifier
                 X[i] = new Org.BouncyCastle.Math.BigInteger(temp_split[i]);
             }
 
-
-            temp_split = M_str.Split("|");
-
             Org.BouncyCastle.Math.BigInteger[] M = new Org.BouncyCastle.Math.BigInteger[n + 1];
 
             for (int i = 0; i < n + 1; ++i)
             {
-                M[i] = new Org.BouncyCastle.Math.BigInteger(temp_split[i]);
+                M[i] = new Org.BouncyCastle.Math.BigInteger(temp_split[i + n + 1]);
             }
 
             RsaKeyParameters[] P = new RsaKeyParameters[n + 1];
-
 
             for (int i = 0; i < n + 1; ++i)
             {
                 P[i] = new RsaKeyParameters(false, M[i], X[i]);
             }
 
-            const int DefaultPrimeProbability = 30;
+            //const int DefaultPrimeProbability = 30;
 
-            DHParametersGenerator generator = new DHParametersGenerator();
-            var key_variable = Encoding.ASCII.GetBytes("test_g");
-            generator.Init(512, DefaultPrimeProbability, new SecureRandom(key_variable));
+            /*DHParametersGenerator generator = new DHParametersGenerator();
+            var key_variable = Encoding.ASCII.GetBytes("test");
+            generator.Init(256, DefaultPrimeProbability, new SecureRandom(key_variable));
             DHParameters parameters = generator.GenerateParameters();
 
-            Org.BouncyCastle.Math.BigInteger g = parameters.G;
+            Org.BouncyCastle.Math.BigInteger g = parameters.G;*/
+
             Random random = new Random();
-            int x = random.Next();
+            int g = 31;
+            int x0 = 5;
 
 
-            Org.BouncyCastle.Math.BigInteger X0 = g.Pow(x);
-            byte[] X0_byte = X0.ToByteArray();
+            //Org.BouncyCastle.Math.BigInteger X0 = g.Pow(x);
+            BigInteger X0 = (BigInteger)Math.Pow(g, x0);
+
+            //byte[] X0_byte = X0.ToByteArray();
+            byte[] X0_byte = Encoding.Default.GetBytes(X0.ToString());
             IAsymmetricBlockCipher cipher = new RsaEngine();
 
             byte[][] y = new byte[n + 1][];
@@ -133,6 +190,50 @@ namespace verifier
             {
                 cipher.Init(true, P[i]);
                 y[i] = cipher.ProcessBlock(X0_byte, 0, X0_byte.Length);
+
+                stream.Write(y[i]);
+
+                stream.Flush();
+            }
+
+
+            bytes = new byte[64];
+            stream.Read(bytes, 0, bytes.Length);
+
+            cipher.Init(false, Sv);
+            byte[] Y0_byte = cipher.ProcessBlock(bytes, 0, bytes.Length);
+
+            int Y0 = Int32.Parse(Encoding.Default.GetString(Y0_byte));
+            //Org.BouncyCastle.Math.BigInteger X0 = new Org.BouncyCastle.Math.BigInteger(X0_byte);
+
+            BigInteger K = BigInteger.Pow(Y0, x0);
+            byte[] k_byte = Encoding.Default.GetBytes(X0.ToString());
+
+
+            int R = random.Next();
+            byte[] R_byte = Encoding.Default.GetBytes(R.ToString());
+
+            byte[] R_cipher = EncryptByteArray(k_byte, R_byte);
+
+            stream.Write(R_cipher);
+
+            stream.Flush();
+
+            bytes = new byte[32];
+            stream.Read(bytes, 0, bytes.Length);
+
+            string R_str = Encoding.Default.GetString(bytes);
+
+            int R1 = Int32.Parse(R_str);
+
+
+            if (R == R1)
+            {
+                Console.WriteLine("SUCCESS");
+            }
+            else
+            {
+                Console.WriteLine("FAIL");
             }
 
 
