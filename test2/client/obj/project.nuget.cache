@@ -1,10 +1,22 @@
 {
   "version": 2,
-  "dgSpecHash": "TqBb1b0zEi0TZuf7W9YEobp79RAxPH6rjbwK+Adz0LUEfHKbL89r9xOqQNUVaqTOup9ZIBEoHpGdpQ/UxzPhIw==",
+  "dgSpecHash": "PsQa89n8HOUX8RosYNE1Kahnawz2Q+sCtB8b+cWjrQLPTEfZvbMIVbn9o7sAgFEdG+poaVepgCCx+qMRs57wiA==",
   "success": true,
   "projectFilePath": "/home/pasan/projects/decentralized_e2e_tunnel/test2/client/client.csproj",
   "expectedPackageFiles": [
+    "/home/pasan/.nuget/packages/bouncycastle/1.8.9/bouncycastle.1.8.9.nupkg.sha512",
     "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'BouncyCastle 1.8.9' was restored using '.NETFramework,Version=v4.6.1, .NETFramework,Version=v4.6.2, .NETFramework,Version=v4.7, .NETFramework,Version=v4.7.1, .NETFramework,Version=v4.7.2, .NETFramework,Version=v4.8' instead of the project target framework 'net5.0'. This package may not be fully compatible with your project.",
+      "libraryId": "BouncyCastle",
+      "targetGraphs": [
+        "net5.0"
+      ]
+    }
+  ]
 }

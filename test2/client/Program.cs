@@ -10,8 +10,25 @@ using System.Numerics;
 using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
+using System;
+using System.Text;
+using System.Security.Cryptography;
+using System.Collections;
+using System.Collections.Generic;
 
-using LSAG;
+using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Encodings;
+using Org.BouncyCastle.Crypto.Engines;
+using Org.BouncyCastle.OpenSsl;
+
+using Org.BouncyCastle.Crypto.Generators;
+using Org.BouncyCastle.Crypto.Parameters;
+using Org.BouncyCastle.Crypto.Digests;
+
+using Org.BouncyCastle.Bcpg;
+using Org.BouncyCastle.Bcpg.OpenPgp;
+using Org.BouncyCastle.Security;
+using Org.BouncyCastle.Utilities.IO;
 
 
 namespace client
@@ -19,40 +36,55 @@ namespace client
     class Program
     {
         //public static System.Numerics.BigInteger;
-
-        static BigInteger gcd(BigInteger n1, BigInteger n2)
-        {
-            if (n2.Equals(0))
-            {
-                return n1;
-            }
-            else
-            {
-                return gcd(n2, BigInteger.Remainder(n1, n2));
-            }
-        }
-
-        static List<BigInteger> multiGroup(BigInteger n)
-        {
-            List<BigInteger> group = new List<BigInteger>();
-            for (BigInteger i = 0; i < n; ++i)
-            {
-                if (gcd(n, i) == 1)
-                {
-                    group.Add(i);
-                }
-            }
-            return group;
-        }
+        static int n;
 
         static void Main(string[] args)
         {
+            n = Int32.Parse(args[0]);
             try
             {
+
+                byte[][] X = new byte[n + 1][];
+                string[] X0 = new string[n + 1];
+                Random rnd = new Random();
+
+                for (int i = 0; i < n + 1; ++i)
+                {
+                    UTF8Encoding utf8enc = new UTF8Encoding();
+                    X0[i] = rnd.Next().ToString();
+                    X[i] = utf8enc.GetBytes(X0[i]);
+                }
+
+                RsaKeyParameters[] P = new RsaKeyParameters[n + 1];
+
+                for (int i = 0; i < n; ++i)
+                {
+
+                    RsaKeyPairGenerator rsaKeyPairGnr = new RsaKeyPairGenerator();
+                    rsaKeyPairGnr.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(), 512));
+                    Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair = rsaKeyPairGnr.GenerateKeyPair();
+
+                    RsaKeyParameters publicKey = (RsaKeyParameters)keyPair.Public;
+                    IAsymmetricBlockCipher cipher = new RsaEngine();
+
+                    P[i + 1] = publicKey;
+                }
+
+                RsaKeyPairGenerator rsaKeyPairGnr_s = new RsaKeyPairGenerator();
+                rsaKeyPairGnr_s.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(), 512));
+                Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair_s = rsaKeyPairGnr_s.GenerateKeyPair();
+
+                P[0] = (RsaKeyParameters)keyPair_s.Public;
+                RsaKeyParameters Ks = (RsaKeyParameters)keyPair_s.Private;
+
+
                 string server = "127.0.0.1";
-                string message = "Hello!!!";
+
                 Int32 port = 13000;
                 TcpClient client = new TcpClient(server, port);
+
+
+                //Time start
                 NetworkStream stream = client.GetStream();
 
                 byte[] bytes;
@@ -61,172 +93,38 @@ namespace client
                 bytes = new byte[64];
                 stream.Read(bytes, 0, bytes.Length);
                 response = System.Text.Encoding.ASCII.GetString(bytes, 0, bytes.Length);
-                Console.WriteLine(response);
                 string N = response;
 
+                string m = N;
 
-                //TcpClient client = null;
+                byte[] v = ring_sign(P, m, Ks, X);
 
-                /*BigInteger P = BigInteger.Parse("149");
-                BigInteger Q = BigInteger.Parse("257");
-                BigInteger N = BigInteger.Multiply(P,Q);
-                Console.WriteLine(N);
+                stream.Write(v);
+                Console.WriteLine(v.Length);
 
-                List<BigInteger> group = new List<BigInteger>(multiGroup(N));
-                Console.WriteLine(group[10]);
-
-                SHA1 sha = new SHA1CryptoServiceProvider();
-                string id = "pasan96tennakoon@gmail.com";
-
-
-                byte[] seed_bytes = System.Text.Encoding.UTF8.GetBytes(P.ToString() + Q.ToString() + id);
-                byte [] seed = sha.ComputeHash(seed_bytes);
-
-                StringBuilder sb = new StringBuilder();
-                foreach (byte b in seed)
-                    sb.Append(b.ToString("X2"));
-
-                string seed_string = sb.ToString();
-
-                byte[] PI_bytes = System.Text.Encoding.UTF8.GetBytes(seed_string+N.ToString());
-                byte [] PI = sha.ComputeHash(PI_bytes);
-
-                sb = new StringBuilder();
-                foreach (byte b in PI)
-                    sb.Append(b.ToString("X2"));
-
-                string PI_string = sb.ToString(); 
-
-
-                byte[] MAC_bytes = System.Text.Encoding.UTF8.GetBytes(PI_string+N.ToString()+seed_string);
-                byte [] MAC = sha.ComputeHash(MAC_bytes);
-
-                sb = new StringBuilder();
-                foreach (byte b in PI)
-                    sb.Append(b.ToString("X2"));
-
-                string MAC_string = sb.ToString();
-
-
-
-                string[] PIC = {PI_string, N.ToString(), seed_string, MAC_string};
-
-                Console.WriteLine("PI:\t" + PIC[0]);
-                Console.WriteLine("N:\t" + PIC[1]);
-                Console.WriteLine("Seed:\t" + PIC[2]);
-                Console.WriteLine("MAC:\t" + PIC[3]);
-                Console.WriteLine();
-
-                int length = 20;
-                BigInteger[] S = new BigInteger[length];
-                BigInteger[] V = new BigInteger[length];
-                BigInteger[] J = new BigInteger[length];
-
-                var random = new Random();
-                Console.Write("S: ");
-                
-                for(int i=0;i<length;++i)
+                string x = "";
+                for (int i = 0; i < n + 1; ++i)
                 {
-                    J[i] = random.Next(group.Count);
-                    byte[] temp_bytes = System.Text.Encoding.UTF8.GetBytes(PIC[0] + J[i].ToString());
-                    byte [] temp_h = sha.ComputeHash(temp_bytes);
-                    int index = 1;
-                    foreach(byte b in temp_h)
-                    {
-                        //Console.WriteLine(b);
-                        index = (index * b) % group.Count;
-                    }
-                    S[i] = group[index];
-                    Console.Write(S[i]+" ");
-                }
-                Console.WriteLine();
-
-                Console.Write("V: ");
-                for(int i=0;i<length;++i)
-                {
-                    V[i] = BigInteger.Remainder(BigInteger.Pow(S[i], 2),N);
-                    Console.Write(V[i]+" ");
-                }
-                Console.WriteLine();
-
-                string msg = "";
-                for(int i=0;i<length;++i)
-                {
-                    msg += V[i] + "|";
+                    x += P[i].Exponent + "|";
                 }
 
-                BigInteger a = 4;
-                BigInteger Ga = BigInteger.Remainder(a,N);
-
-                BigInteger r =group[random.Next(group.Count)];
-                BigInteger X = BigInteger.Remainder(BigInteger.Multiply(r,r),N);
-                Console.WriteLine("X: "+X);
-                Console.WriteLine();
-                
-                msg += X + "|";
-                msg += N;*/
-
-
-                var liu2005 = new Liu2005();
-                int participants = 10;
-                string msg = N;
-
-
-                Console.WriteLine("{0} participants", participants);
-                liu2005.GroupParameters = KnownGroupParameters.RFC5114_2_1_160;
-
-                var messageBytes = Encoding.UTF8.GetBytes(msg);
-
-                var keys = Enumerable.Range(0, participants).Select(i => liu2005.GenerateKeyPair()).ToArray();
-                var publicKeys = keys.Select(k => k[1]).ToArray();
-
-                var signature = liu2005.GenerateSignature(messageBytes, publicKeys, keys[0][0], 0);
-                string pub_keys_string = JsonConvert.SerializeObject(publicKeys);
-                string liu2005_string = JsonConvert.SerializeObject(liu2005);
-                string signature_string = JsonConvert.SerializeObject(signature);
-
-                msg = msg + "/" + pub_keys_string + "/" + liu2005_string + "/" + signature_string;
-
-                Console.WriteLine(msg);
-
-                bytes = System.Text.Encoding.ASCII.GetBytes(msg);
-                stream.Write(bytes, 0, bytes.Length);
-
-                bytes = new Byte[256];
-
-                // String to store the response ASCII representation.
-                String responseData = String.Empty;
-
-                stream.Read(bytes, 0, bytes.Length);
-                responseData = System.Text.Encoding.ASCII.GetString(bytes);
-                Console.WriteLine("Received: {0}", responseData);
-
-                /*string[] temp_split = responseData.Split('|');
-                int[] B = new int[length];
-                for (int i = 0; i < length; ++i)
+                string M = "";
+                for (int i = 0; i < n + 1; ++i)
                 {
-                    B[i] = Int32.Parse(temp_split[i]);
+                    M += P[i].Modulus + "|";
                 }
 
-                BigInteger Y1 = 1;
-                for (int i = 0; i < S.Length; ++i)
+                string X0_str = "";
+                for (int i = 0; i < n + 1; ++i)
                 {
-                    Y1 = BigInteger.Remainder(Y1, N);
-                    Y1 = BigInteger.Multiply(Y1, BigInteger.Remainder(BigInteger.Pow(S[i], B[i]), N));
-                    //Y1 *= (Math.Pow(S[i], (B[i]))%N);
-                    //Y2 *= Math.Pow(S[i], (1-B[i]))%N;
+                    X0_str += X0[i] + "|";
                 }
-                Y1 = BigInteger.Remainder(BigInteger.Multiply(r, Y1), N);
-                //Y1 = (r*Y1)%N;
-                msg = Y1.ToString();
-                //Y2 = (r*Y2);
-                data = System.Text.Encoding.ASCII.GetBytes(msg);
-                stream.Write(data, 0, data.Length);
 
-                data = new Byte[256];
-                stream.Read(data, 0, data.Length);
-                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                Console.WriteLine("Received: {0}", responseData);*/
+
+                bytes = Encoding.UTF8.GetBytes(x + M + X0_str);
+                stream.Write(bytes);
+
+                stream.Flush();
 
 
 
@@ -245,8 +143,146 @@ namespace client
                 Console.WriteLine("SocketException: {0}", e);
             }
 
-            Console.WriteLine("\n Press Enter to continue...");
-            Console.Read();
+        }
+
+        public static byte[] ring_sign(RsaKeyParameters[] P, string m, RsaKeyParameters Ks, byte[][] X)
+        {
+            byte[] k1 = Encoding.UTF8.GetBytes(m);
+
+            byte[] k = new byte[64];
+
+            for (int i = 0; i < k1.Length; ++i)
+            {
+                k[i] = (byte)(k[i] + k1[i]);
+            }
+
+
+            byte[][] y = new byte[n + 1][];
+
+            for (int i = 0; i < n + 1; ++i)
+            {
+                IAsymmetricBlockCipher cipher = new RsaEngine();
+                cipher.Init(true, P[i]);
+
+                y[i] = cipher.ProcessBlock(X[i], 0, X[i].Length);
+            }
+
+            byte[] ring = y[0];
+            for (int i = 1; i < n + 1; ++i)
+            {
+                ring = exclusiveOR(ring, k);
+                ring = exclusiveOR(ring, y[i]);
+            }
+
+            byte[] v = ring;
+            return v;
+        }
+
+        public static void ring_verify(RsaKeyParameters[] P, byte[] v, byte[][] X, string m)
+        {
+
+            byte[][] y = new byte[n + 1][];
+
+            for (int i = 0; i < n + 1; ++i)
+            {
+                IAsymmetricBlockCipher cipher = new RsaEngine();
+                cipher.Init(true, P[i]);
+
+                y[i] = cipher.ProcessBlock(X[i], 0, X[i].Length);
+            }
+
+            byte[] k1 = Encoding.UTF8.GetBytes(m);
+
+            byte[] k = new byte[64];
+
+            for (int i = 0; i < k1.Length; ++i)
+            {
+                k[i] = (byte)(k[i] + k1[i]);
+            }
+
+
+            byte[] ring = y[0];
+            for (int i = 1; i < n + 1; ++i)
+            {
+                ring = exclusiveOR(ring, k);
+                ring = exclusiveOR(ring, y[i]);
+            }
+
+            Console.WriteLine("v: " + ByteArrayToString(v));
+            Console.WriteLine("ring: " + ByteArrayToString(ring));
+
+        }
+
+
+        public static byte[] exclusiveOR(byte[] arr1, byte[] arr2)
+        {
+            if (arr1.Length != arr2.Length)
+                throw new ArgumentException("arr1 and arr2 are not the same length");
+
+            byte[] result = new byte[arr1.Length];
+
+            for (int i = 0; i < arr1.Length; ++i)
+                result[i] = (byte)(arr1[i] ^ arr2[i]);
+
+            return result;
+        }
+
+        public static string ByteArrayToString(byte[] ba)
+        {
+            StringBuilder hex = new StringBuilder(ba.Length * 2);
+            foreach (byte b in ba)
+                hex.AppendFormat("{0:x2}", b);
+            return hex.ToString();
+        }
+
+        static byte[] Encrypt(byte[] input, RSAParameters publicKey)
+        {
+            byte[] encrypted;
+            using (var rsa = new RSACryptoServiceProvider(2048))
+            {
+                rsa.PersistKeyInCsp = false;
+                rsa.ImportParameters(publicKey);
+
+                //get public key from file
+                //rsa.ImportParameters(StringToKey(File.ReadAllText(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\pubKey.xml")));
+                try
+                {
+                    encrypted = rsa.Encrypt(input, true);
+                    return encrypted;
+                }
+                catch (System.Exception e)
+                {
+                    System.Console.WriteLine(e);
+                    byte[] empty = { };
+                    return empty;
+                }
+            }
+        }
+
+        static byte[] Decrypt(byte[] input, RSAParameters privateKey)
+        {
+            Console.WriteLine(input.Length);
+            byte[] decrypted;
+            using (var rsa = new RSACryptoServiceProvider(2048))
+            {
+                rsa.PersistKeyInCsp = false;
+                rsa.ImportParameters(privateKey);
+
+                //get private key from file
+                //rsa.ImportParameters(StringToKey(File.ReadAllText(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) + @"\priKey.xml")));
+
+                try
+                {
+                    decrypted = rsa.Decrypt(input, true);
+                    return decrypted;
+                }
+                catch (System.Exception e)
+                {
+                    System.Console.WriteLine(e);
+                    byte[] empty = { };
+                    return empty;
+                }
+            }
         }
     }
 }

@@ -34,3 +34,4 @@ C:/Projects/decentralized_e2e_tunnel/anonymous/server/obj/Debug/net5.0/server.cs
 /home/pasan/projects/decentralized_e2e_tunnel/test2/server/bin/Debug/net5.0/Newtonsoft.Json.dll
 /home/pasan/projects/decentralized_e2e_tunnel/test2/server/obj/Debug/net5.0/server.csproj.CopyComplete
 /home/pasan/projects/decentralized_e2e_tunnel/test2/server/obj/Debug/net5.0/server.genruntimeconfig.cache
+/home/pasan/projects/decentralized_e2e_tunnel/test2/server/bin/Debug/net5.0/BouncyCastle.Crypto.dll

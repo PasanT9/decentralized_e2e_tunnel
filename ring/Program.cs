@@ -132,7 +132,7 @@ namespace ring
                 ring = exclusiveOR(ring, k);
                 ring = exclusiveOR(ring, y[i]);
             }
-
+            Console.WriteLine("v: " + ByteArrayToString(v));
             Console.WriteLine("ring: " + ByteArrayToString(ring));
 
         }
