@@ -44,7 +44,7 @@ namespace server
 
             stream.Read(bytes, 0, bytes.Length);
             data = System.Text.Encoding.ASCII.GetString(bytes, 0, bytes.Length);
-            Console.WriteLine("Received: {0}", data);
+            Console.WriteLine("Received: {0}", data); 
             Console.WriteLine();
 
             string[] temp_split = data.Split('|','/');

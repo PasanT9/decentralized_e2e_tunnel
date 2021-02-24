@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\client\\client.csproj": {}
+    "/home/pasan/projects/decentralized_e2e_tunnel/anonymous/client/client.csproj": {}
   },
   "projects": {
-    "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\client\\client.csproj": {
+    "/home/pasan/projects/decentralized_e2e_tunnel/anonymous/client/client.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\client\\client.csproj",
+        "projectUniqueName": "/home/pasan/projects/decentralized_e2e_tunnel/anonymous/client/client.csproj",
         "projectName": "client",
-        "projectPath": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\client\\client.csproj",
-        "packagesPath": "C:\\Users\\Pasan\\.nuget\\packages\\",
-        "outputPath": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\client\\obj\\",
+        "projectPath": "/home/pasan/projects/decentralized_e2e_tunnel/anonymous/client/client.csproj",
+        "packagesPath": "/home/pasan/.nuget/packages/",
+        "outputPath": "/home/pasan/projects/decentralized_e2e_tunnel/anonymous/client/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\Pasan\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/home/pasan/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net5.0"
@@ -58,7 +58,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.101\\RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/5.0.102/RuntimeIdentifierGraph.json"
         }
       }
     }

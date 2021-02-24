@@ -43,9 +43,9 @@ namespace prover
         static void gen_keys()
         {
             Random random = new Random();
-            a_p = random.Next(1, 4);
+            a_p = 2;
 
-            A_p = g.Pow(a_p);
+            A_p = g.Pow(a_p).Mod(q);
         }
 
         public static Org.BouncyCastle.Math.BigInteger[] req_keys(int n)
@@ -56,7 +56,7 @@ namespace prover
                 Random random = new Random();
                 int a_i = random.Next(1, 4);
 
-                P[i] = g.Pow(a_i);
+                P[i] = g.Pow(a_i).Mod(q);
             }
             return P;
         }
@@ -84,8 +84,8 @@ namespace prover
             TcpClient client = new TcpClient(server, port);
             NetworkStream stream = client.GetStream();
 
-            g = new Org.BouncyCastle.Math.BigInteger(7.ToString());
-            p = new Org.BouncyCastle.Math.BigInteger(11.ToString());
+            g = new Org.BouncyCastle.Math.BigInteger(2.ToString());
+            p = new Org.BouncyCastle.Math.BigInteger(31.ToString());
             q = new Org.BouncyCastle.Math.BigInteger(5.ToString());
             int n = Int32.Parse(args[0]);
             gen_keys();
@@ -96,12 +96,12 @@ namespace prover
 
             //Start time
             Random random = new Random();
-            int s = 21;
+            int s = 4;
             //int s = 29;
-            Org.BouncyCastle.Math.BigInteger U = (g.Pow(s));
+            Org.BouncyCastle.Math.BigInteger U = (g.Pow(s)).Mod(p);
             for (int i = 0; i < n - 1; ++i)
             {
-                U = U.Multiply((P[i].Pow(V[i])));
+                U = U.Multiply((P[i].Pow(V[i])).Mod(p)).Mod(p);
             }
 
             byte[] bytes;
@@ -143,7 +143,7 @@ namespace prover
 
             Org.BouncyCastle.Math.BigInteger s_big = new Org.BouncyCastle.Math.BigInteger(s.ToString());
 
-            Org.BouncyCastle.Math.BigInteger r_big = (s_big.Add((a_p_big.Multiply(v_p_big)).Negate()));
+            Org.BouncyCastle.Math.BigInteger r_big = (s_big.Add((a_p_big.Multiply(v_p_big)).Negate())).Mod(q);
             //int r = (s - ((a_p * v_p) % 31));
             //int r = Int32.Parse(r_big.ToString());
 
@@ -155,11 +155,7 @@ namespace prover
             bytes = Encoding.UTF8.GetBytes(msg);
             stream.Write(bytes);
 
-            stream.Flush();
-
-
-
-  
+            stream.Flush(); 
 
         }
     }

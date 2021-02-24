@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "O5sh8ILOfwKAHfDojCrflUsTZvUfyMyoq8jyQ8oFNH65186xskOiN+jc9xI04d6C870RhHoUetW7vNCqu+9Qyg==",
+  "success": true,
+  "projectFilePath": "/home/pasan/projects/decentralized_e2e_tunnel/test2/server/server.csproj",
+  "expectedPackageFiles": [
+    "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512"
+  ],
+  "logs": []
+}

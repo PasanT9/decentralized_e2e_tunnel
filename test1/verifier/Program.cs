@@ -57,8 +57,8 @@ namespace verifier
         static void Main(string[] args)
         {
             int n = Int32.Parse(args[0]);
-            g = new Org.BouncyCastle.Math.BigInteger(7.ToString());
-            p = new Org.BouncyCastle.Math.BigInteger(11.ToString());
+            g = new Org.BouncyCastle.Math.BigInteger(2.ToString());
+            p = new Org.BouncyCastle.Math.BigInteger(31.ToString());
             q = new Org.BouncyCastle.Math.BigInteger(5.ToString());
 
             TcpListener server = null;
@@ -127,11 +127,13 @@ namespace verifier
                 Console.WriteLine("1st verification FAIL");
             }
 
-            Org.BouncyCastle.Math.BigInteger U0 = (g.Pow(r));
+            Org.BouncyCastle.Math.BigInteger U0 = (g.Pow(r)).Mod(p);
             for (int i = 0; i < n; ++i)
             {
-                U0 = U0.Multiply((P[i].Pow(V[i])));
+                U0 = U0.Multiply((P[i].Pow(V[i])).Mod(p)).Mod(p);
             }
+            Console.WriteLine(U);
+            Console.WriteLine(U0);
 
             string U1 = U0.ToString();
             bool flag = true;

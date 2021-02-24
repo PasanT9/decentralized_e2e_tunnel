@@ -1,10 +1,10 @@
 {
   "version": 2,
-  "dgSpecHash": "gzn2RbsJ6J4MN1UJz9vMANWT46cIAQFsebmSedo+zVmFASKul2tEtFaeLNic0/+1M7179V4ael57Lu6gqA7Cfg==",
+  "dgSpecHash": "y7sqUtApxXpI2fDCOLQd3JKlvUmL+3tb9xdlrQSaCrep5CByk9ISN3SyyRAKw3mS3ywV1nTLoWWeHIRFeF+rXA==",
   "success": true,
-  "projectFilePath": "C:\\Projects\\decentralized_e2e_tunnel\\anonymous\\client\\client.csproj",
+  "projectFilePath": "/home/pasan/projects/decentralized_e2e_tunnel/anonymous/client/client.csproj",
   "expectedPackageFiles": [
-    "C:\\Users\\Pasan\\.nuget\\packages\\newtonsoft.json\\12.0.3\\newtonsoft.json.12.0.3.nupkg.sha512"
+    "/home/pasan/.nuget/packages/newtonsoft.json/12.0.3/newtonsoft.json.12.0.3.nupkg.sha512"
   ],
   "logs": []
 }
