@@ -90,6 +90,8 @@ namespace superpeer_network
         static int n;
         static int r;
 
+        static string local_ip_str;
+
         //Create random strings to imitate public keys
         public static string random_string()
         {
@@ -444,7 +446,9 @@ namespace superpeer_network
                         {
                             if (shared_keys.ContainsKey(data0))
                             {
-                                IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+                                IPAddress ipAddress = IPAddress.Parse(local_ip_str);
+                                Random random = new Random();
+                                int port = random.Next(2000, 4000);
                                 IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
 
                                 //Connect to server
@@ -721,6 +725,7 @@ namespace superpeer_network
         {
             n = Int32.Parse(args[0]);
             r = Int32.Parse(args[1]);
+            local_ip_str = "127.0.0.1";
 
             superpeer_neighbours = new Dictionary<IPEndPoint, SslStream>();
             peers = new Dictionary<string, IPEndPoint>();
@@ -746,7 +751,7 @@ namespace superpeer_network
             store.Open(OpenFlags.ReadWrite);
             store.Add(server_cert);
 
-            local_ip = IPAddress.Parse("127.0.0.1");
+            local_ip = IPAddress.Parse(local_ip_str);
             //local_ip = IPAddress.Parse("68.183.91.69");
 
             //Initiate first and seconds servers of the super peer network
@@ -790,13 +795,13 @@ namespace superpeer_network
 
                 //Initiate connection with neighbour (Get 1/3 of neighbours peers)
                 TcpClient client = new TcpClient(ipLocalEndPoint);
-                client.Connect("127.0.0.1", 27005);
+                client.Connect(local_ip_str, 27005);
                 SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(SSLValidation.ValidateServerCertificate), null);
                 SSLValidation.authenticate_client(sslStream);
 
 
 
-                superpeer_neighbours[new IPEndPoint(IPAddress.Parse("127.0.0.1"), 27005)] = sslStream;
+                superpeer_neighbours[new IPEndPoint(IPAddress.Parse(local_ip_str), 27005)] = sslStream;
 
                 TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
                 new Thread(() => handle_neighbour(1)).Start();
@@ -955,8 +960,9 @@ namespace superpeer_network
                     sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
                     // Read a message from the client.
                     response = TCPCommunication.recieve_message_tcp(sslStream);
+                    Console.WriteLine(response);
 
-                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
                     rec_keys.Add(response);
                     Console.ResetColor();
 

@@ -475,7 +475,7 @@ namespace superpeer_peer
             Console.WriteLine("Initializing the registration...");
 
 
-            server_ip = "127.0.0.1";
+            server_ip = "128.199.118.154";
             Console.Write("Server port: ");
             server_port = Int32.Parse(Console.ReadLine());
 

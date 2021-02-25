@@ -62,6 +62,8 @@ namespace superpeer_network
         static int n;
         static int r;
 
+        static string local_ip_str;
+
 
         public static void insert_peers(string[] new_peers)
         {
@@ -281,8 +283,10 @@ namespace superpeer_network
                         {
                             if (shared_keys.ContainsKey(data0))
                             {
-                                IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
-                                IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+                                IPAddress ipAddress = IPAddress.Parse(local_ip_str);
+                                Random random = new Random();
+                                int port = random.Next(2000, 4000);
+                                IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, port);
 
                                 //Connect to server
                                 TcpClient client = new TcpClient(ipLocalEndPoint);
@@ -695,6 +699,7 @@ namespace superpeer_network
         {
             n = Int32.Parse(args[0]);
             r = Int32.Parse(args[1]);
+            local_ip_str = "127.0.0.1";
             //To handle on exit function to distribute peers upon exit
             Console.CancelKeyPress += On_exit;
 
@@ -736,7 +741,7 @@ namespace superpeer_network
             store.Add(server_cert);
 
             //Create the local end point(ip+port)
-            local_ip = IPAddress.Parse("127.0.0.1");
+            local_ip = IPAddress.Parse(local_ip_str);
             local_port = random.Next(20000, 40000);
 
             init_connection(server_ip, server_port);
