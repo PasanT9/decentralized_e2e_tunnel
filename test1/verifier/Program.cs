@@ -56,9 +56,7 @@ namespace verifier
 
         static void Main(string[] args)
         {
-            var watch = new System.Diagnostics.Stopwatch();
-            
-            watch.Start();
+           
             
             int n = Int32.Parse(args[0]);
             g = new Org.BouncyCastle.Math.BigInteger(2.ToString());
@@ -155,10 +153,10 @@ namespace verifier
                 Console.WriteLine("2nd verification PASS");
             }
             //End time
+			
+			DateTime now = DateTime.Now;
+			Console.WriteLine("Strat Second: {0}", now.Second);
             
-            watch.Stop();
-
-            Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
             
             
         }

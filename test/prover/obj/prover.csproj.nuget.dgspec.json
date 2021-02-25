@@ -1,30 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "/home/pasan/projects/decentralized_e2e_tunnel/test/prover/prover.csproj": {}
+    "C:\\Users\\Supipi\\Desktop\\decentralized_e2e_tunnel\\test\\prover\\prover.csproj": {}
   },
   "projects": {
-    "/home/pasan/projects/decentralized_e2e_tunnel/test/prover/prover.csproj": {
+    "C:\\Users\\Supipi\\Desktop\\decentralized_e2e_tunnel\\test\\prover\\prover.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/home/pasan/projects/decentralized_e2e_tunnel/test/prover/prover.csproj",
+        "projectUniqueName": "C:\\Users\\Supipi\\Desktop\\decentralized_e2e_tunnel\\test\\prover\\prover.csproj",
         "projectName": "prover",
-        "projectPath": "/home/pasan/projects/decentralized_e2e_tunnel/test/prover/prover.csproj",
-        "packagesPath": "/home/pasan/.nuget/packages/",
-        "outputPath": "/home/pasan/projects/decentralized_e2e_tunnel/test/prover/obj/",
+        "projectPath": "C:\\Users\\Supipi\\Desktop\\decentralized_e2e_tunnel\\test\\prover\\prover.csproj",
+        "packagesPath": "C:\\Users\\Supipi\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Supipi\\Desktop\\decentralized_e2e_tunnel\\test\\prover\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "/home/pasan/.nuget/NuGet/NuGet.Config"
+          "C:\\Users\\Supipi\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net5.0"
         ],
-        "sources": {
-          "https://api.nuget.org/v3/index.json": {}
-        },
         "frameworks": {
           "net5.0": {
-            "targetAlias": "net5.0",
             "projectReferences": {}
           }
         },
@@ -36,7 +32,6 @@
       },
       "frameworks": {
         "net5.0": {
-          "targetAlias": "net5.0",
           "dependencies": {
             "BouncyCastle": {
               "target": "Package",
@@ -47,22 +42,12 @@
               "version": "[12.0.3, )"
             }
           },
-          "imports": [
-            "net461",
-            "net462",
-            "net47",
-            "net471",
-            "net472",
-            "net48"
-          ],
-          "assetTargetFallback": true,
-          "warn": true,
-          "frameworkReferences": {
-            "Microsoft.NETCore.App": {
-              "privateAssets": "all"
-            }
-          },
-          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/5.0.102/RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\3.1.404\\RuntimeIdentifierGraph.json"
+        }
+      },
+      "runtimes": {
+        "win7-x86": {
+          "#import": []
         }
       }
     }

@@ -151,10 +151,10 @@ namespace prover
 
             RsaKeyParameters Pv = req_ver_key();
             
-            var watch = new System.Diagnostics.Stopwatch();
 
             //Time start
-            watch.Start();
+			DateTime now = DateTime.Now;
+			Console.WriteLine("Strat Second: {0}", now.Second);
             
             string X = Pp.Exponent + "|";
             for (int i = 0; i < n; ++i)
@@ -232,10 +232,7 @@ namespace prover
 
             stream.Flush();
 
-            watch.Stop();
-
-            Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
-
+            
 
 
         }
