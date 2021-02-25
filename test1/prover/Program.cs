@@ -93,8 +93,12 @@ namespace prover
             Org.BouncyCastle.Math.BigInteger[] P = req_keys(n - 1);
 
             int[] V = gen_v(n - 1);
+            
+            var watch = new System.Diagnostics.Stopwatch();
 
             //Start time
+            watch.Start();
+            
             Random random = new Random();
             int s = 4;
             //int s = 29;
