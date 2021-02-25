@@ -150,8 +150,12 @@ namespace prover
             RsaKeyParameters[] P = req_keys(n);
 
             RsaKeyParameters Pv = req_ver_key();
+            
+            var watch = new System.Diagnostics.Stopwatch();
 
             //Time start
+            watch.Start();
+            
             string X = Pp.Exponent + "|";
             for (int i = 0; i < n; ++i)
             {
