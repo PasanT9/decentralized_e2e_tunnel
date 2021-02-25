@@ -241,7 +241,7 @@ namespace verifier
 
 
             DateTime now = DateTime.Now;
-			Console.WriteLine("Strat Second: {0}", now.Second);
+	    Console.WriteLine("Strat Second: {0}", now.Second);
 
         }
     }
