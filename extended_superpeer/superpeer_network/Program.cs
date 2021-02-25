@@ -54,9 +54,13 @@ namespace superpeer_network
         static List<IPEndPoint> change_neighbours;
 
         static Dictionary<String, String> shared_keys;
+        static List<String> rec_keys;
 
         static int hop_count = 2;
         static int flood_phases = 2;
+
+        static int n;
+        static int r;
 
 
         public static void insert_peers(string[] new_peers)
@@ -242,15 +246,16 @@ namespace superpeer_network
                                     if (!dest.Key.Equals(ip))
                                     {
                                         Console.WriteLine("Adding reg message to buffer for: " + dest.Key);
-                                        message_buffer[-1 + response] = dest.Key;
+                                        message_buffer[-1 + ":" + response] = dest.Key;
                                     }
                                 }
                             }
                             else
                             {
+
                                 shared_keys[key] = temp_split[2];
                                 Console.WriteLine($"key for {key} stored: " + temp_split[2]);
-                                if (temp_split.Length > 2)
+                                if (temp_split.Length > 3)
                                 {
                                     string full_msg = temp_split[0] + ":" + temp_split[1];
 
@@ -688,6 +693,8 @@ namespace superpeer_network
 
         static void Main(string[] args)
         {
+            n = Int32.Parse(args[0]);
+            r = Int32.Parse(args[1]);
             //To handle on exit function to distribute peers upon exit
             Console.CancelKeyPress += On_exit;
 
@@ -695,9 +702,9 @@ namespace superpeer_network
             neighbour_ip = null;
             neighbour_port = -1;
 
-            /*Console.Write("Server ip: ");
-            server_ip = Console.ReadLine();*/
-            server_ip = "127.0.0.1";
+            Console.Write("Server ip: ");
+            server_ip = Console.ReadLine();
+            // server_ip = "127.0.0.1";
 
             Console.Write("Server port: ");
             server_port = Convert.ToInt32(Console.ReadLine());
@@ -714,6 +721,7 @@ namespace superpeer_network
             exit_neighbours = new List<IPEndPoint>();
             change_neighbours = new List<IPEndPoint>();
             shared_keys = new Dictionary<String, String>();
+            rec_keys = new List<String>();
 
             client_keys = new Dictionary<IPEndPoint, PublicKeyCoordinates>();
 
@@ -796,11 +804,10 @@ namespace superpeer_network
             }
 
         }
-
-        static void wait_keys(SslStream stream, int port)
+        static void listen_keys(SslStream stream, int port)
         {
-
             TcpListener key_server = new TcpListener(local_ip, port);
+
             key_server.Start();
             Console.WriteLine("Waiting for keys");
 
@@ -814,13 +821,11 @@ namespace superpeer_network
                     client = key_server.AcceptTcpClient();
                     SslStream sslStream = new SslStream(client.GetStream(), false);
                     sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
-                    sslStream.ReadTimeout = 40000;
-                    sslStream.WriteTimeout = 40000;
                     // Read a message from the client.
                     response = TCPCommunication.recieve_message_tcp(sslStream);
 
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine(response);
+                    rec_keys.Add(response);
                     Console.ResetColor();
 
                 }
@@ -834,6 +839,62 @@ namespace superpeer_network
                     Console.WriteLine("Exception");
                     break;
                 }
+
+            }
+            Console.WriteLine("Stop listening to keys");
+        }
+
+        static void wait_keys(SslStream stream, int port)
+        {
+
+            Thread listen = new Thread(() => listen_keys(stream, port));
+            listen.Start();
+            Thread.Sleep(8000);
+            try
+            {
+                listen.Abort();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            finally
+            {
+                Dictionary<String, HashSet<String>> keys = new Dictionary<String, HashSet<String>>();
+                foreach (var key in shared_keys)
+                {
+                    HashSet<String> temp = new HashSet<String>();
+                    keys[key.Key] = temp;
+                    temp.Add(key.Value);
+                }
+
+                foreach (String key in rec_keys)
+                {
+                    string[] temp_split = key.Split(":");
+                    keys[temp_split[0]].Add(temp_split[1]);
+                }
+                string reply = "";
+                Console.WriteLine("Collected keys: ");
+                foreach (var key in keys)
+                {
+                    string[] shares = new string[2];
+                    int i = 0;
+                    foreach (string part in key.Value)
+                    {
+                        shares[i++] = part;
+                        if (i == r)
+                            break;
+                    }
+
+                    var generatedKey = SharesManager.CombineKey(shares);
+                    var hexKey = KeyGenerator.GetHexKey(generatedKey);
+
+                    Console.WriteLine(hexKey);
+                    reply += hexKey + "/";
+
+                }
+                TCPCommunication.send_message_tcp(stream, reply);
+                stream.Close();
             }
         }
 

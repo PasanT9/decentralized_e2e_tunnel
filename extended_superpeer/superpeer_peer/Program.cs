@@ -158,6 +158,7 @@ namespace superpeer_peer
 
             key = KeyGenerator.GenerateKey(polynomsCount * 16);
             var byte_key = KeyGenerator.GenerateDoubleBytesKey(key);
+            Console.WriteLine(key.Length);
             var hexKey = KeyGenerator.GetHexKey(byte_key);
 
             var key_variable = Encoding.ASCII.GetBytes(hexKey);
@@ -165,6 +166,7 @@ namespace superpeer_peer
             RsaKeyPairGenerator rsaKeyPairGnr = new RsaKeyPairGenerator();
             rsaKeyPairGnr.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(key_variable), 512));
             Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair = rsaKeyPairGnr.GenerateKeyPair();
+
 
             P = (RsaKeyParameters)keyPair.Public;
             S = (RsaKeyParameters)keyPair.Private;
