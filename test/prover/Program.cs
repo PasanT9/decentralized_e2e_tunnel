@@ -232,7 +232,9 @@ namespace prover
 
             stream.Flush();
 
+            watch.Stop();
 
+            Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
 
 
 
