@@ -56,6 +56,10 @@ namespace verifier
 
         static void Main(string[] args)
         {
+            var watch = new System.Diagnostics.Stopwatch();
+            
+            watch.Start();
+            
             int n = Int32.Parse(args[0]);
             g = new Org.BouncyCastle.Math.BigInteger(2.ToString());
             p = new Org.BouncyCastle.Math.BigInteger(31.ToString());
@@ -151,6 +155,12 @@ namespace verifier
                 Console.WriteLine("2nd verification PASS");
             }
             //End time
+            
+            watch.Stop();
+
+            Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
+            
+            
         }
         static void PrintByteArray(byte[] bytes)
         {

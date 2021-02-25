@@ -38,6 +38,9 @@ namespace server
         static int n;
         static void Main(string[] args)
         {
+            var watch = new System.Diagnostics.Stopwatch();
+            
+            watch.Start();
 
             n = Int32.Parse(args[0]);
             TcpListener server = null;
@@ -116,6 +119,10 @@ namespace server
             ring_verify(P, v, X, N.ToString());
 
             //End time
+            
+            watch.Stop();
+
+            Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
 
 
         }
