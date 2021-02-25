@@ -147,10 +147,6 @@ namespace superpeer_peer
 
             Console.WriteLine(BitConverter.ToInt32(dec));
 
-
-
-
-
         }
 
         static void gen_keypair()
@@ -166,12 +162,25 @@ namespace superpeer_peer
             rsaKeyPairGnr.Init(new Org.BouncyCastle.Crypto.KeyGenerationParameters(new SecureRandom(key_variable), 512));
             Org.BouncyCastle.Crypto.AsymmetricCipherKeyPair keyPair = rsaKeyPairGnr.GenerateKeyPair();
 
+
             P = (RsaKeyParameters)keyPair.Public;
             S = (RsaKeyParameters)keyPair.Private;
 
 
-            Console.WriteLine("My key: " + hexKey);
+            print_key(hexKey);
 
+        }
+
+        static void print_key(string key)
+        {
+            for (int i = 0; i < key.Length; ++i)
+            {
+                for (int j = 3; j < 8; ++j)
+                {
+                    Console.Write((key[i] * j).ToString("X") + "-");
+                }
+            }
+            Console.WriteLine();
         }
 
         static void Main(string[] args)
@@ -402,7 +411,11 @@ namespace superpeer_peer
             TCPCommunication.send_message_tcp(sslStream, "REQ_P");
             string response = TCPCommunication.recieve_message_tcp(sslStream);
 
-            Console.WriteLine(response);
+            string[] temp_split = response.Split("/");
+            for (int i = 0; i < temp_split.Length; ++i)
+            {
+                print_key(temp_split[i]);
+            }
 
             sslStream.Close();
             client.Close();
@@ -462,7 +475,7 @@ namespace superpeer_peer
             Console.WriteLine("Initializing the registration...");
 
 
-            server_ip = "127.0.0.1";
+            server_ip = "128.199.118.154";
             Console.Write("Server port: ");
             server_port = Int32.Parse(Console.ReadLine());
 

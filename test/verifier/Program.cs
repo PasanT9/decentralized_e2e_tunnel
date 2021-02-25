@@ -114,7 +114,11 @@ namespace verifier
 
         static void Main(string[] args)
         {
+<<<<<<< HEAD
             
+=======
+          
+>>>>>>> e87d7bd6763c0e2c9302616faed3c846a8178038
             
             int n = Int32.Parse(args[0]);
             gen_keys();
@@ -239,8 +243,14 @@ namespace verifier
             }
             //Time start
 
+<<<<<<< HEAD
 			DateTime now = DateTime.Now;
 			Console.WriteLine("Strat Second: {0}", now.Second);
+=======
+
+            DateTime now = DateTime.Now;
+	    Console.WriteLine("Strat Second: {0}", now.Second);
+>>>>>>> e87d7bd6763c0e2c9302616faed3c846a8178038
 
         }
     }

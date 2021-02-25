@@ -151,10 +151,18 @@ namespace prover
 
             RsaKeyParameters Pv = req_ver_key();
             
+<<<<<<< HEAD
 
             //Time start
 			DateTime now = DateTime.Now;
 			Console.WriteLine("Strat Second: {0}", now.Second);
+=======
+       
+
+            //Time start
+            DateTime now = DateTime.Now;
+	    Console.WriteLine("Strat Second: {0}", now.Second);
+>>>>>>> e87d7bd6763c0e2c9302616faed3c846a8178038
             
             string X = Pp.Exponent + "|";
             for (int i = 0; i < n; ++i)
@@ -232,8 +240,11 @@ namespace prover
 
             stream.Flush();
 
+<<<<<<< HEAD
             
 
+=======
+>>>>>>> e87d7bd6763c0e2c9302616faed3c846a8178038
 
         }
     }

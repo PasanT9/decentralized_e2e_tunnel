@@ -87,6 +87,11 @@ namespace superpeer_network
         static int hop_count = 2;
         static int flood_phases = 2;
 
+        static int n;
+        static int r;
+
+        static string local_ip_str;
+
         //Create random strings to imitate public keys
         public static string random_string()
         {
@@ -412,20 +417,25 @@ namespace superpeer_network
                             }
                             else
                             {
+
                                 shared_keys[key] = temp_split[2];
-                                string full_msg = temp_split[0] + ":" + temp_split[1];
-
-                                for (int i = 3; i < temp_split.Length; ++i)
+                                Console.WriteLine($"key for {key} stored: " + temp_split[2]);
+                                if (temp_split.Length > 3)
                                 {
-                                    full_msg += ":" + temp_split[i];
-                                }
+                                    string full_msg = temp_split[0] + ":" + temp_split[1];
 
-                                foreach (var dest in superpeer_neighbours)
-                                {
-                                    if (!dest.Key.Equals(ip))
+                                    for (int i = 3; i < temp_split.Length; ++i)
                                     {
-                                        Console.WriteLine("Adding reg message to buffer for: " + dest.Key);
-                                        message_buffer[-1 + ":" + full_msg] = dest.Key;
+                                        full_msg += ":" + temp_split[i];
+                                    }
+
+                                    foreach (var dest in superpeer_neighbours)
+                                    {
+                                        if (!dest.Key.Equals(ip))
+                                        {
+                                            Console.WriteLine("Adding reg message to buffer for: " + dest.Key);
+                                            message_buffer[-1 + ":" + full_msg] = dest.Key;
+                                        }
                                     }
                                 }
 
@@ -436,7 +446,9 @@ namespace superpeer_network
                         {
                             if (shared_keys.ContainsKey(data0))
                             {
-                                IPAddress ipAddress = IPAddress.Parse("127.0.0.1");
+                                IPAddress ipAddress = IPAddress.Parse(local_ip_str);
+                                Random random = new Random();
+                                int port = random.Next(2000, 4000);
                                 IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
 
                                 //Connect to server
@@ -463,7 +475,7 @@ namespace superpeer_network
                                 if (!dest.Key.Equals(ip))
                                 {
                                     Console.WriteLine("Adding req message to buffer for: " + dest.Key);
-                                    message_buffer[-1 + response] = dest.Key;
+                                    message_buffer[-1 + ":" + response] = dest.Key;
                                 }
                             }
 
@@ -711,6 +723,10 @@ namespace superpeer_network
         }
         static void Main(string[] args)
         {
+            n = Int32.Parse(args[0]);
+            r = Int32.Parse(args[1]);
+            local_ip_str = "127.0.0.1";
+
             superpeer_neighbours = new Dictionary<IPEndPoint, SslStream>();
             peers = new Dictionary<string, IPEndPoint>();
             exit_neighbours = new List<IPEndPoint>();
@@ -725,6 +741,8 @@ namespace superpeer_network
             client_keys = new Dictionary<IPEndPoint, PublicKeyCoordinates>();
             shared_keys = new Dictionary<String, String>();
 
+
+
             //insert_peers_random();
 
             //Add certificate to the certificate store
@@ -733,7 +751,7 @@ namespace superpeer_network
             store.Open(OpenFlags.ReadWrite);
             store.Add(server_cert);
 
-            local_ip = IPAddress.Parse("127.0.0.1");
+            local_ip = IPAddress.Parse(local_ip_str);
             //local_ip = IPAddress.Parse("68.183.91.69");
 
             //Initiate first and seconds servers of the super peer network
@@ -777,13 +795,13 @@ namespace superpeer_network
 
                 //Initiate connection with neighbour (Get 1/3 of neighbours peers)
                 TcpClient client = new TcpClient(ipLocalEndPoint);
-                client.Connect("127.0.0.1", 27005);
+                client.Connect(local_ip_str, 27005);
                 SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(SSLValidation.ValidateServerCertificate), null);
                 SSLValidation.authenticate_client(sslStream);
 
 
 
-                superpeer_neighbours[new IPEndPoint(IPAddress.Parse("127.0.0.1"), 27005)] = sslStream;
+                superpeer_neighbours[new IPEndPoint(IPAddress.Parse(local_ip_str), 27005)] = sslStream;
 
                 TCPCommunication.send_message_tcp(sslStream, "SUCCESS");
                 new Thread(() => handle_neighbour(1)).Start();
@@ -942,8 +960,9 @@ namespace superpeer_network
                     sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
                     // Read a message from the client.
                     response = TCPCommunication.recieve_message_tcp(sslStream);
+                    Console.WriteLine(response);
 
-                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
                     rec_keys.Add(response);
                     Console.ResetColor();
 
@@ -1001,14 +1020,14 @@ namespace superpeer_network
                     foreach (string part in key.Value)
                     {
                         shares[i++] = part;
-                        if (i == 2)
+                        if (i == r)
                             break;
                     }
 
                     var generatedKey = SharesManager.CombineKey(shares);
                     var hexKey = KeyGenerator.GetHexKey(generatedKey);
 
-                    Console.WriteLine(hexKey);
+                    print_key(hexKey);
                     reply += hexKey + "/";
 
                 }
@@ -1099,6 +1118,19 @@ namespace superpeer_network
                 result[i] = (byte)(arr1[i] ^ arr2[i]);
 
             return result;
+        }
+
+
+        static void print_key(string key)
+        {
+            for (int i = 0; i < key.Length; ++i)
+            {
+                for (int j = 3; j < 8; ++j)
+                {
+                    Console.Write((key[i] * j).ToString("X") + "-");
+                }
+            }
+            Console.WriteLine();
         }
 
         static void handle_connections()
@@ -1209,22 +1241,26 @@ namespace superpeer_network
                 else if (String.Compare(response, "REG_P") == 0)
                 {
                     Console.WriteLine("Peer registering");
-                    Byte[] data = new Byte[8];
+                    Byte[] data = new Byte[6];
                     sslStream.Read(data, 0, data.Length);
 
-                    int players = 3;
-                    int required = 2;
+                    int players = n;
+                    int required = r;
 
                     var key = KeyGenerator.GenerateDoubleBytesKey(data);
                     var hexKey = KeyGenerator.GetHexKey(key);
 
-                    Console.WriteLine("recieved key: " + hexKey);
+                    print_key(hexKey);
+                    //Console.WriteLine("key: " + data.Length);
+
+                    //Console.WriteLine("recieved key: " + hexKey);
 
                     Console.WriteLine("Shares: ");
                     var splitted = SharesManager.SplitKey(key, players, required);
                     for (int i = 0; i < splitted.Length; i++)
                     {
                         Console.WriteLine(splitted[i]);
+                        Console.WriteLine("size: " + splitted[i].Length);
                     }
                     Console.WriteLine();
 
