@@ -147,10 +147,6 @@ namespace superpeer_peer
 
             Console.WriteLine(BitConverter.ToInt32(dec));
 
-
-
-
-
         }
 
         static void gen_keypair()
@@ -158,7 +154,6 @@ namespace superpeer_peer
 
             key = KeyGenerator.GenerateKey(polynomsCount * 16);
             var byte_key = KeyGenerator.GenerateDoubleBytesKey(key);
-            Console.WriteLine(key.Length);
             var hexKey = KeyGenerator.GetHexKey(byte_key);
 
             var key_variable = Encoding.ASCII.GetBytes(hexKey);
@@ -172,8 +167,20 @@ namespace superpeer_peer
             S = (RsaKeyParameters)keyPair.Private;
 
 
-            Console.WriteLine("My key: " + hexKey);
+            print_key(hexKey);
 
+        }
+
+        static void print_key(string key)
+        {
+            for (int i = 0; i < key.Length; ++i)
+            {
+                for (int j = 3; j < 8; ++j)
+                {
+                    Console.Write((key[i] * j).ToString("X") + "-");
+                }
+            }
+            Console.WriteLine();
         }
 
         static void Main(string[] args)
@@ -404,7 +411,11 @@ namespace superpeer_peer
             TCPCommunication.send_message_tcp(sslStream, "REQ_P");
             string response = TCPCommunication.recieve_message_tcp(sslStream);
 
-            Console.WriteLine(response);
+            string[] temp_split = response.Split("/");
+            for (int i = 0; i < temp_split.Length; ++i)
+            {
+                print_key(temp_split[i]);
+            }
 
             sslStream.Close();
             client.Close();

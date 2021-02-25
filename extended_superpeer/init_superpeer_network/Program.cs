@@ -1021,7 +1021,7 @@ namespace superpeer_network
                     var generatedKey = SharesManager.CombineKey(shares);
                     var hexKey = KeyGenerator.GetHexKey(generatedKey);
 
-                    Console.WriteLine(hexKey);
+                    print_key(hexKey);
                     reply += hexKey + "/";
 
                 }
@@ -1112,6 +1112,19 @@ namespace superpeer_network
                 result[i] = (byte)(arr1[i] ^ arr2[i]);
 
             return result;
+        }
+
+
+        static void print_key(string key)
+        {
+            for (int i = 0; i < key.Length; ++i)
+            {
+                for (int j = 3; j < 8; ++j)
+                {
+                    Console.Write((key[i] * j).ToString("X") + "-");
+                }
+            }
+            Console.WriteLine();
         }
 
         static void handle_connections()
@@ -1222,7 +1235,7 @@ namespace superpeer_network
                 else if (String.Compare(response, "REG_P") == 0)
                 {
                     Console.WriteLine("Peer registering");
-                    Byte[] data = new Byte[8];
+                    Byte[] data = new Byte[6];
                     sslStream.Read(data, 0, data.Length);
 
                     int players = n;
@@ -1230,9 +1243,11 @@ namespace superpeer_network
 
                     var key = KeyGenerator.GenerateDoubleBytesKey(data);
                     var hexKey = KeyGenerator.GetHexKey(key);
-                    Console.WriteLine("key: " + data.Length);
 
-                    Console.WriteLine("recieved key: " + hexKey);
+                    print_key(hexKey);
+                    //Console.WriteLine("key: " + data.Length);
+
+                    //Console.WriteLine("recieved key: " + hexKey);
 
                     Console.WriteLine("Shares: ");
                     var splitted = SharesManager.SplitKey(key, players, required);
