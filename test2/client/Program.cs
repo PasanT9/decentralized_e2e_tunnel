@@ -86,8 +86,8 @@ namespace client
 
                 //Time start
                 
-				DateTime now = DateTime.Now;
-			    Console.WriteLine("Strat Second: {0}", now.Second);
+		DateTime now = DateTime.Now;
+		Console.WriteLine("Strat Second: {0}", now.Second);
 				
 				
                 NetworkStream stream = client.GetStream();
