@@ -98,7 +98,7 @@ namespace prover
 
             //Start time
 	    DateTime now = DateTime.Now;
-	    Console.WriteLine("Strat Second: {0}", now.Millisecond;
+	    Console.WriteLine("Strat Second: {0}", now.Millisecond);
 		
 		
             Random random = new Random();
