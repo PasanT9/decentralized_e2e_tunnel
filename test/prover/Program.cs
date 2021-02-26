@@ -232,11 +232,6 @@ namespace prover
 
             stream.Flush();
 
-<<<<<<< HEAD
-            
-
-=======
->>>>>>> e87d7bd6763c0e2c9302616faed3c846a8178038
 
         }
     }
