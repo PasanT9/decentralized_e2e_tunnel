@@ -154,7 +154,7 @@ namespace prover
 
             //Time start
 	    DateTime now = DateTime.Now;
-	    Console.WriteLine("Strat Second: {0}", now.Millisecond;
+	    Console.WriteLine("Strat Second: {0}", now.Millisecond);
 
             string X = Pp.Exponent + "|";
             for (int i = 0; i < n; ++i)
