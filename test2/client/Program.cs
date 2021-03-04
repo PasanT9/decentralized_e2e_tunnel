@@ -85,10 +85,11 @@ namespace client
 
 
                 //Time start
-                var watch = new System.Diagnostics.Stopwatch();
-            
-                watch.Start();
                 
+		DateTime now = DateTime.Now;
+		Console.WriteLine("Strat Second: {0}", now.Millisecond);
+				
+				
                 NetworkStream stream = client.GetStream();
 
                 byte[] bytes;
@@ -147,9 +148,6 @@ namespace client
                 Console.WriteLine("SocketException: {0}", e);
             }
             
-            watch.Stop();
-
-            Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
 
         }
 

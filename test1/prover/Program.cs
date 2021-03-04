@@ -94,11 +94,13 @@ namespace prover
 
             int[] V = gen_v(n - 1);
             
-            var watch = new System.Diagnostics.Stopwatch();
+           
 
             //Start time
-            watch.Start();
-            
+	    DateTime now = DateTime.Now;
+	    Console.WriteLine("Strat Second: {0}", now.Millisecond);
+		
+		
             Random random = new Random();
             int s = 4;
             //int s = 29;
@@ -161,9 +163,7 @@ namespace prover
 
             stream.Flush(); 
             
-            watch.Stop();
-
-            Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
+         
 
         }
     }

@@ -114,9 +114,6 @@ namespace verifier
 
         static void Main(string[] args)
         {
-            var watch = new System.Diagnostics.Stopwatch();
-            
-            watch.Start();
             
             int n = Int32.Parse(args[0]);
             gen_keys();
@@ -239,12 +236,12 @@ namespace verifier
             {
                 Console.WriteLine("FAIL");
             }
+	
             //Time start
 
+	    DateTime now = DateTime.Now;
+	    Console.WriteLine("Strat Second: {0}", now.Millisecond);
 
-           watch.Stop();
-
-           Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
 
         }
     }
