@@ -92,6 +92,7 @@ namespace superpeer_network
 
         static string local_ip_str;
 
+
         //Create random strings to imitate public keys
         public static string random_string()
         {
@@ -375,6 +376,34 @@ namespace superpeer_network
                                 }
                             }
                         }
+                        else if (String.Compare(op_code, "SEARCH_P") == 0)
+                        {
+                            Console.WriteLine("search request recieved for: " + data0);
+                            Console.WriteLine("Hop count: " + data1);
+                            if (peer_exists(data0))
+                            {
+                                Console.WriteLine("Key is found");
+                                //peers.Remove(data0);
+                                TCPCommunication.send_message_tcp(sslStream, "FOUND:" + data0 + ":" + local_ip.ToString() + ":" + local_port);
+                                Console.WriteLine("Sent");
+                            }
+                            else
+                            {
+                                if (String.Compare(data1, "0") != 0)
+                                {
+                                    foreach (var dest in superpeer_neighbours)
+                                    {
+                                        if (!dest.Key.Equals(ip))
+                                        {
+                                            Console.WriteLine("Adding search to buffer for: " + dest.Key);
+                                            message_tunnel[dest.Key] = ip;
+                                            new Thread(() => remove_tunnel(dest.Key)).Start();
+                                            message_buffer[-1 + ":SEARCH_P:" + data0 + ":" + data1] = dest.Key;
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         else if (String.Compare(op_code, "FOUND") == 0)
                         {
                             if (message_tunnel.ContainsKey(ip))
@@ -618,6 +647,22 @@ namespace superpeer_network
                                         Console.WriteLine($"{message}");
                                         Console.ResetColor();
                                         TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], full_msg);
+                                        message_buffer.Remove(message_full);
+                                    }
+                                }
+                                else if (String.Compare(message, "SEARCH_P") == 0)
+                                {
+                                    data0 = temp_split[2];
+                                    hops = (Int32.Parse((temp_split.Length > 2) ? temp_split[3] : "0")) - 1;
+
+                                    IPEndPoint destination_ip = message_buffer[message_full];
+                                    if (destination_ip == neighbour)
+                                    {
+                                        Console.Write($"Sending({neighbour}): ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine($"{message}");
+                                        Console.ResetColor();
+                                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message + ":" + data0 + ":" + hops);
                                         message_buffer.Remove(message_full);
                                     }
                                 }
@@ -941,6 +986,49 @@ namespace superpeer_network
             //sslStream.Close();
         }
 
+        static void wait_reply(SslStream sslStream, string dest_key)
+        {
+            for (int i = 0; i < flood_phases; ++i)
+            {
+                Thread.Sleep(3000);
+                if (!reply_buffer.ContainsKey(dest_key))
+                {
+                    List<IPEndPoint> superpeer_neighbours_list = new List<IPEndPoint>(superpeer_neighbours.Keys);
+                    int count = 0;
+                    foreach (var neighbour in superpeer_neighbours_list)
+                    {
+                        Console.WriteLine("To: " + neighbour);
+                        message_tunnel[neighbour] = null;
+                        message_buffer[(count++) + ":SEARCH_P:" + dest_key + ":" + (hop_count * 2)] = neighbour;
+                    }
+                    //new Thread(() => wait_reply(sslStream, receiver_key, sender_key)).Start();
+                }
+                else
+                {
+                    break;
+                }
+            }
+            //Thread.Sleep(3000);
+            if (reply_buffer.ContainsKey(dest_key))
+            {
+                //peers[key] = null;
+                TCPCommunication.send_message_tcp(sslStream, reply_buffer[dest_key]);
+
+                reply_buffer.Remove(dest_key);
+                //TCPCommunication.send_message_tcp(sslStream, "FOUND");
+                sslStream.Close();
+
+            }
+            else
+            {
+                TCPCommunication.send_message_tcp(sslStream, "NOT_FOUND");
+                sslStream.Close();
+            }
+
+            //sslStream.Close();
+        }
+
+
         static void listen_keys(SslStream stream, int port)
         {
             TcpListener key_server = new TcpListener(local_ip, port);
@@ -961,6 +1049,8 @@ namespace superpeer_network
                     // Read a message from the client.
                     response = TCPCommunication.recieve_message_tcp(sslStream);
                     Console.WriteLine(response);
+                    var time = sw.Elapsed;
+                    Console.WriteLine("Time elapsed: " + time);
 
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
                     rec_keys.Add(response);
@@ -1133,6 +1223,36 @@ namespace superpeer_network
             Console.WriteLine();
         }
 
+        static bool compare_keys(string key1, string key2)
+        {
+            string recon_key = "";
+            for (int i = 0; i < key2.Length; ++i)
+            {
+                for (int j = 3; j < 8; ++j)
+                {
+                    recon_key += (key2[i] * j).ToString("X") + "-";
+                }
+            }
+            if (key1.Equals(recon_key))
+            {
+
+                return true;
+            }
+            return false;
+        }
+
+        static bool peer_exists(string key)
+        {
+            foreach (var peer in peers)
+            {
+                if (compare_keys(key, peer.Key))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         static void handle_connections()
         {
             Console.WriteLine("Server is starting on port: " + local_port);
@@ -1251,6 +1371,7 @@ namespace superpeer_network
                     var hexKey = KeyGenerator.GetHexKey(key);
 
                     print_key(hexKey);
+                    peers[hexKey] = (IPEndPoint)client.Client.RemoteEndPoint;
                     //Console.WriteLine("key: " + data.Length);
 
                     //Console.WriteLine("recieved key: " + hexKey);
@@ -1280,7 +1401,10 @@ namespace superpeer_network
 
                 else if (String.Compare(response, "REQ_P") == 0)
                 {
+
                     Console.WriteLine("Requesting public keys");
+                    sw = Stopwatch.StartNew();
+
 
                     List<IPEndPoint> superpeer_neighbours_list = new List<IPEndPoint>(superpeer_neighbours.Keys);
                     int count = 0;
@@ -1398,7 +1522,24 @@ namespace superpeer_network
                 else if (String.Compare(response, "FIND_P") == 0)
                 {
                     //sw = Stopwatch.StartNew();
-                    string sender_key = TCPCommunication.recieve_message_tcp(sslStream);
+                    string dest_key = TCPCommunication.recieve_message_tcp(sslStream);
+                    //Console.WriteLine(dest_key);
+                    if (peer_exists(dest_key))
+                    {
+                        TCPCommunication.send_message_tcp(sslStream, "FOUND");
+                    }
+                    else
+                    {
+                        List<IPEndPoint> superpeer_neighbours_list = new List<IPEndPoint>(superpeer_neighbours.Keys);
+                        int count = 0;
+                        foreach (var neighbour in superpeer_neighbours_list)
+                        {
+                            message_tunnel[neighbour] = null;
+                            message_buffer[(count++) + ":SEARCH_P:" + dest_key + ":" + hop_count] = neighbour;
+                        }
+                        new Thread(() => wait_reply(sslStream, dest_key)).Start();
+                    }
+                    /*
                     if (peers.ContainsKey(sender_key))
                     {
                         TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
@@ -1426,7 +1567,7 @@ namespace superpeer_network
                         TCPCommunication.send_message_tcp(sslStream, "REJECT");
                         sslStream.Close();
                         client.Close();
-                    }
+                    }*/
                 }
                 else if (String.Compare(response, "CONNECT_P") == 0)
                 {

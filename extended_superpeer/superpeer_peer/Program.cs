@@ -51,7 +51,8 @@ namespace superpeer_peer
         static string server_ip;
         static int server_port;
 
-        //static string local_ip;
+        //static string local_ip; 
+        //static string local_ip = "192.168.8.100";
         static string local_ip = "127.0.0.1";
         static int local_port;
 
@@ -183,6 +184,74 @@ namespace superpeer_peer
             Console.WriteLine();
         }
 
+        static void find_peer()
+        {
+            Console.Write("Destination: ");
+            string dest_key = Console.ReadLine();
+            IPAddress ipAddress = IPAddress.Parse(local_ip);
+            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+
+            //Connect to server
+            TcpClient client = new TcpClient(ipLocalEndPoint);
+            try
+            {
+
+                client.Connect(server_ip, server_port);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("try again!!!");
+                Thread.Sleep(1000);
+                client.Connect(server_ip, server_port);
+            }
+            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+            authenticate_server(sslStream);
+
+            TCPCommunication.send_message_tcp(sslStream, "FIND_P");
+            TCPCommunication.send_message_tcp(sslStream, dest_key);
+
+            string response = TCPCommunication.recieve_message_tcp(sslStream);
+            Console.WriteLine(response);
+
+            /*if (String.Compare(response, "ACCEPT") == 0)
+            {
+                TCPCommunication.send_message_tcp(sslStream, dest_key);
+
+                response = TCPCommunication.recieve_message_tcp(sslStream);
+
+                string[] temp_split = response.Split(':');
+                dest_ip = temp_split[1];
+                dest_port = Int32.Parse(temp_split[2]);
+
+                Console.WriteLine($"destination peer in {dest_ip}:{dest_port}");
+
+                //TCPCommunication.send_message_tcp(sslStream, pubKey.ToString());
+                //response = TCPCommunication.recieve_message_tcp(sslStream);
+                //Console.WriteLine(response);
+                sslStream.Close();
+                client.Close();
+
+                client = new TcpClient(ipLocalEndPoint);
+                Console.WriteLine("Client connecting");
+                client.Connect(dest_ip, dest_port);
+                Console.WriteLine("Client connected");
+                sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+                authenticate_server(sslStream);
+
+                req_connection(sslStream, client, dest_key);
+
+
+                sslStream.Close();
+                client.Close();
+            }
+            else if (String.Compare(response, "REJECT") == 0)
+            {
+                Console.WriteLine("Connection rejected");
+                sslStream.Close();
+                client.Close();
+            }*/
+        }
+
         static void Main(string[] args)
         {
 
@@ -193,7 +262,9 @@ namespace superpeer_peer
 
             //share_key();
 
-            request_keys();
+            //request_keys();
+
+            find_peer();
 
 
             /*Console.Write("init connection: ");
@@ -475,7 +546,8 @@ namespace superpeer_peer
             Console.WriteLine("Initializing the registration...");
 
 
-            server_ip = "128.199.118.154";
+            //server_ip = "128.199.118.154";
+            server_ip = "127.0.0.1";
             Console.Write("Server port: ");
             server_port = Int32.Parse(Console.ReadLine());
 
@@ -515,7 +587,17 @@ namespace superpeer_peer
 
             //Connect to server
             TcpClient client = new TcpClient(ipLocalEndPoint);
-            client.Connect(server_ip, server_port);
+            try
+            {
+
+                client.Connect(server_ip, server_port);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("try again!!!");
+                Thread.Sleep(1000);
+                client.Connect(server_ip, server_port);
+            }
             SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
             authenticate_server(sslStream);
 
