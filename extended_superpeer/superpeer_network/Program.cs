@@ -32,6 +32,9 @@ namespace superpeer_network
 
         static Dictionary<string, IPEndPoint> message_buffer;
         static Dictionary<IPEndPoint, IPEndPoint> message_tunnel;
+
+        static Dictionary<IPEndPoint, IPEndPoint> auth_tunnel;
+        static Dictionary<IPEndPoint, IPEndPoint> auth_tunnel_rev;
         static Dictionary<IPEndPoint, int> pending_requests;
 
         static Dictionary<string, string> reply_buffer;
@@ -218,6 +221,7 @@ namespace superpeer_network
                             if (peer_exists(data0))
                             {
                                 Console.WriteLine("Key is found");
+                                auth_tunnel_rev[ip] = null;
                                 //peers.Remove(data0);
                                 TCPCommunication.send_message_tcp(sslStream, "FOUND_P:" + data0 + ":" + local_ip.ToString() + ":" + local_port);
                                 Console.WriteLine("Sent");
@@ -247,15 +251,38 @@ namespace superpeer_network
                                 {
                                     Console.WriteLine("Tunnel exists for: " + neighbour + "->" + message_tunnel[ip]);
                                     TCPCommunication.send_message_tcp(superpeer_neighbours[message_tunnel[ip]], response);
+                                    auth_tunnel[ip] = message_tunnel[ip];
+                                    auth_tunnel_rev[message_tunnel[ip]] = ip;
                                     message_tunnel.Remove(ip);
+
                                 }
                                 else
                                 {
                                     Console.WriteLine("key: " + data0);
                                     Console.WriteLine("Key exists in : " + data1 + ":" + data2);
                                     reply_buffer[data0] = "FOUND:" + data1 + ":" + data2;
+                                    auth_tunnel[ip] = message_tunnel[ip];
                                     message_tunnel.Remove(ip);
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Tunnel does not exists");
+                            }
 
+                        }
+                        else if (String.Compare(op_code, "AUTH_P") == 0)
+                        {
+                            if (auth_tunnel_rev.ContainsKey(ip))
+                            {
+                                if (auth_tunnel_rev[ip] != null)
+                                {
+                                    Console.WriteLine("Auth tunnel exists for: " + neighbour + "->" + auth_tunnel_rev[ip]);
+                                    TCPCommunication.send_message_tcp(superpeer_neighbours[auth_tunnel_rev[ip]], response);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Auth dest found");
                                 }
                             }
                             else
@@ -789,6 +816,8 @@ namespace superpeer_network
             peers = new Dictionary<string, IPEndPoint>();
             message_buffer = new Dictionary<string, IPEndPoint>();
             message_tunnel = new Dictionary<IPEndPoint, IPEndPoint>();
+            auth_tunnel = new Dictionary<IPEndPoint, IPEndPoint>();
+            auth_tunnel_rev = new Dictionary<IPEndPoint, IPEndPoint>();
             reply_buffer = new Dictionary<string, string>();
             pending_requests = new Dictionary<IPEndPoint, int>();
 
@@ -1052,7 +1081,25 @@ namespace superpeer_network
 
                 reply_buffer.Remove(dest_key);
                 //TCPCommunication.send_message_tcp(sslStream, "FOUND");
-                sslStream.Close();
+                //sslStream.Close();
+
+                byte[] bytes;
+
+                bytes = new byte[204800];
+                sslStream.Read(bytes, 0, bytes.Length);
+
+                string U = Encoding.Default.GetString(bytes);
+
+                var enumerator = auth_tunnel.Keys.GetEnumerator();
+                enumerator.MoveNext();
+
+                IPEndPoint tunnel = enumerator.Current;
+
+                TCPCommunication.send_message_tcp(superpeer_neighbours[tunnel], "AUTH_P:" + U);
+                //message_buffer[(-1) + ":AUTH_P:" + U] = tunnel;
+
+                Console.WriteLine(U);
+
 
             }
             else

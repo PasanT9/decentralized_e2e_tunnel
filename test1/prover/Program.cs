@@ -93,14 +93,14 @@ namespace prover
             Org.BouncyCastle.Math.BigInteger[] P = req_keys(n - 1);
 
             int[] V = gen_v(n - 1);
-            
-           
+
+
 
             //Start time
-	    DateTime now = DateTime.Now;
-	    Console.WriteLine("Strat Second: {0}", now.Millisecond);
-		
-		
+            DateTime now = DateTime.Now;
+            Console.WriteLine("Strat Second: {0}", now.Millisecond);
+
+
             Random random = new Random();
             int s = 4;
             //int s = 29;
@@ -161,11 +161,11 @@ namespace prover
             bytes = Encoding.UTF8.GetBytes(msg);
             stream.Write(bytes);
 
-            stream.Flush(); 
-            
-         
+            stream.Flush();
+
+
 
         }
     }
 }
- 
+

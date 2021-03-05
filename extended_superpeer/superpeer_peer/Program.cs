@@ -59,6 +59,14 @@ namespace superpeer_peer
         static PublicKeyCoordinates pubKey;
         static ECDiffieHellmanOpenSsl node;
 
+        public static int a_p;
+        public static Org.BouncyCastle.Math.BigInteger A_p;
+
+        public static Org.BouncyCastle.Math.BigInteger g;
+
+        public static Org.BouncyCastle.Math.BigInteger p;
+        public static Org.BouncyCastle.Math.BigInteger q;
+
         static RsaKeyParameters P;
         static RsaKeyParameters S;
         static byte[] key;
@@ -92,6 +100,39 @@ namespace superpeer_peer
                 localIP = endPoint.Address.ToString();
             }
             return localIP;
+        }
+
+        static void gen_keys()
+        {
+            Random random = new Random();
+            a_p = 2;
+
+            A_p = g.Pow(a_p).Mod(q);
+        }
+
+
+        public static Org.BouncyCastle.Math.BigInteger[] req_keys(int n)
+        {
+            Org.BouncyCastle.Math.BigInteger[] P = new Org.BouncyCastle.Math.BigInteger[n];
+            for (int i = 0; i < n; ++i)
+            {
+                Random random = new Random();
+                int a_i = random.Next(1, 4);
+
+                P[i] = g.Pow(a_i).Mod(q);
+            }
+            return P;
+        }
+
+        public static int[] gen_v(int n)
+        {
+            int[] V = new int[n];
+            for (int i = 0; i < n; ++i)
+            {
+                Random random = new Random();
+                V[i] = random.Next(1, 4);
+            }
+            return V;
         }
 
 
@@ -213,6 +254,31 @@ namespace superpeer_peer
             string response = TCPCommunication.recieve_message_tcp(sslStream);
             Console.WriteLine(response);
 
+            int n = 10;
+            gen_keys();
+
+            Org.BouncyCastle.Math.BigInteger[] P = req_keys(n - 1);
+
+            int[] V = gen_v(n - 1);
+
+            Random random = new Random();
+            int s = 4;
+            //int s = 29;
+            Org.BouncyCastle.Math.BigInteger U = (g.Pow(s)).Mod(p);
+            for (int i = 0; i < n - 1; ++i)
+            {
+                U = U.Multiply((P[i].Pow(V[i])).Mod(p)).Mod(p);
+            }
+
+            byte[] bytes;
+
+            bytes = new byte[16];
+            bytes = Encoding.Default.GetBytes(U.ToString());
+            sslStream.Write(bytes);
+
+
+
+
             /*if (String.Compare(response, "ACCEPT") == 0)
             {
                 TCPCommunication.send_message_tcp(sslStream, dest_key);
@@ -255,16 +321,34 @@ namespace superpeer_peer
         static void Main(string[] args)
         {
 
+            g = new Org.BouncyCastle.Math.BigInteger(2.ToString());
+            p = new Org.BouncyCastle.Math.BigInteger(31.ToString());
+            q = new Org.BouncyCastle.Math.BigInteger(5.ToString());
+
             gen_keypair();
 
 
             init_connection();
 
+            Console.Write("Request connection: ");
+            string input = Console.ReadLine();
+            //locate_peer();
+            //anonym_peer();
+            if (input == "y")
+            {
+                find_peer();
+            }
+            else
+            {
+                listen_peer();
+            }
+
+
             //share_key();
 
             //request_keys();
 
-            find_peer();
+            //find_peer();
 
 
             /*Console.Write("init connection: ");
@@ -554,6 +638,7 @@ namespace superpeer_peer
             //Select a random port as local port
             Random random = new Random();
             local_port = random.Next(20000, 40000);
+            Console.WriteLine("port: " + local_port);
 
             //Create local endpoint for connection
             IPAddress ipAddress = IPAddress.Parse(local_ip);
@@ -657,7 +742,7 @@ namespace superpeer_peer
             SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
             authenticate_server(sslStream);
 
-            listen_connection(sslStream, client);
+            //listen_connection(sslStream, client);
             //req_connection(sslStream, client, dest_key);
 
 
@@ -835,16 +920,36 @@ namespace superpeer_peer
 
         }
 
-        static void listen_connection(SslStream sslStream, TcpClient client)
+        static void listen_peer()
         {
 
             /*myAes = Aes.Create();
             myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
             myAes.IV = new byte[16] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
 */
+            Console.WriteLine("port: " + local_port);
+            IPAddress ipAddress = IPAddress.Parse(local_ip);
+            IPEndPoint ipLocalEndPoint = new IPEndPoint(ipAddress, local_port);
+
+            //Connect to server
+            TcpClient client = new TcpClient(ipLocalEndPoint);
+            try
+            {
+
+                client.Connect(server_ip, server_port);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("try again!!!");
+                Thread.Sleep(1000);
+                client.Connect(server_ip, server_port);
+            }
+            SslStream sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
+            authenticate_server(sslStream);
 
             TCPCommunication.send_message_tcp(sslStream, "LISTEN_P");
-            TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
+            //TCPCommunication.send_message_tcp(sslStream, HashString.GetHashString(pubKey.ToString()));
+            sslStream.Write(key);
 
             string response = TCPCommunication.recieve_message_tcp(sslStream);
 
@@ -852,103 +957,9 @@ namespace superpeer_peer
             {
 
                 Console.WriteLine("Start authenticating");
-                Byte[] data = new Byte[2048];
-                sslStream.Read(data, 0, data.Length);
-                string message = Encoding.UTF8.GetString(data);
-                string P_str = message;
-                RsaKeyParameters[] P = restructure_P(P_str);
-
-                Console.WriteLine("P: " + P_str);
-                Console.WriteLine();
-
-                data = new Byte[2048];
-                sslStream.Read(data, 0, data.Length);
-
-                message = Encoding.UTF8.GetString(data);
-                string X_str = message;
-                byte[][] X = restructure_X(X_str);
-
-                Console.WriteLine("X: " + X_str);
-                Console.WriteLine();
-
                 response = TCPCommunication.recieve_message_tcp(sslStream);
-                string m = response;
-                Console.WriteLine("m: " + m);
-                Console.WriteLine();
 
-
-                data = new Byte[64];
-                sslStream.Read(data, 0, data.Length);
-                byte[] v = data;
-                Console.WriteLine("v: " + ByteArrayToString(v));
-                Console.WriteLine();
-
-                if (ring_verify(P, v, X, m))
-                {
-                    Console.WriteLine("Authentication success");
-                }
-                else
-                {
-                    Console.WriteLine("Authentication failure");
-                }
-
-
-                /*byte[] data = new Byte[256];
-                data = Encoding.UTF8.GetBytes(pubKey.ToString());
-                sslStream.Write(data);
-                sslStream.Flush();*/
-
-
-                /*data = new Byte[256];
-                sslStream.Read(data, 0, data.Length);
-                response = Encoding.UTF8.GetString(data);
-                PublicKeyCoordinates request_key = JsonConvert.DeserializeObject<PublicKeyCoordinates>(response);
-
-                sslStream.Close();
-                client.Close();
-
-
-
-                ECDiffieHellmanOpenSsl temp = new ECDiffieHellmanOpenSsl();
-                ECParameters epTemp = temp.ExportParameters(false);
-
-                epTemp.Q.X = request_key.X;
-                epTemp.Q.Y = request_key.Y;
-
-                ECDiffieHellmanPublicKey servePubKey = ECDiffieHellman.Create(epTemp).PublicKey;
-                byte[] sharedKey = node.DeriveKeyMaterial(servePubKey);
-                Console.WriteLine(BitConverter.ToString(sharedKey).Replace("-", ""));
-
-                //myAes.Key = sharedKey;
-                //myAes.Key = new byte[16] { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16 };
-
-
-                DTLSClient dtls = new DTLSClient(server_ip, server_port.ToString(), new byte[] { 0xBA, 0xA0 });
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    dtls.Unbuffer = "winpty.exe";
-                    dtls.Unbuffer_Args = "-Xplain -Xallow-non-tty";
-                }
-                else
-                {
-                    dtls.Unbuffer = "stdbuf";
-                    dtls.Unbuffer_Args = "-i0 -o0";
-                }
-                dtls.Start();
-
-                byte[] bytes;
-
-                new Thread(() => read_relay(dtls)).Start();
-
-                while (true)
-                {
-                    string input = Console.ReadLine();
-                    byte[] encryptedData = EncryptStringToBytes_Aes(input, myAes.Key, myAes.IV);
-                    //dtls.GetStream().Write(Encoding.Default.GetBytes(input+Environment.NewLine));
-                    dtls.GetStream().Write(encryptedData);
-                }
-                dtls.WaitForExit();*/
+                Console.WriteLine("U: " + response);
 
 
             }
