@@ -291,6 +291,26 @@ namespace superpeer_network
                             }
 
                         }
+                        else if (String.Compare(op_code, "AUTH_R") == 0)
+                        {
+                            if (auth_tunnel.ContainsKey(ip))
+                            {
+                                if (auth_tunnel[ip] != null)
+                                {
+                                    Console.WriteLine("Auth Reply tunnel exists for: " + neighbour + "->" + auth_tunnel[ip]);
+                                    TCPCommunication.send_message_tcp(superpeer_neighbours[auth_tunnel[ip]], response);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Auth dest found");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Tunnel does not exists");
+                            }
+
+                        }
                         else if (String.Compare(op_code, "FOUND") == 0)
                         {
                             if (message_tunnel.ContainsKey(ip))

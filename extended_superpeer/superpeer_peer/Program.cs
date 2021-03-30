@@ -277,6 +277,46 @@ namespace superpeer_peer
             sslStream.Write(bytes);
 
 
+            response = TCPCommunication.recieve_message_tcp(sslStream);
+            int C = Int32.Parse(response);
+            Console.WriteLine("C: " + C);
+
+            int v_p = C;
+            for (int i = 0; i < n - 1; ++i)
+            {
+                v_p = v_p ^ V[i];
+            }
+
+
+            string V_str = v_p + "|";
+
+            for (int i = 0; i < n - 1; ++i)
+            {
+                V_str += V[i] + "|";
+            }
+
+            string P_str = A_p.ToString() + "|";
+            for (int i = 0; i < n - 1; ++i)
+            {
+                P_str += P[i] + "|";
+            }
+
+            Org.BouncyCastle.Math.BigInteger a_p_big = new Org.BouncyCastle.Math.BigInteger(a_p.ToString());
+            Org.BouncyCastle.Math.BigInteger v_p_big = new Org.BouncyCastle.Math.BigInteger(v_p.ToString());
+
+            Org.BouncyCastle.Math.BigInteger s_big = new Org.BouncyCastle.Math.BigInteger(s.ToString());
+
+            Org.BouncyCastle.Math.BigInteger r_big = (s_big.Add((a_p_big.Multiply(v_p_big)).Negate())).Mod(q);
+            //int r = (s - ((a_p * v_p) % 31));
+            //int r = Int32.Parse(r_big.ToString());
+
+            string r_str = r_big.ToString();
+
+            string msg = V_str + P_str + r_str;
+
+            TCPCommunication.send_message_tcp(sslStream, msg);
+
+
 
 
             /*if (String.Compare(response, "ACCEPT") == 0)
@@ -958,8 +998,82 @@ namespace superpeer_peer
 
                 Console.WriteLine("Start authenticating");
                 response = TCPCommunication.recieve_message_tcp(sslStream);
+                string U = response;
+                Console.WriteLine("U: " + U);
 
-                Console.WriteLine("U: " + response);
+                Random random = new Random();
+                int c = random.Next(1, 4);
+                byte[] bytes;
+
+                bytes = new byte[16];
+                bytes = Encoding.Default.GetBytes(c.ToString());
+                sslStream.Write(bytes);
+
+                response = TCPCommunication.recieve_message_tcp(sslStream);
+
+                Console.WriteLine("msg: " + response);
+
+                int n = 10;
+
+                string[] temp_split = response.Split("|");
+
+                int[] V = new int[n];
+                int c0 = 0;
+                for (int i = 0; i < n; ++i)
+                {
+                    V[i] = Int32.Parse(temp_split[i]);
+                    c0 = c0 ^ V[i];
+                }
+
+
+                Org.BouncyCastle.Math.BigInteger[] P = new Org.BouncyCastle.Math.BigInteger[n];
+                for (int i = 0; i < n; ++i)
+                {
+                    P[i] = new Org.BouncyCastle.Math.BigInteger(temp_split[n + i]);
+                }
+
+                int r = Int32.Parse(temp_split[2 * n]);
+                if (c0 == c)
+                {
+                    Console.WriteLine("1st verification PASS");
+                }
+                else
+                {
+                    Console.WriteLine("1st verification FAIL");
+                }
+
+                Org.BouncyCastle.Math.BigInteger U0 = (g.Pow(r)).Mod(p);
+                for (int i = 0; i < n; ++i)
+                {
+                    U0 = U0.Multiply((P[i].Pow(V[i])).Mod(p)).Mod(p);
+                }
+                Console.WriteLine(U);
+                Console.WriteLine(U0);
+
+                string U1 = U0.ToString();
+                bool flag = true;
+                for (int i = 0; i < U1.Length; ++i)
+                {
+                    if (U1[i] != U[i])
+                    {
+                        Console.WriteLine("2nd verification FAIL");
+                        flag = false;
+                        break;
+                    }
+                }
+                if (flag)
+                {
+                    Console.WriteLine("2nd verification PASS");
+                }
+
+
+
+
+
+
+
+
+
 
 
             }

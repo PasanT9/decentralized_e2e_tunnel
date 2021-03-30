@@ -454,6 +454,27 @@ namespace superpeer_network
                             }
 
                         }
+                        else if (String.Compare(op_code, "AUTH_R") == 0)
+                        {
+                            if (auth_tunnel.ContainsKey(ip))
+                            {
+                                if (auth_tunnel[ip] != null)
+                                {
+                                    Console.WriteLine("Auth Reply tunnel exists for: " + neighbour + "->" + auth_tunnel[ip]);
+                                    TCPCommunication.send_message_tcp(superpeer_neighbours[auth_tunnel[ip]], response);
+                                }
+                                else
+                                {
+                                    listner_buffer.Add(data0);
+                                    Console.WriteLine("Auth dest found");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Tunnel does not exists");
+                            }
+
+                        }
                         else if (String.Compare(op_code, "FOUND") == 0)
                         {
                             if (message_tunnel.ContainsKey(ip))
@@ -717,6 +738,21 @@ namespace superpeer_network
                                     }
                                 }
                                 else if (String.Compare(message, "AUTH_P") == 0)
+                                {
+                                    data0 = temp_split[2];
+                                    Console.WriteLine(data0);
+                                    IPEndPoint destination_ip = message_buffer[message_full];
+                                    if (destination_ip == neighbour)
+                                    {
+                                        Console.Write($"Sending({neighbour}): ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine($"{message}");
+                                        Console.ResetColor();
+                                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message + ":" + data0);
+                                        message_buffer.Remove(message_full);
+                                    }
+                                }
+                                else if (String.Compare(message, "AUTH_R") == 0)
                                 {
                                     data0 = temp_split[2];
                                     Console.WriteLine(data0);
@@ -1105,7 +1141,24 @@ namespace superpeer_network
                 message_buffer[0 + ":AUTH_P:" + U] = tunnel;
 
 
+                while (listner_buffer.Count == 0) ;
 
+                Console.WriteLine("C: " + listner_buffer[0]);
+
+                TCPCommunication.send_message_tcp(sslStream, listner_buffer[0]);
+                listner_buffer.RemoveAt(0);
+
+                string msg = TCPCommunication.recieve_message_tcp(sslStream);
+
+                enumerator = auth_tunnel.Keys.GetEnumerator();
+                enumerator.MoveNext();
+
+                tunnel = enumerator.Current;
+
+                Console.WriteLine("Sending auth message to: " + tunnel);
+
+                //TCPCommunication.send_message_tcp(superpeer_neighbours[tunnel], "AUTH_P:" + U);
+                message_buffer[-1 + ":AUTH_P:" + msg] = tunnel;
 
 
             }
@@ -1801,7 +1854,27 @@ namespace superpeer_network
             TCPCommunication.send_message_tcp(listen_stream, listner_buffer[0]);
             listner_buffer.RemoveAt(0);
 
+            byte[] bytes = new byte[16];
+            listen_stream.Read(bytes, 0, bytes.Length);
 
+            string C = Encoding.Default.GetString(bytes);
+            Console.WriteLine("C: " + C);
+
+            var enumerator = auth_tunnel_rev.Keys.GetEnumerator();
+            enumerator.MoveNext();
+
+            IPEndPoint tunnel = enumerator.Current;
+
+            Console.WriteLine("Sending auth message to: " + tunnel);
+
+            //TCPCommunication.send_message_tcp(superpeer_neighbours[tunnel], "AUTH_P:" + U);
+            message_buffer[0 + ":AUTH_R:" + C] = tunnel;
+
+
+            while (listner_buffer.Count == 0) ;
+
+            TCPCommunication.send_message_tcp(listen_stream, listner_buffer[0]);
+            listner_buffer.RemoveAt(0);
 
 
 
