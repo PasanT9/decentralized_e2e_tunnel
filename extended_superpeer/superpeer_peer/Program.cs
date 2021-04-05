@@ -1070,12 +1070,6 @@ namespace superpeer_peer
 
 
 
-
-
-
-
-
-
             }
             else if (String.Compare(response, "REJECT") == 0)
             {

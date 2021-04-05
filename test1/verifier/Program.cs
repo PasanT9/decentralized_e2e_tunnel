@@ -56,8 +56,8 @@ namespace verifier
 
         static void Main(string[] args)
         {
-           
-            
+
+
             int n = Int32.Parse(args[0]);
             g = new Org.BouncyCastle.Math.BigInteger(2.ToString());
             p = new Org.BouncyCastle.Math.BigInteger(31.ToString());
@@ -153,12 +153,12 @@ namespace verifier
                 Console.WriteLine("2nd verification PASS");
             }
             //End time
-			
-	    DateTime now = DateTime.Now;
-	    Console.WriteLine("Strat Second: {0}", now.Millisecond);
-            
-            
-            
+
+            DateTime now = DateTime.Now;
+            Console.WriteLine("Strat Second: {0}", now.Millisecond);
+
+
+
         }
         static void PrintByteArray(byte[] bytes)
         {

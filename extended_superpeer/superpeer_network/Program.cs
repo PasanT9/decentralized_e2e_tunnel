@@ -35,10 +35,11 @@ namespace superpeer_network
 
         static Dictionary<IPEndPoint, IPEndPoint> auth_tunnel;
         static Dictionary<IPEndPoint, IPEndPoint> auth_tunnel_rev;
-        static Dictionary<IPEndPoint, int> pending_requests;
+        static Dictionary<IPEndPoint, bool> pending_requests;
 
         static Dictionary<string, string> reply_buffer;
         static Dictionary<IPEndPoint, PublicKeyCoordinates> client_keys;
+        static Dictionary<IPEndPoint, SslStream> req_stream;
 
         static X509Certificate2 server_cert;
         static IPAddress local_ip;
@@ -58,7 +59,7 @@ namespace superpeer_network
 
         static Dictionary<String, String> shared_keys;
         static List<String> rec_keys;
-
+        static List<string> listner_buffer;
         static int hop_count = 2;
         static int flood_phases = 2;
 
@@ -125,6 +126,7 @@ namespace superpeer_network
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(response);
                     Console.ResetColor();
+
                     if (String.Compare(response, "END") == 0)
                     {
                         TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
@@ -217,14 +219,21 @@ namespace superpeer_network
                         else if (String.Compare(op_code, "SEARCH_P") == 0)
                         {
                             Console.WriteLine("search request recieved for: " + data0);
-                            Console.WriteLine("Hop count: " + data2);
+                            Console.WriteLine("Hop count: " + data1);
                             if (peer_exists(data0))
                             {
                                 Console.WriteLine("Key is found");
-                                auth_tunnel_rev[ip] = null;
-                                //peers.Remove(data0);
-                                TCPCommunication.send_message_tcp(sslStream, "FOUND_P:" + data0 + ":" + local_ip.ToString() + ":" + local_port);
-                                Console.WriteLine("Sent");
+                                IPEndPoint listen_ip = peer_get_ip(data0);
+                                Console.WriteLine("listner: " + listen_ip);
+                                if (pending_requests[listen_ip])
+                                {
+                                    Console.WriteLine("loop stop");
+                                    auth_tunnel_rev[ip] = null;
+                                    TCPCommunication.send_message_tcp(sslStream, "FOUND_P:" + data0 + ":" + local_ip.ToString() + ":" + local_port);
+
+                                    //req_stream[receiver_ip] = sslStream;
+                                    pending_requests[listen_ip] = false;
+                                }
                             }
                             else
                             {
@@ -283,6 +292,7 @@ namespace superpeer_network
                                 else
                                 {
                                     Console.WriteLine("Auth dest found");
+                                    listner_buffer.Add(data0);
                                 }
                             }
                             else
@@ -302,6 +312,7 @@ namespace superpeer_network
                                 }
                                 else
                                 {
+                                    listner_buffer.Add(data0);
                                     Console.WriteLine("Auth dest found");
                                 }
                             }
@@ -603,6 +614,41 @@ namespace superpeer_network
                                         message_buffer.Remove(message_full);
                                     }
                                 }
+                                else if (String.Compare(message, "AUTH_P") == 0)
+                                {
+                                    data0 = temp_split[2];
+                                    Console.WriteLine(data0);
+                                    IPEndPoint destination_ip = message_buffer[message_full];
+                                    if (destination_ip == neighbour)
+                                    {
+                                        Console.Write($"Sending({neighbour}): ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine($"{message}");
+                                        Console.ResetColor();
+                                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message + ":" + data0);
+                                        message_buffer.Remove(message_full);
+                                    }
+                                }
+                                else if (String.Compare(message, "AUTH_R") == 0)
+                                {
+                                    data0 = temp_split[2];
+                                    Console.WriteLine("h: " + data0);
+                                    IPEndPoint destination_ip = message_buffer[message_full];
+                                    if (destination_ip.Equals(neighbour))
+                                    {
+                                        Console.Write($"Sending({neighbour}): ");
+                                        Console.ForegroundColor = ConsoleColor.Yellow;
+                                        Console.WriteLine($"{message}");
+                                        Console.ResetColor();
+                                        TCPCommunication.send_message_tcp(superpeer_neighbours[neighbour], message + ":" + data0);
+                                        message_buffer.Remove(message_full);
+                                    }
+                                    else
+                                    {
+                                        Console.WriteLine("dest: " + destination_ip);
+                                        Console.WriteLine("neigh: " + neighbour);
+                                    }
+                                }
                                 else
                                 {
                                     data0 = (temp_split.Length > 2) ? temp_split[2] : "";
@@ -839,12 +885,14 @@ namespace superpeer_network
             auth_tunnel = new Dictionary<IPEndPoint, IPEndPoint>();
             auth_tunnel_rev = new Dictionary<IPEndPoint, IPEndPoint>();
             reply_buffer = new Dictionary<string, string>();
-            pending_requests = new Dictionary<IPEndPoint, int>();
+            pending_requests = new Dictionary<IPEndPoint, bool>();
+            req_stream = new Dictionary<IPEndPoint, SslStream>();
 
             exit_neighbours = new List<IPEndPoint>();
             change_neighbours = new List<IPEndPoint>();
             shared_keys = new Dictionary<String, String>();
             rec_keys = new List<String>();
+            listner_buffer = new List<string>();
 
             client_keys = new Dictionary<IPEndPoint, PublicKeyCoordinates>();
 
@@ -1023,7 +1071,6 @@ namespace superpeer_network
 
         static void wait_reply(SslStream sslStream, string receiver_key, string sender_key)
         {
-            Console.WriteLine("Thread");
             for (int i = 0; i < flood_phases; ++i)
             {
                 Thread.Sleep(3000);
@@ -1033,6 +1080,7 @@ namespace superpeer_network
                     int count = 0;
                     foreach (var neighbour in superpeer_neighbours_list)
                     {
+                        Console.WriteLine("To: " + neighbour);
                         message_tunnel[neighbour] = null;
                         message_buffer[(count++) + ":SEARCH:" + receiver_key + ":" + sender_key + ":" + (hop_count * 2)] = neighbour;
                     }
@@ -1105,20 +1153,41 @@ namespace superpeer_network
 
                 byte[] bytes;
 
-                bytes = new byte[204800];
+                bytes = new byte[16];
                 sslStream.Read(bytes, 0, bytes.Length);
 
                 string U = Encoding.Default.GetString(bytes);
+                Console.WriteLine("U: " + U);
 
                 var enumerator = auth_tunnel.Keys.GetEnumerator();
                 enumerator.MoveNext();
 
                 IPEndPoint tunnel = enumerator.Current;
 
-                TCPCommunication.send_message_tcp(superpeer_neighbours[tunnel], "AUTH_P:" + U);
-                //message_buffer[(-1) + ":AUTH_P:" + U] = tunnel;
+                Console.WriteLine("Sending auth message to: " + tunnel);
 
-                Console.WriteLine(U);
+                //TCPCommunication.send_message_tcp(superpeer_neighbours[tunnel], "AUTH_P:" + U);
+                message_buffer[0 + ":AUTH_P:" + U] = tunnel;
+
+
+                while (listner_buffer.Count == 0) ;
+
+                Console.WriteLine("C: " + listner_buffer[0]);
+
+                TCPCommunication.send_message_tcp(sslStream, listner_buffer[0]);
+                listner_buffer.RemoveAt(0);
+
+                string msg = TCPCommunication.recieve_message_tcp(sslStream);
+
+                enumerator = auth_tunnel.Keys.GetEnumerator();
+                enumerator.MoveNext();
+
+                tunnel = enumerator.Current;
+
+                Console.WriteLine("Sending auth message to: " + tunnel);
+
+                //TCPCommunication.send_message_tcp(superpeer_neighbours[tunnel], "AUTH_P:" + U);
+                message_buffer[-1 + ":AUTH_P:" + msg] = tunnel;
 
 
             }
@@ -1129,6 +1198,18 @@ namespace superpeer_network
             }
 
             //sslStream.Close();
+        }
+
+        static void print_key(string key)
+        {
+            for (int i = 0; i < key.Length; ++i)
+            {
+                for (int j = 3; j < 8; ++j)
+                {
+                    Console.Write((key[i] * j).ToString("X") + "-");
+                }
+            }
+            Console.WriteLine();
         }
 
         static bool compare_keys(string key1, string key2)
@@ -1149,6 +1230,18 @@ namespace superpeer_network
             return false;
         }
 
+        static IPEndPoint peer_get_ip(string key)
+        {
+            foreach (var peer in peers)
+            {
+                if (compare_keys(key, peer.Key))
+                {
+                    return peer.Value;
+                }
+            }
+            return null;
+        }
+
         static bool peer_exists(string key)
         {
             foreach (var peer in peers)
@@ -1160,6 +1253,9 @@ namespace superpeer_network
             }
             return false;
         }
+
+
+
 
         static void handle_connections()
         {
@@ -1268,22 +1364,28 @@ namespace superpeer_network
                 else if (String.Compare(response, "REG_P") == 0)
                 {
                     Console.WriteLine("Peer registering");
-                    Byte[] data = new Byte[8];
+                    Byte[] data = new Byte[6];
                     sslStream.Read(data, 0, data.Length);
 
-                    int players = 3;
-                    int required = 2;
+                    int players = n;
+                    int required = r;
 
                     var key = KeyGenerator.GenerateDoubleBytesKey(data);
                     var hexKey = KeyGenerator.GetHexKey(key);
 
-                    Console.WriteLine("recieved key: " + hexKey);
+                    print_key(hexKey);
+                    peers[hexKey] = (IPEndPoint)client.Client.RemoteEndPoint;
+                    Console.WriteLine("Registering: " + (IPEndPoint)client.Client.RemoteEndPoint);
+                    //Console.WriteLine("key: " + data.Length);
+
+                    //Console.WriteLine("recieved key: " + hexKey);
 
                     Console.WriteLine("Shares: ");
                     var splitted = SharesManager.SplitKey(key, players, required);
                     for (int i = 0; i < splitted.Length; i++)
                     {
                         Console.WriteLine(splitted[i]);
+                        Console.WriteLine("size: " + splitted[i].Length);
                     }
                     Console.WriteLine();
 
@@ -1300,8 +1402,10 @@ namespace superpeer_network
                     }
 
                 }
+
                 else if (String.Compare(response, "REQ_P") == 0)
                 {
+
                     Console.WriteLine("Requesting public keys");
 
                     List<IPEndPoint> superpeer_neighbours_list = new List<IPEndPoint>(superpeer_neighbours.Keys);
@@ -1439,11 +1543,14 @@ namespace superpeer_network
 
                         if (pending_requests.ContainsKey(receiver_ip))
                         {
+                            req_stream[receiver_ip] = sslStream;
+                            pending_requests[receiver_ip] = false;
 
-                            TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
-                            TCPCommunication.send_message_tcp(sslStream, pending_requests[receiver_ip].ToString());
+                            //TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
 
-                            byte[] data = new Byte[256];
+                            //TCPCommunication.send_message_tcp(sslStream, pending_requests[receiver_ip].ToString());
+
+                            /*byte[] data = new Byte[256];
                             sslStream.Read(data, 0, data.Length);
                             response = Encoding.UTF8.GetString(data);
 
@@ -1457,7 +1564,7 @@ namespace superpeer_network
                             client_keys[receiver_ip] = request_key;
 
                             sslStream.Close();
-                            client.Close();
+                            client.Close();*/
 
 
                             /*Thread.Sleep(1000);
@@ -1483,20 +1590,31 @@ namespace superpeer_network
                 }
                 else if (String.Compare(response, "LISTEN_P") == 0)
                 {
-                    string sender_key = TCPCommunication.recieve_message_tcp(sslStream);
+
+                    Byte[] data = new Byte[6];
+                    sslStream.Read(data, 0, data.Length);
+
+                    var key = KeyGenerator.GenerateDoubleBytesKey(data);
+                    var hexKey = KeyGenerator.GetHexKey(key);
+                    IPEndPoint listen_ip = (IPEndPoint)client.Client.RemoteEndPoint;
+
+                    peers[hexKey] = listen_ip;
+
+                    Console.WriteLine("Pending listener: " + listen_ip);
+                    pending_requests[listen_ip] = true;
+
+                    new Thread(() => handle_relay(listen_ip, sslStream)).Start();
+                    /*string sender_key = TCPCommunication.recieve_message_tcp(sslStream);
                     if (peers.ContainsKey(sender_key))
                     {
                         //response = TCPCommunication.recieve_message_tcp(sslStream);
-                        Console.WriteLine($"Listen request received for {response}");
-
-                        Random random = new Random();
-                        int dtls_port = random.Next(20000, 40000);
+                        //Console.WriteLine($"Listen request received for {response}");
 
                         IPEndPoint listen_ip = (IPEndPoint)client.Client.RemoteEndPoint;
 
-                        pending_requests[listen_ip] = dtls_port;
+                        pending_requests[listen_ip] = true;
 
-                        new Thread(() => handle_relay(dtls_port, listen_ip, sslStream)).Start();
+                        new Thread(() => handle_relay(listen_ip, sslStream)).Start();
                         //Thread.Sleep(1000);
 
                         //TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
@@ -1504,16 +1622,13 @@ namespace superpeer_network
                         //TCPCommunication.send_message_tcp(sslStream, "ACCEPT");
 
                         //pending_requests.Add(listen_ip);
-
-                        /*sslStream.Close();
-                        client.Close();*/
                     }
                     else
                     {
                         TCPCommunication.send_message_tcp(sslStream, "REJECT");
                         sslStream.Close();
                         client.Close();
-                    }
+                    }*/
 
 
                     //new Thread(() => handle_relay(relay_ip)).Start();
@@ -1525,13 +1640,50 @@ namespace superpeer_network
             }
         }
 
-        static void handle_relay(int port, IPEndPoint listen_ip, SslStream listen_stream)
+        static void handle_relay(IPEndPoint listen_ip, SslStream listen_stream)
         {
             //pending_requests.Remove(client1);
 
             Console.WriteLine("start relay");
 
-            DTLSServer dtls_server0 = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
+            while (pending_requests[listen_ip]) ;
+
+            //SslStream request_stream = req_stream[listen_ip];
+
+            TCPCommunication.send_message_tcp(listen_stream, "ACCEPT");
+
+            while (listner_buffer.Count == 0) ;
+
+            TCPCommunication.send_message_tcp(listen_stream, listner_buffer[0]);
+            listner_buffer.RemoveAt(0);
+
+            byte[] bytes = new byte[16];
+            listen_stream.Read(bytes, 0, bytes.Length);
+
+            string C = Encoding.Default.GetString(bytes);
+            Console.WriteLine("C: " + C);
+
+            var enumerator = auth_tunnel_rev.Keys.GetEnumerator();
+            enumerator.MoveNext();
+
+            IPEndPoint tunnel = enumerator.Current;
+
+            Console.WriteLine("Sending auth message to: " + tunnel);
+
+            //TCPCommunication.send_message_tcp(superpeer_neighbours[tunnel], "AUTH_P:" + U);
+            message_buffer[0 + ":AUTH_R:" + C] = tunnel;
+
+
+            while (listner_buffer.Count == 0) ;
+
+            TCPCommunication.send_message_tcp(listen_stream, listner_buffer[0]);
+            listner_buffer.RemoveAt(0);
+
+
+
+
+
+            /*DTLSServer dtls_server0 = new DTLSServer(local_port.ToString(), new byte[] { 0xBA, 0xA0 });
             DTLSServer dtls_server1 = new DTLSServer(port.ToString(), new byte[] { 0xBA, 0xA0 });
 
 
@@ -1550,23 +1702,25 @@ namespace superpeer_network
                 dtls_server1.Unbuffer_Args = "-i0 -o0";
             }
 
-
-
             dtls_server0.Start();
-            dtls_server1.Start();
+            dtls_server1.Start();*/
 
-            TCPCommunication.send_message_tcp(listen_stream, "ACCEPT");
+            /*            TCPCommunication.send_message_tcp(listen_stream, "ACCEPT");
 
-            byte[] data = new Byte[256];
-            listen_stream.Read(data, 0, data.Length);
-            string response = Encoding.UTF8.GetString(data);
+                        byte[] data = new Byte[256];
+                        listen_stream.Read(data, 0, data.Length);
+                        string response = Encoding.UTF8.GetString(data);
 
-            PublicKeyCoordinates listen_pub_key = JsonConvert.DeserializeObject<PublicKeyCoordinates>(response);
-            client_keys[listen_ip] = listen_pub_key;
+                        PublicKeyCoordinates listen_pub_key = JsonConvert.DeserializeObject<PublicKeyCoordinates>(response);
+                        client_keys[listen_ip] = listen_pub_key;
 
-            while (client_keys[listen_ip] == listen_pub_key) ;
+                        Console.WriteLine("listen pubKey: " + listen_pub_key);
 
-            data = new Byte[256];
+                        while (client_keys[listen_ip] == listen_pub_key) ;*/
+
+
+
+            /*data = new Byte[256];
             data = Encoding.UTF8.GetBytes(client_keys[listen_ip].ToString());
             listen_stream.Write(data);
             listen_stream.Flush();
@@ -1577,7 +1731,8 @@ namespace superpeer_network
             new Thread(() => dtls_server1.GetStream().CopyTo(dtls_server0.GetStream(), 16)).Start();
 
             dtls_server0.WaitForExit();
-            dtls_server1.WaitForExit();
+            dtls_server1.WaitForExit();*/
         }
+
     }
 }

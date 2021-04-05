@@ -444,8 +444,8 @@ namespace superpeer_network
                                 }
                                 else
                                 {
-                                    listner_buffer.Add(data0);
                                     Console.WriteLine("Auth dest found");
+                                    listner_buffer.Add(data0);
                                 }
                             }
                             else
