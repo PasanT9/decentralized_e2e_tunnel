@@ -151,7 +151,7 @@ namespace superpeer_network
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine("Server exception");
             }
         }
 
@@ -585,12 +585,12 @@ namespace superpeer_network
                 }
                 catch (System.InvalidOperationException e)
                 {
-                    Console.WriteLine(e);
+                    Console.WriteLine("Invalid operation");
                     break;
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    Console.WriteLine("Exception");
                     break;
                 }
             }
@@ -1227,7 +1227,7 @@ namespace superpeer_network
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine("Try again!!!");
             }
             finally
             {

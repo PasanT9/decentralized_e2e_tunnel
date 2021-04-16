@@ -68,6 +68,8 @@ namespace superpeer_network
 
         static string local_ip_str;
 
+        static bool verbose = false;
+
 
         public static void insert_peers(string[] new_peers)
         {
@@ -433,12 +435,12 @@ namespace superpeer_network
                 }
                 catch (System.InvalidOperationException e)
                 {
-                    Console.WriteLine(e);
+                    Console.WriteLine("Invalid operation");
                     break;
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine(e);
+                    Console.WriteLine("Exception");
                     break;
                 }
             }
@@ -526,14 +528,14 @@ namespace superpeer_network
                     }
                     catch (System.ArgumentException e)
                     {
-                        Console.WriteLine(e);
+                        //Console.WriteLine("A");
                         Console.WriteLine("neighbours have changed");
                         Thread.Sleep(100);
                         continue;
                     }
                     catch (System.IndexOutOfRangeException e)
                     {
-                        Console.WriteLine(e);
+                        //Console.WriteLine(e);
                         Console.WriteLine("neighbours have changed");
                         Thread.Sleep(100);
                         continue;
@@ -619,7 +621,7 @@ namespace superpeer_network
                                     data0 = temp_split[2];
                                     Console.WriteLine(data0);
                                     IPEndPoint destination_ip = message_buffer[message_full];
-                                    if (destination_ip == neighbour)
+                                    if (destination_ip.Equals(neighbour))
                                     {
                                         Console.Write($"Sending({neighbour}): ");
                                         Console.ForegroundColor = ConsoleColor.Yellow;
@@ -694,14 +696,14 @@ namespace superpeer_network
                             }
                             catch (System.InvalidOperationException e)
                             {
-                                Console.WriteLine(e);
+                                //Console.WriteLine(e);
                                 Console.WriteLine("neighbours have changed");
                                 Thread.Sleep(100);
                                 break;
                             }
                             catch (Exception e)
                             {
-                                Console.WriteLine(e);
+                                //Console.WriteLine(e);
                                 Console.WriteLine("neighbours have changed");
                                 Thread.Sleep(100);
                                 break;
@@ -859,8 +861,28 @@ namespace superpeer_network
 
         static void Main(string[] args)
         {
-            n = Int32.Parse(args[0]);
-            r = Int32.Parse(args[1]);
+            /*
+            try
+            {
+                n = Int32.Parse(args[0]);
+                r = Int32.Parse(args[1]);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("Incorrect format");
+                Console.WriteLine("dotnet run <n> <r>");
+                return;
+            }
+            if (args.Length > 2 && args[2] == "-v")
+            {
+                verbose = true;
+            }
+            else if (args.Length > 2)
+            {
+                Console.WriteLine("Incorrect format");
+                Console.WriteLine("dotnet run <n> <r> -v");
+                return;
+            }*/
             local_ip_str = "127.0.0.1";
             //To handle on exit function to distribute peers upon exit
             Console.CancelKeyPress += On_exit;
@@ -1027,7 +1049,7 @@ namespace superpeer_network
             }
             catch (Exception e)
             {
-                Console.WriteLine(e);
+                Console.WriteLine("Server start error!!");
             }
             finally
             {
