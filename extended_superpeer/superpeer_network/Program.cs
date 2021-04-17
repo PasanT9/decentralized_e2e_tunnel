@@ -369,7 +369,9 @@ namespace superpeer_network
                             {
 
                                 shared_keys[key] = temp_split[2];
+                                Console.WriteLine();
                                 Console.WriteLine($"key for {key} stored: " + temp_split[2]);
+                                Console.WriteLine();
                                 if (temp_split.Length > 3)
                                 {
                                     string full_msg = temp_split[0] + ":" + temp_split[1];
@@ -750,23 +752,10 @@ namespace superpeer_network
                 exit_neighbours.Add(neighbour);
             }
 
-
-            /*IPEndPoint neighbour;
-            var neighbour_itr = superpeer_neighbours.GetEnumerator();
-            neighbour_itr.MoveNext();
-            neighbour = neighbour_itr.Current.Key;
-            exit_neighbours.Add(neighbour);
-            //Thread.Sleep(1000);
-
-            neighbour_itr.MoveNext();
-            neighbour = neighbour_itr.Current.Key;
-            exit_neighbours.Add(neighbour);*/
-
             Thread.Sleep(4000);
 
-            server.Server.Disconnect(true);
-            server.Server.Close();
-            //TcpClient client = new TcpClient(ipLocalEndPoint);
+            // server.Server.Disconnect(true);
+            // server.Server.Close();
 
             System.Environment.Exit(1);
 
@@ -1016,6 +1005,9 @@ namespace superpeer_network
                     sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
                     // Read a message from the client.
                     response = TCPCommunication.recieve_message_tcp(sslStream);
+                    Console.WriteLine();
+                    Console.WriteLine(response);
+                    Console.WriteLine();
 
                     Console.ForegroundColor = ConsoleColor.Red;
                     rec_keys.Add(response);
@@ -1386,6 +1378,7 @@ namespace superpeer_network
                 else if (String.Compare(response, "REG_P") == 0)
                 {
                     Console.WriteLine("Peer registering");
+                    Console.WriteLine();
                     Byte[] data = new Byte[6];
                     sslStream.Read(data, 0, data.Length);
 
@@ -1396,6 +1389,7 @@ namespace superpeer_network
                     var hexKey = KeyGenerator.GetHexKey(key);
 
                     print_key(hexKey);
+                    Console.WriteLine();
                     peers[hexKey] = (IPEndPoint)client.Client.RemoteEndPoint;
                     Console.WriteLine("Registering: " + (IPEndPoint)client.Client.RemoteEndPoint);
                     //Console.WriteLine("key: " + data.Length);
@@ -1407,7 +1401,7 @@ namespace superpeer_network
                     for (int i = 0; i < splitted.Length; i++)
                     {
                         Console.WriteLine(splitted[i]);
-                        Console.WriteLine("size: " + splitted[i].Length);
+                        Console.WriteLine();
                     }
                     Console.WriteLine();
 

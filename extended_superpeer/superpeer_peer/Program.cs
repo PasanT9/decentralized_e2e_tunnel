@@ -253,22 +253,54 @@ namespace superpeer_peer
 
             string response = TCPCommunication.recieve_message_tcp(sslStream);
             Console.WriteLine(response);
+            Console.WriteLine();
 
             int n = 10;
             gen_keys();
 
+            Console.WriteLine();
+            Console.WriteLine("a_p: " + a_p);
+            Console.WriteLine("A_p: " + A_p);
+            Console.WriteLine();
+
             Org.BouncyCastle.Math.BigInteger[] P = req_keys(n - 1);
 
+            Console.WriteLine("Received Keys(P):");
+            for (int i = 0; i < P.Length; ++i)
+            {
+                Console.Write("\t" + P[i]);
+            }
+            Console.WriteLine();
+            Console.WriteLine();
+
+            Console.WriteLine("V values:");
             int[] V = gen_v(n - 1);
+            for (int i = 0; i < P.Length; ++i)
+            {
+                Console.Write("\t" + V[i]);
+            }
+            Console.WriteLine();
+            Console.WriteLine();
 
             Random random = new Random();
             int s = 4;
             //int s = 29;
+
+            Console.WriteLine("Generating U:");
+            Console.WriteLine();
+
+            Console.WriteLine("U = (g^s mod p) (p_1^v_1 mod p) (p_2^v_2 mod p) ... (p_(n-1)^v_(n-1) mod p)");
+            Console.WriteLine($"U = ({g}^{s} mod p) ({P[0]}^{V[0]} mod p) ({P[1]}^{V[1]} mod p) ... ({P[n - 2]}^{V[n - 2]} mod p)");
+            Console.WriteLine($"U = {(g.Pow(s)).Mod(p)} {(P[0].Pow(V[0])).Mod(p)} {(P[1].Pow(V[1])).Mod(p)} ... {(P[n - 2].Pow(V[n - 2])).Mod(p)}");
             Org.BouncyCastle.Math.BigInteger U = (g.Pow(s)).Mod(p);
             for (int i = 0; i < n - 1; ++i)
             {
                 U = U.Multiply((P[i].Pow(V[i])).Mod(p)).Mod(p);
             }
+            Console.WriteLine($"U = {U}");
+            Console.WriteLine();
+
+            Console.WriteLine("---------------------------------------------------------------------");
 
             byte[] bytes;
 
@@ -280,12 +312,20 @@ namespace superpeer_peer
             response = TCPCommunication.recieve_message_tcp(sslStream);
             int C = Int32.Parse(response);
             Console.WriteLine("C: " + C);
+            Console.WriteLine();
+
+            Console.WriteLine("Calculating v_p");
+            Console.WriteLine("v_p \t= \tc xor v_1 xor ... xor v_(n-1)");
+            Console.WriteLine($"v_p \t= \t{C} xor {V[0]} xor ... xor {V[n - 2]}");
+
 
             int v_p = C;
             for (int i = 0; i < n - 1; ++i)
             {
                 v_p = v_p ^ V[i];
             }
+            Console.WriteLine($"v_p \t= \t{v_p}");
+            Console.WriteLine();
 
 
             string V_str = v_p + "|";
@@ -309,53 +349,22 @@ namespace superpeer_peer
             Org.BouncyCastle.Math.BigInteger r_big = (s_big.Add((a_p_big.Multiply(v_p_big)).Negate())).Mod(q);
             //int r = (s - ((a_p * v_p) % 31));
             //int r = Int32.Parse(r_big.ToString());
+            Console.WriteLine("Calculating r: ");
+            //r = s - a_pv_p mod p
+            Console.WriteLine("r\t=\ts - (a_p)(v_p) mod p");
+            Console.WriteLine($"r\t=\t{s} - ({a_p})({v_p}) mod p");
+            Console.WriteLine($"r\t=\t{r_big}");
+            Console.WriteLine();
 
             string r_str = r_big.ToString();
 
             string msg = V_str + P_str + r_str;
+            Console.WriteLine("msg:" + msg);
+            Console.WriteLine();
+
+            Console.WriteLine("---------------------------------------------------------------------");
 
             TCPCommunication.send_message_tcp(sslStream, msg);
-
-
-
-
-            /*if (String.Compare(response, "ACCEPT") == 0)
-            {
-                TCPCommunication.send_message_tcp(sslStream, dest_key);
-
-                response = TCPCommunication.recieve_message_tcp(sslStream);
-
-                string[] temp_split = response.Split(':');
-                dest_ip = temp_split[1];
-                dest_port = Int32.Parse(temp_split[2]);
-
-                Console.WriteLine($"destination peer in {dest_ip}:{dest_port}");
-
-                //TCPCommunication.send_message_tcp(sslStream, pubKey.ToString());
-                //response = TCPCommunication.recieve_message_tcp(sslStream);
-                //Console.WriteLine(response);
-                sslStream.Close();
-                client.Close();
-
-                client = new TcpClient(ipLocalEndPoint);
-                Console.WriteLine("Client connecting");
-                client.Connect(dest_ip, dest_port);
-                Console.WriteLine("Client connected");
-                sslStream = new SslStream(client.GetStream(), false, new RemoteCertificateValidationCallback(ValidateServerCertificate), null);
-                authenticate_server(sslStream);
-
-                req_connection(sslStream, client, dest_key);
-
-
-                sslStream.Close();
-                client.Close();
-            }
-            else if (String.Compare(response, "REJECT") == 0)
-            {
-                Console.WriteLine("Connection rejected");
-                sslStream.Close();
-                client.Close();
-            }*/
         }
 
         static void Main(string[] args)
@@ -366,6 +375,8 @@ namespace superpeer_peer
             q = new Org.BouncyCastle.Math.BigInteger(5.ToString());
 
             gen_keypair();
+
+            //find_peer();
 
 
             init_connection();
@@ -382,6 +393,8 @@ namespace superpeer_peer
             {
                 listen_peer();
             }
+
+
 
 
             //share_key();
@@ -610,6 +623,7 @@ namespace superpeer_peer
             for (int i = 0; i < temp_split.Length; ++i)
             {
                 print_key(temp_split[i]);
+                Console.WriteLine();
             }
 
             sslStream.Close();
@@ -617,6 +631,19 @@ namespace superpeer_peer
 
 
 
+        }
+
+        static Org.BouncyCastle.Math.BigInteger hash_key(string key)
+        {
+            int a_i = 1;
+            for (int i = 0; i < key.Length; ++i)
+            {
+                a_i = a_i + (key[i] - '0');
+            }
+
+            Org.BouncyCastle.Math.BigInteger hash = g.Pow(a_i).Mod(q);
+
+            return hash;
         }
 
 
@@ -814,6 +841,7 @@ namespace superpeer_peer
                 {
 
                     Console.WriteLine("Start Authenticating");
+                    Console.WriteLine();
                     ring_authenticate(sslStream);
 
 
@@ -996,14 +1024,23 @@ namespace superpeer_peer
             if (String.Compare(response, "ACCEPT") == 0)
             {
 
+                Console.WriteLine();
                 Console.WriteLine("Start authenticating");
+
                 response = TCPCommunication.recieve_message_tcp(sslStream);
                 string U = response;
+                Console.WriteLine();
+                Console.WriteLine("---------------------------------------------------------------------");
                 Console.WriteLine("U: " + U);
+                Console.WriteLine();
 
                 Random random = new Random();
                 int c = random.Next(1, 4);
+                //Console.WriteLine();
+                Console.WriteLine("Random number c: " + c);
+                Console.WriteLine();
                 byte[] bytes;
+                Console.WriteLine("---------------------------------------------------------------------");
 
                 bytes = new byte[16];
                 bytes = Encoding.Default.GetBytes(c.ToString());
@@ -1011,7 +1048,9 @@ namespace superpeer_peer
 
                 response = TCPCommunication.recieve_message_tcp(sslStream);
 
-                Console.WriteLine("msg: " + response);
+                Console.WriteLine();
+                Console.WriteLine("msg:\t" + response);
+                Console.WriteLine();
 
                 int n = 10;
 
@@ -1019,11 +1058,16 @@ namespace superpeer_peer
 
                 int[] V = new int[n];
                 int c0 = 0;
+                Console.WriteLine("Calculating c'");
+                Console.WriteLine("c' \t= \tv_1 xor v_2 xor ... xor v_n");
                 for (int i = 0; i < n; ++i)
                 {
                     V[i] = Int32.Parse(temp_split[i]);
                     c0 = c0 ^ V[i];
                 }
+                Console.WriteLine($"c' \t= \t{V[0]} xor {V[1]} xor ... xor {V[n - 1]}");
+                Console.WriteLine($"c' \t= \tc");
+                Console.WriteLine();
 
 
                 Org.BouncyCastle.Math.BigInteger[] P = new Org.BouncyCastle.Math.BigInteger[n];
@@ -1032,38 +1076,51 @@ namespace superpeer_peer
                     P[i] = new Org.BouncyCastle.Math.BigInteger(temp_split[n + i]);
                 }
 
+                Console.WriteLine("Check if c = c'");
+                Console.WriteLine($"Check if {c0} = {c}'");
                 int r = Int32.Parse(temp_split[2 * n]);
                 if (c0 == c)
                 {
-                    Console.WriteLine("1st verification PASS");
+                    Console.WriteLine("\t1st verification PASS");
                 }
                 else
                 {
-                    Console.WriteLine("1st verification FAIL");
+                    Console.WriteLine("\t1st verification FAIL");
                 }
+                Console.WriteLine();
+                Console.WriteLine("---------------------------------------------------------------------");
+                Console.WriteLine();
+
+                Console.WriteLine("U' = (g^r mod p) (p_1^v_1 mod p) (p_2^v_2 mod p) ... (p_n^v_n mod p)");
+                Console.WriteLine($"U' = ({g}^{r} mod p) ({P[0]}^{V[0]} mod p) ({P[1]}^{V[1]} mod p) ... ({P[n - 2]}^{V[n - 2]} mod p)");
+                Console.WriteLine($"U' = {(g.Pow(r)).Mod(p)} {(P[0].Pow(V[0])).Mod(p)} {(P[1].Pow(V[1])).Mod(p)} ... {(P[n - 1].Pow(V[n - 1])).Mod(p)}");
 
                 Org.BouncyCastle.Math.BigInteger U0 = (g.Pow(r)).Mod(p);
                 for (int i = 0; i < n; ++i)
                 {
                     U0 = U0.Multiply((P[i].Pow(V[i])).Mod(p)).Mod(p);
                 }
-                Console.WriteLine(U);
-                Console.WriteLine(U0);
+                Console.WriteLine($"U' = {U0}");
+                Console.WriteLine();
+
+
 
                 string U1 = U0.ToString();
                 bool flag = true;
+                Console.WriteLine("Check if U = U'");
+                Console.WriteLine($"Check if {U} = {U0}'");
                 for (int i = 0; i < U1.Length; ++i)
                 {
                     if (U1[i] != U[i])
                     {
-                        Console.WriteLine("2nd verification FAIL");
+                        Console.WriteLine("\t2nd verification FAIL");
                         flag = false;
                         break;
                     }
                 }
                 if (flag)
                 {
-                    Console.WriteLine("2nd verification PASS");
+                    Console.WriteLine("\t2nd verification PASS");
                 }
 
 

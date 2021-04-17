@@ -519,7 +519,9 @@ namespace superpeer_network
                             {
 
                                 shared_keys[key] = temp_split[2];
+                                Console.WriteLine();
                                 Console.WriteLine($"key for {key} stored: " + temp_split[2]);
+                                Console.WriteLine();
                                 if (temp_split.Length > 3)
                                 {
                                     string full_msg = temp_split[0] + ":" + temp_split[1];
@@ -1191,9 +1193,11 @@ namespace superpeer_network
                     sslStream.AuthenticateAsServer(server_cert, clientCertificateRequired: false, SslProtocols.Tls13, checkCertificateRevocation: true);
                     // Read a message from the client.
                     response = TCPCommunication.recieve_message_tcp(sslStream);
+                    Console.WriteLine();
                     Console.WriteLine(response);
                     var time = sw.Elapsed;
                     Console.WriteLine("Time elapsed: " + time);
+                    Console.WriteLine();
 
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
                     rec_keys.Add(response);
@@ -1516,6 +1520,7 @@ namespace superpeer_network
                 else if (String.Compare(response, "REG_P") == 0)
                 {
                     Console.WriteLine("Peer registering");
+                    Console.WriteLine();
                     Byte[] data = new Byte[6];
                     sslStream.Read(data, 0, data.Length);
 
@@ -1526,6 +1531,7 @@ namespace superpeer_network
                     var hexKey = KeyGenerator.GetHexKey(key);
 
                     print_key(hexKey);
+                    Console.WriteLine();
                     peers[hexKey] = (IPEndPoint)client.Client.RemoteEndPoint;
                     Console.WriteLine("Registering: " + (IPEndPoint)client.Client.RemoteEndPoint);
                     //Console.WriteLine("key: " + data.Length);
@@ -1537,7 +1543,7 @@ namespace superpeer_network
                     for (int i = 0; i < splitted.Length; i++)
                     {
                         Console.WriteLine(splitted[i]);
-                        Console.WriteLine("size: " + splitted[i].Length);
+                        Console.WriteLine();
                     }
                     Console.WriteLine();
 
